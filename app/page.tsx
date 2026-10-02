@@ -32,7 +32,7 @@ export default function Home() {
     }
 
     // 3. Ensure viewport begins cleanly at the top hero section
-    window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
+    window.scrollTo(0, 0);
   }, []);
 
   return (

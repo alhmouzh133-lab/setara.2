@@ -33,6 +33,23 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl" className={`${tajawal.variable} font-sans`}>
       <body className="bg-[#171513] text-[#F5EFE6] antialiased selection:bg-[#C8AA78]/30 selection:text-[#F5EFE6]" suppressHydrationWarning>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  if ('scrollRestoration' in history) {
+                    history.scrollRestoration = 'manual';
+                  }
+                  if (location.hash) {
+                    history.replaceState(history.state, '', location.pathname + location.search);
+                  }
+                  window.scrollTo(0, 0);
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
         {children}
       </body>
     </html>
