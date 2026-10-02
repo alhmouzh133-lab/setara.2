@@ -1,0 +1,69 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-tajawal), "Tajawal", system-ui, -apple-system, sans-serif;
+  --color-cocoa: #211B17;
+  --color-charcoal: #171513;
+  --color-ivory: #F5EFE6;
+  --color-sand: #D8C6AE;
+  --color-champagne: #C8AA78;
+}
+
+html {
+  scroll-behavior: smooth;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Continuous Slow Zoom-In with Two-Layer Crossfade */
+@keyframes heroContinuousZoom {
+  0% {
+    transform: scale(1.000);
+    opacity: 0;
+  }
+  3.73% { /* 2.5s / 67s: crossfade in completes, scale 1.0027 */
+    transform: scale(1.0027);
+    opacity: 1;
+  }
+  50.0% { /* 33.5s / 67s: steady continuous forward zoom to scale 1.0335 */
+    transform: scale(1.0335);
+    opacity: 1;
+  }
+  53.73% { /* 36.0s / 67s: crossfade out completes, scale reaches 1.036 */
+    transform: scale(1.036);
+    opacity: 0;
+  }
+  55.0% { /* 36.85s / 67s: scale resets to 1.000 while 100% invisible */
+    transform: scale(1.000);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.000);
+    opacity: 0;
+  }
+}
+
+.hero-zoom-layer-1 {
+  animation: heroContinuousZoom 67s linear infinite;
+  animation-delay: -2.5s;
+  will-change: transform, opacity;
+  transform-origin: center center;
+}
+
+.hero-zoom-layer-2 {
+  animation: heroContinuousZoom 67s linear infinite;
+  animation-delay: -36s;
+  will-change: transform, opacity;
+  transform-origin: center center;
+}

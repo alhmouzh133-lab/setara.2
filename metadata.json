@@ -1,0 +1,6 @@
+{
+  "name": "سيتارة | متجر ستائر فاخرة وتفصيل حسب الطلب",
+  "description": "سيتارة في الأردن - ستائر جاهزة فاخرة وتفصيل حسب الطلب بجودة عالية وتصاميم عصرية تناسب كل مساحة.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
