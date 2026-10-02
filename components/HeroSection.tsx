@@ -86,7 +86,7 @@ export default function HeroSection() {
               fill
               priority
               sizes="100vw"
-              className="object-cover object-center filter brightness-90"
+              className="object-cover object-center filter brightness-95"
               referrerPolicy="no-referrer"
             />
           </div>
@@ -106,7 +106,7 @@ export default function HeroSection() {
                 fill
                 priority
                 sizes="100vw"
-                className="object-cover object-center filter brightness-90"
+                className="object-cover object-center filter brightness-95"
                 referrerPolicy="no-referrer"
               />
             </div>
@@ -124,16 +124,16 @@ export default function HeroSection() {
                 fill
                 priority
                 sizes="100vw"
-                className="object-cover object-center filter brightness-90"
+                className="object-cover object-center filter brightness-95"
                 referrerPolicy="no-referrer"
               />
             </div>
           </div>
         )}
 
-        {/* High-Contrast Legibility Scrims (Stationary) */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#171513] via-[#171513]/75 to-[#171513]/40 pointer-events-none" />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#171513]/95 via-[#171513]/60 to-transparent rtl:bg-gradient-to-l pointer-events-none" />
+        {/* High-Contrast Legibility Scrims (Lightened to reveal curtain details) */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#171513] via-[#171513]/55 to-[#171513]/20 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#171513]/80 via-[#171513]/40 to-transparent rtl:bg-gradient-to-l pointer-events-none" />
       </div>
 
       {/* Hero Foreground Content: Headline, Description & Buttons (Stationary container) */}

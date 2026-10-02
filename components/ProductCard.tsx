@@ -33,13 +33,6 @@ export default function ProductCard({ product }: ProductCardProps) {
             referrerPolicy="no-referrer"
           />
 
-          {/* Quiet Demo Imagery Tag */}
-          <div className="absolute top-2.5 right-2.5">
-            <span className="px-2 py-0.5 text-[10px] font-medium bg-[#171513]/75 text-[#F5EFE6] rounded-xs backdrop-blur-xs">
-              صورة تمثيلية للعرض
-            </span>
-          </div>
-
           {/* Category Tag */}
           <div className="absolute bottom-2.5 right-2.5">
             <span className="px-2 py-0.5 text-[11px] font-semibold text-[#171513] bg-[#FAF6F0]/95 rounded-xs shadow-2xs">

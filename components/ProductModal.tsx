@@ -323,7 +323,7 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
                     />
                   )}
                   <span>
-                    {selectedColor ? `معاينة: ${selectedColor.name}` : 'صورة تمثيلية للعرض'}
+                    {selectedColor ? `معاينة: ${selectedColor.name}` : 'معاينة اللون'}
                   </span>
                 </span>
               </div>
