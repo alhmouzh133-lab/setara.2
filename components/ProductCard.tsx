@@ -13,8 +13,14 @@ interface ProductCardProps {
 export default function ProductCard({ product }: ProductCardProps) {
   const { setOpenProductModal } = useCart();
 
-  // Find lowest price among sizes
-  const minPrice = Math.min(...product.sizes.map((s) => s.price));
+  // Find lowest price among available variants or sizes
+  const availableVariantPrices = (product.variants || [])
+    .filter((v) => v.isAvailable)
+    .map((v) => Number(v.price));
+  const fallbackSizePrices = (product.sizes || []).map((s) => Number(s.price));
+  const pricePool = availableVariantPrices.length > 0 ? availableVariantPrices : fallbackSizePrices;
+  const rawMin = pricePool.length > 0 ? Math.min(...pricePool) : 25;
+  const minPrice = isFinite(rawMin) && rawMin > 0 ? rawMin : 25;
 
   return (
     <article

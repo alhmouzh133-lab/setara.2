@@ -63,6 +63,34 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
     return product.images;
   }, [selectedColor, product.images]);
 
+  // Available size options genuinely configured and enabled for the selected color
+  const availableSizes = React.useMemo<SizeOption[]>(() => {
+    if (!selectedColor) return [];
+
+    if (product.variants && product.variants.length > 0) {
+      // Find variants for this color that are explicitly available
+      const colorVariants = product.variants.filter(
+        (v) => (v.colorId === selectedColor.id || v.colorId === selectedColor.name) && v.isAvailable
+      );
+
+      return colorVariants.map((v) => {
+        const sizeDef = product.sizes.find((s) => s.id === v.sizeId);
+        return {
+          id: v.sizeId,
+          variantId: v.id,
+          label: sizeDef?.label || 'مقاس قياسي',
+          widthCm: sizeDef?.widthCm || 150,
+          heightCm: sizeDef?.heightCm || 260,
+          price: Number(v.price),
+          stockQuantity: Number(v.stockQuantity),
+        };
+      });
+    }
+
+    // Fallback for static demo products without explicit variants array
+    return product.sizes;
+  }, [selectedColor, product.variants, product.sizes]);
+
   // Handle color selection
   const handleSelectColor = (color: ColorOption) => {
     // 1. Clicking already selected color does not reload or reset gallery
@@ -73,9 +101,31 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
     setValidationError(null);
     setImageLoadError(false);
 
-    // Preserve selectedSize if it is available in this product
-    if (selectedSize && !product.sizes.some((s) => s.id === selectedSize.id)) {
-      setSelectedSize(null);
+    // Color-specific size validation: retain selected size only if valid for the new color. Otherwise clear it.
+    if (selectedSize) {
+      let matchingVariant: any = null;
+      if (product.variants && product.variants.length > 0) {
+        matchingVariant = product.variants.find(
+          (v) => (v.colorId === color.id || v.colorId === color.name) && v.sizeId === selectedSize.id && v.isAvailable
+        );
+      } else {
+        matchingVariant = product.sizes.find((s) => s.id === selectedSize.id);
+      }
+
+      if (matchingVariant) {
+        const sizeDef = product.sizes.find((s) => s.id === selectedSize.id);
+        setSelectedSize({
+          id: selectedSize.id,
+          variantId: matchingVariant.id,
+          label: sizeDef?.label || selectedSize.label,
+          widthCm: sizeDef?.widthCm || selectedSize.widthCm,
+          heightCm: sizeDef?.heightCm || selectedSize.heightCm,
+          price: Number(matchingVariant.price),
+          stockQuantity: Number(matchingVariant.stockQuantity ?? 10),
+        });
+      } else {
+        setSelectedSize(null);
+      }
     }
 
     const targetUrl = color.image;
@@ -484,7 +534,7 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
               </div>
             </div>
 
-            {/* 2. REQUIRED Size Variant Selection (Retains Selected Color & Image) */}
+            {/* 2. REQUIRED Size Variant Selection (Derived strictly from color's available variants) */}
             <div className="mt-5">
               <div className="flex items-center justify-between mb-2">
                 <label className="text-xs font-bold text-[#F5EFE6] flex items-center gap-1.5">
@@ -492,32 +542,48 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
                   <span className="text-red-400">*</span>
                 </label>
                 <span className="text-xs text-[#C8AA78] font-semibold">
-                  {selectedSize ? `${selectedSize.label} (${selectedSize.price} ${SHOP_CONFIG.currencySymbol})` : 'لم يتم الاختيار'}
+                  {selectedSize
+                    ? `${selectedSize.label} (${selectedSize.price} ${SHOP_CONFIG.currencySymbol})`
+                    : availableSizes.length === 0
+                    ? 'غير متوفر'
+                    : 'لم يتم الاختيار'}
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                {product.sizes.map((size) => {
-                  const isSelected = selectedSize?.id === size.id;
-                  return (
-                    <button
-                      key={size.id}
-                      type="button"
-                      onClick={() => handleSelectSize(size)}
-                      className={`flex flex-col items-center justify-center p-2.5 rounded-lg border text-right transition-all cursor-pointer ${
-                        isSelected
-                          ? 'bg-[#2E251F] border-[#C8AA78] text-[#F5EFE6] shadow-sm'
-                          : 'bg-[#171513] border-white/10 text-[#D8C6AE] hover:border-white/30'
-                      }`}
-                    >
-                      <span className="text-xs font-bold">{size.label}</span>
-                      <span className="text-xs font-semibold text-[#C8AA78] mt-0.5 tabular-nums">
-                        {size.price} {SHOP_CONFIG.currencySymbol}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
+              {availableSizes.length === 0 ? (
+                <div className="p-3.5 bg-[#171513] border border-amber-500/30 rounded-lg text-center text-xs text-[#D8C6AE] flex items-center justify-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-[#C8AA78] shrink-0" />
+                  <span>لا توجد مقاسات متاحة لهذا اللون</span>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  {availableSizes.map((size) => {
+                    const isSelected = selectedSize?.id === size.id;
+                    return (
+                      <button
+                        key={size.id}
+                        type="button"
+                        onClick={() => handleSelectSize(size)}
+                        className={`flex flex-col items-center justify-center p-2.5 rounded-lg border text-right transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-[#2E251F] border-[#C8AA78] text-[#F5EFE6] shadow-sm'
+                            : 'bg-[#171513] border-white/10 text-[#D8C6AE] hover:border-white/30'
+                        }`}
+                      >
+                        <span className="text-xs font-bold">{size.label}</span>
+                        <span className="text-xs font-semibold text-[#C8AA78] mt-0.5 tabular-nums">
+                          {size.price} {SHOP_CONFIG.currencySymbol}
+                        </span>
+                        {size.stockQuantity !== undefined && size.stockQuantity <= 3 && size.stockQuantity > 0 && (
+                          <span className="text-[10px] text-amber-400 mt-0.5">
+                            بقي {size.stockQuantity} فقط
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* 3. Quantity Counter */}
@@ -558,18 +624,33 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
 
           {/* Modal Bottom CTA */}
           <div className="mt-6 pt-4 border-t border-white/10">
-            <button
-              type="button"
-              onClick={handleAdd}
-              className="w-full py-3.5 px-6 rounded-lg bg-[#C8AA78] hover:bg-[#d5ba8c] text-[#171513] font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md active:scale-[0.99] cursor-pointer"
-            >
-              <ShoppingBag className="w-4 h-4" />
-              <span>
-                {currentUnitPrice
-                  ? `إضافة إلى السلة · ${currentTotalPrice} ${SHOP_CONFIG.currencySymbol}`
-                  : 'حدد اللون والمقاس للإضافة'}
-              </span>
-            </button>
+            {(() => {
+              const isPurchasable = Boolean(
+                selectedColor &&
+                selectedSize &&
+                availableSizes.some((s) => s.id === selectedSize.id)
+              );
+
+              return (
+                <button
+                  type="button"
+                  onClick={handleAdd}
+                  disabled={!isPurchasable}
+                  className="w-full py-3.5 px-6 rounded-lg bg-[#C8AA78] hover:bg-[#d5ba8c] disabled:opacity-40 disabled:cursor-not-allowed text-[#171513] font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md active:scale-[0.99] cursor-pointer"
+                >
+                  <ShoppingBag className="w-4 h-4" />
+                  <span>
+                    {!selectedColor
+                      ? 'حدد اللون المطلوب أولاً'
+                      : availableSizes.length === 0
+                      ? 'لا توجد مقاسات متاحة لهذا اللون'
+                      : !selectedSize
+                      ? 'حدد المقاس المطلوب للإضافة'
+                      : `إضافة إلى السلة · ${currentTotalPrice} ${SHOP_CONFIG.currencySymbol}`}
+                  </span>
+                </button>
+              );
+            })()}
             <p className="text-[11px] text-center text-[#D8C6AE]/60 mt-1.5">
               {SHOP_CONFIG.deliveryPricingNote}
             </p>

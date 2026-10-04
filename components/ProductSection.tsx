@@ -1,23 +1,30 @@
 'use client';
 
 import React from 'react';
-import { PRODUCTS, SHOP_CONFIG } from '@/lib/shop-data';
+import { PRODUCTS, Product, SHOP_CONFIG } from '@/lib/shop-data';
 import ProductCard from './ProductCard';
 import { CheckCircle2 } from 'lucide-react';
 
 interface ProductSectionProps {
+  products?: Product[];
   selectedCategory: 'all' | 'sheer' | 'blackout' | 'roller';
   onSelectCategory: (category: 'all' | 'sheer' | 'blackout' | 'roller') => void;
 }
 
 export default function ProductSection({
+  products = PRODUCTS,
   selectedCategory,
   onSelectCategory,
 }: ProductSectionProps) {
+  const currentProducts = products && products.length > 0 ? products : PRODUCTS;
   const filteredProducts =
     selectedCategory === 'all'
-      ? PRODUCTS
-      : PRODUCTS.filter((p) => p.category === selectedCategory);
+      ? currentProducts
+      : currentProducts.filter((p) => p.category === selectedCategory);
+
+  const sheerCount = currentProducts.filter((p) => p.category === 'sheer').length;
+  const blackoutCount = currentProducts.filter((p) => p.category === 'blackout').length;
+  const rollerCount = currentProducts.filter((p) => p.category === 'roller').length;
 
   return (
     <section
@@ -49,7 +56,7 @@ export default function ProductSection({
                   : 'text-[#241E1A] hover:text-[#000000] hover:bg-[#DDD0C0]'
               }`}
             >
-              جميع الستائر ({PRODUCTS.length})
+              جميع الستائر ({currentProducts.length})
             </button>
             <button
               onClick={() => onSelectCategory('sheer')}
@@ -59,7 +66,7 @@ export default function ProductSection({
                   : 'text-[#241E1A] hover:text-[#000000] hover:bg-[#DDD0C0]'
               }`}
             >
-              ستائر شفافة (3)
+              ستائر شفافة ({sheerCount})
             </button>
             <button
               onClick={() => onSelectCategory('blackout')}
@@ -69,7 +76,7 @@ export default function ProductSection({
                   : 'text-[#241E1A] hover:text-[#000000] hover:bg-[#DDD0C0]'
               }`}
             >
-              ستائر تعتيم (3)
+              ستائر تعتيم ({blackoutCount})
             </button>
             <button
               onClick={() => onSelectCategory('roller')}
@@ -79,7 +86,7 @@ export default function ProductSection({
                   : 'text-[#241E1A] hover:text-[#000000] hover:bg-[#DDD0C0]'
               }`}
             >
-              ستائر رول (2)
+              ستائر رول ({rollerCount})
             </button>
           </div>
 

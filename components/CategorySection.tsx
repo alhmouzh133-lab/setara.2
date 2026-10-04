@@ -6,10 +6,16 @@ import { CATEGORIES, CategoryInfo } from '@/lib/shop-data';
 import { ArrowLeft } from 'lucide-react';
 
 interface CategorySectionProps {
+  categories?: CategoryInfo[];
   onSelectCategory: (category: 'all' | 'sheer' | 'blackout' | 'roller') => void;
 }
 
-export default function CategorySection({ onSelectCategory }: CategorySectionProps) {
+export default function CategorySection({
+  categories = CATEGORIES,
+  onSelectCategory,
+}: CategorySectionProps) {
+  const displayCategories = categories && categories.length > 0 ? categories : CATEGORIES;
+
   const handleCategoryClick = (id: CategoryInfo['id']) => {
     onSelectCategory(id);
     const shopEl = document.getElementById('ready-made-shop');
@@ -48,9 +54,9 @@ export default function CategorySection({ onSelectCategory }: CategorySectionPro
           </button>
         </div>
 
-        {/* 3 Visual Category Cards */}
+        {/* Visual Category Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6">
-          {CATEGORIES.map((cat) => (
+          {displayCategories.map((cat) => (
             <div
               key={cat.id}
               onClick={() => handleCategoryClick(cat.id)}

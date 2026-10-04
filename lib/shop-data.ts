@@ -19,6 +19,19 @@ export interface SizeOption {
   widthCm: number;
   heightCm: number;
   price: number; // Demo price in JOD for this specific variant
+  variantId?: string;
+  stockQuantity?: number;
+}
+
+export interface ProductVariant {
+  id: string;
+  productId: string;
+  colorId: string;
+  sizeId: string;
+  price: number;
+  stockQuantity: number;
+  isAvailable: boolean;
+  sku?: string;
 }
 
 export interface Product {
@@ -33,7 +46,9 @@ export interface Product {
   lightBlocking: string;
   colors: ColorOption[];
   sizes: SizeOption[];
+  variants?: ProductVariant[];
   images: string[];
+  mainImage?: string;
   care: string[];
   features: string[];
   isFeatured?: boolean;
@@ -438,6 +453,26 @@ export const PRODUCTS: Product[] = [
     isFeatured: false,
   },
 ];
+
+// Ensure fallback demo products have variants array populated
+PRODUCTS.forEach((prod) => {
+  if (!prod.variants || prod.variants.length === 0) {
+    prod.variants = [];
+    prod.colors.forEach((c) => {
+      prod.sizes.forEach((s) => {
+        prod.variants!.push({
+          id: `var_${prod.id}_${c.id}_${s.id}`,
+          productId: prod.id,
+          colorId: c.id,
+          sizeId: s.id,
+          price: s.price,
+          stockQuantity: 10,
+          isAvailable: true,
+        });
+      });
+    });
+  }
+});
 
 // ----------------------------------------------------------------------------
 // 4. Custom Quote Configurations (Curtain types, fabrics, colors)
