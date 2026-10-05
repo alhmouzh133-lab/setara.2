@@ -3,12 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { SHOP_CONFIG } from '@/lib/shop-data';
+import { SHOP_CONFIG, getWhatsAppUrl } from '@/lib/shop-data';
 import { useCart } from '@/lib/cart-context';
-import { ShoppingBag, Menu, X, Scissors, Layers, Home, ListOrdered } from 'lucide-react';
+import { ShoppingBag, Menu, X, Scissors, Layers, Home, MessageCircle } from 'lucide-react';
 
 export default function Header() {
-  const { totalItems, setIsCartOpen, setIsCustomQuoteOpen, setIsOrdersOpen } = useCart();
+  const { totalItems, setIsCartOpen, setIsCustomQuoteOpen } = useCart();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -99,13 +99,6 @@ export default function Header() {
             تفصيل حسب الطلب
           </button>
           <button
-            onClick={() => setIsOrdersOpen(true)}
-            className="hover:text-[#F5EFE6] text-[#D8C6AE] transition-colors py-1 cursor-pointer flex items-center gap-1.5"
-          >
-            <ListOrdered className="w-3.5 h-3.5 text-[#C8AA78]" />
-            <span>طلباتي</span>
-          </button>
-          <button
             onClick={() => scrollToSection('contact-footer')}
             className="hover:text-[#F5EFE6] transition-colors py-1 cursor-pointer"
           >
@@ -115,6 +108,17 @@ export default function Header() {
 
         {/* Zone 3: Actions (Cart icon with badge & CTA button) */}
         <div className="flex items-center gap-2.5 sm:gap-3">
+          <a
+            href={getWhatsAppUrl('مرحباً متجر سيتارة، أود الاستفسار عن الستائر المتاحة لديكم.')}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="محادثة واتساب"
+            className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-300 bg-emerald-950/40 hover:bg-emerald-900/50 border border-emerald-500/30 transition-all rounded-md shadow-xs whitespace-nowrap"
+          >
+            <MessageCircle className="w-3.5 h-3.5 text-emerald-400" />
+            <span>واتساب</span>
+          </a>
+
           <button
             onClick={() => setIsCustomQuoteOpen(true)}
             className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-[#171513] bg-[#C8AA78] hover:bg-[#d8be8f] transition-all rounded-md shadow-xs whitespace-nowrap active:scale-[0.98]"
@@ -183,16 +187,16 @@ export default function Header() {
               <Scissors className="w-4 h-4" />
               <span>تفصيل حسب الطلب (عرض سعر)</span>
             </button>
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                setIsOrdersOpen(true);
-              }}
-              className="flex items-center gap-2.5 py-2 text-right hover:text-[#C8AA78] transition-colors"
+            <a
+              href={getWhatsAppUrl('مرحباً متجر سيتارة، أود الاستفسار عن الستائر المتاحة لديكم.')}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center gap-2.5 py-2 text-right text-emerald-400 font-semibold"
             >
-              <ListOrdered className="w-4 h-4 text-[#C8AA78]" />
-              <span>طلباتي</span>
-            </button>
+              <MessageCircle className="w-4 h-4 text-emerald-400" />
+              <span>محادثة واتساب مباشرة (0798187000)</span>
+            </a>
           </div>
 
           <div className="pt-2 border-t border-white/10">

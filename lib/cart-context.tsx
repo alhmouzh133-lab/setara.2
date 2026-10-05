@@ -1,23 +1,57 @@
 'use client';
 
 import React, { createContext, useContext, useSyncExternalStore, useState, useCallback } from 'react';
-import { ColorOption, Product, SizeOption } from './shop-data';
+import { ColorOption, Product, SizeOption, CustomCurtainItem } from './shop-data';
 
 export interface CartItem {
-  id: string; // unique composite key: `${productId}_${color.id}_${size.id}`
+  id: string; // unique composite key: `${curtainType}_${fabricId}_${color.id}_${size.id}_${curtainStyle || ''}_${liningOption || ''}` or `custom_${id}`
   productId: string;
   productName: string;
   categoryName: string;
+  curtainType?: 'electric' | 'manual' | 'roller' | string;
+  curtainTypeName?: string;
+  fabricId?: string;
+  fabricName?: string;
   image: string;
   color: ColorOption;
   size: SizeOption;
-  unitPrice: number; // in JOD
+  unitPrice: number; // in JOD (0 if unpriced)
   quantity: number;
+  isCustom?: boolean;
+  isUnpriced?: boolean;
+  curtainStyle?: string; // 'ويفي' or 'أمريكي'
+  fabricChoice?: string; // 'كتان طبيعي', 'مخمل ناعم', 'شيفون انسيابي', etc.
+  liningOption?: string; // 'بطانة 50%', 'بطانة 80%', 'تعتيم 100% — Blackout'
+  customDetails?: {
+    curtainType: string;
+    fabric: string;
+    color: string;
+    customColorNote?: string;
+    widthCm: string;
+    heightCm: string;
+    roomLocation?: string;
+    itemNotes?: string;
+  };
 }
 
 interface CartContextType {
   items: CartItem[];
-  addItem: (product: Product, color: ColorOption, size: SizeOption, quantity?: number) => void;
+  addItem: (
+    product: Product,
+    color: ColorOption,
+    size: SizeOption,
+    quantity?: number,
+    options?: {
+      curtainType?: string;
+      curtainTypeName?: string;
+      fabricId?: string;
+      fabricName?: string;
+      curtainStyle?: string;
+      liningOption?: string;
+      resolvedImage?: string;
+    }
+  ) => void;
+  addCustomItem: (customItem: CustomCurtainItem) => void;
   updateQuantity: (itemId: string, newQuantity: number) => void;
   removeItem: (itemId: string) => void;
   clearCart: () => void;
@@ -31,11 +65,6 @@ interface CartContextType {
   setOpenProductModal: (product: Product | null) => void;
   isCustomQuoteOpen: boolean;
   setIsCustomQuoteOpen: (open: boolean) => void;
-  isOrdersOpen: boolean;
-  setIsOrdersOpen: (open: boolean) => void;
-  selectedOrderRef: string | null;
-  setSelectedOrderRef: (ref: string | null) => void;
-  openOrderDetails: (ref: string) => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -54,7 +83,6 @@ function initCartFromStorage() {
   try {
     let stored = window.localStorage.getItem(LOCAL_STORAGE_KEY);
     if (!stored) {
-      // Migrate from legacy key if present
       stored = window.localStorage.getItem(LEGACY_STORAGE_KEY);
       if (stored) {
         window.localStorage.setItem(LOCAL_STORAGE_KEY, stored);
@@ -86,9 +114,36 @@ function emitChange() {
 }
 
 const cartStore = {
-  add(product: Product, color: ColorOption, size: SizeOption, quantity = 1) {
+  add(
+    product: Product,
+    color: ColorOption,
+    size: SizeOption,
+    quantity = 1,
+    options?: {
+      curtainType?: string;
+      curtainTypeName?: string;
+      fabricId?: string;
+      fabricName?: string;
+      curtainStyle?: string;
+      liningOption?: string;
+      resolvedImage?: string;
+    }
+  ) {
     initCartFromStorage();
-    const compositeId = `${product.id}_${color.id}_${size.id}`;
+    const curtainType = options?.curtainType || product.curtainType || 'electric';
+    const curtainTypeName = options?.curtainTypeName || product.name;
+    const fabricId = options?.fabricId || product.defaultFabricId || 'linen';
+    const fabricName = options?.fabricName || 'كتان طبيعي';
+    const curtainStyle = options?.curtainStyle || (curtainType !== 'roller' ? 'ويفي' : undefined);
+    const liningOption = options?.liningOption || (curtainType !== 'roller' ? 'بطانة 50%' : undefined);
+
+    const isUnpriced = curtainType === 'roller' || Boolean(product.isUnpriced);
+    const unitPrice = isUnpriced ? 0 : size.price;
+
+    const styleKey = curtainStyle || '';
+    const liningKey = liningOption || '';
+    const compositeId = `${curtainType}_${fabricId}_${color.id}_${size.id}_${styleKey}_${liningKey}`;
+
     const existingIndex = memoryCart.findIndex((item) => item.id === compositeId);
     if (existingIndex > -1) {
       memoryCart = memoryCart.map((item, idx) =>
@@ -100,16 +155,67 @@ const cartStore = {
         {
           id: compositeId,
           productId: product.id,
-          productName: product.name,
+          productName: curtainTypeName,
+          curtainType,
+          curtainTypeName,
+          fabricId,
+          fabricName,
           categoryName: product.categoryName,
-          image: color.image || product.images[0] || '/images/hero.jpg',
+          image: options?.resolvedImage || color.image || product.images[0] || '/images/hero.jpg',
           color,
           size,
-          unitPrice: size.price,
+          unitPrice,
           quantity,
+          isCustom: false,
+          isUnpriced,
+          curtainStyle,
+          fabricChoice: fabricName,
+          liningOption,
         },
       ];
     }
+    emitChange();
+  },
+  addCustom(item: CustomCurtainItem) {
+    initCartFromStorage();
+    const customId = `custom_${item.id}`;
+    memoryCart = [
+      ...memoryCart,
+      {
+        id: customId,
+        productId: 'custom_curtain',
+        productName: `ستارة تفصيل: ${item.curtainType}`,
+        categoryName: 'تفصيل حسب الطلب',
+        image: '/images/craft_textures.jpg',
+        color: {
+          id: `custom_${item.color}`,
+          name: item.color + (item.customColorNote ? ` (${item.customColorNote})` : ''),
+          hex: '#C8AA78',
+          image: '/images/craft_textures.jpg',
+          gallery: [],
+        },
+        size: {
+          id: `custom_size_${item.id}`,
+          label: `${item.widthCm} × ${item.heightCm} سم`,
+          widthCm: parseFloat(item.widthCm) || 0,
+          heightCm: parseFloat(item.heightCm) || 0,
+          price: 0,
+        },
+        unitPrice: 0,
+        quantity: item.quantity || 1,
+        isCustom: true,
+        customDetails: {
+          curtainType: item.curtainType,
+          fabric: item.fabric,
+          color: item.color,
+          customColorNote: item.customColorNote,
+          widthCm: item.widthCm,
+          heightCm: item.heightCm,
+          roomLocation: item.roomLocation,
+          itemNotes: item.itemNotes,
+        },
+      },
+    ];
     emitChange();
   },
   updateQuantity(itemId: string, newQuantity: number) {
@@ -158,21 +264,33 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [openProductModal, setOpenProductModal] = useState<Product | null>(null);
   const [isCustomQuoteOpen, setIsCustomQuoteOpen] = useState(false);
-  const [isOrdersOpen, setIsOrdersOpen] = useState(false);
-  const [selectedOrderRef, setSelectedOrderRef] = useState<string | null>(null);
-
-  const openOrderDetails = useCallback((ref: string) => {
-    setSelectedOrderRef(ref);
-    setIsOrdersOpen(true);
-  }, []);
 
   const addItem = useCallback(
-    (product: Product, color: ColorOption, size: SizeOption, quantity = 1) => {
-      cartStore.add(product, color, size, quantity);
+    (
+      product: Product,
+      color: ColorOption,
+      size: SizeOption,
+      quantity = 1,
+      options?: {
+        curtainType?: string;
+        curtainTypeName?: string;
+        fabricId?: string;
+        fabricName?: string;
+        curtainStyle?: string;
+        liningOption?: string;
+        resolvedImage?: string;
+      }
+    ) => {
+      cartStore.add(product, color, size, quantity, options);
       setIsCartOpen(true);
     },
     []
   );
+
+  const addCustomItem = useCallback((customItem: CustomCurtainItem) => {
+    cartStore.addCustom(customItem);
+    setIsCartOpen(true);
+  }, []);
 
   const updateQuantity = useCallback((itemId: string, newQuantity: number) => {
     cartStore.updateQuantity(itemId, newQuantity);
@@ -187,13 +305,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const totalItems = items.reduce((acc, curr) => acc + curr.quantity, 0);
-  const subtotal = items.reduce((acc, curr) => acc + curr.unitPrice * curr.quantity, 0);
+  const subtotal = items
+    .filter((item) => !item.isCustom && !item.isUnpriced)
+    .reduce((acc, curr) => acc + (curr.unitPrice || 0) * curr.quantity, 0);
 
   return (
     <CartContext.Provider
       value={{
         items,
         addItem,
+        addCustomItem,
         updateQuantity,
         removeItem,
         clearCart,
@@ -207,11 +328,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         setOpenProductModal,
         isCustomQuoteOpen,
         setIsCustomQuoteOpen,
-        isOrdersOpen,
-        setIsOrdersOpen,
-        selectedOrderRef,
-        setSelectedOrderRef,
-        openOrderDetails,
       }}
     >
       {children}

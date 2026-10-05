@@ -2,9 +2,9 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { Product, SHOP_CONFIG } from '@/lib/shop-data';
+import { Product, SHOP_CONFIG, getWhatsAppUrl } from '@/lib/shop-data';
 import { useCart } from '@/lib/cart-context';
-import { SlidersHorizontal } from 'lucide-react';
+import { SlidersHorizontal, MessageCircle } from 'lucide-react';
 
 interface ProductCardProps {
   product: Product;
@@ -13,14 +13,9 @@ interface ProductCardProps {
 export default function ProductCard({ product }: ProductCardProps) {
   const { setOpenProductModal } = useCart();
 
-  // Find lowest price among available variants or sizes
-  const availableVariantPrices = (product.variants || [])
-    .filter((v) => v.isAvailable)
-    .map((v) => Number(v.price));
-  const fallbackSizePrices = (product.sizes || []).map((s) => Number(s.price));
-  const pricePool = availableVariantPrices.length > 0 ? availableVariantPrices : fallbackSizePrices;
-  const rawMin = pricePool.length > 0 ? Math.min(...pricePool) : 25;
-  const minPrice = isFinite(rawMin) && rawMin > 0 ? rawMin : 25;
+  // Determine pricing display
+  const isUnpriced = Boolean(product.isUnpriced);
+  const fixedPrice = product.sizes && product.sizes.length > 0 ? product.sizes[0].price : null;
 
   return (
     <article
@@ -31,7 +26,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         {/* Product Image Area with Consistent 4:3 Ratio */}
         <div className="relative aspect-[4/3] w-full overflow-hidden bg-[#EFE9DF]">
           <Image
-            src={product.images[0]}
+            src={product.mainImage || product.images[0] || '/images/hero.jpg'}
             alt={product.name}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
@@ -76,35 +71,55 @@ export default function ProductCard({ product }: ProductCardProps) {
             {product.shortDesc}
           </p>
 
-          {/* 3. Clearest Element: Price with د.أ */}
+          {/* 3. Price Display */}
           <div className="mt-3.5 pt-3 border-t border-[#EFE9DF] flex items-baseline justify-between">
             <span className="text-xs text-[#63574D]">السعر:</span>
-            <div className="flex items-baseline gap-1 text-[#171513]">
-              <span className="text-xs text-[#63574D]">يبدأ من</span>
-              <span className="text-lg sm:text-xl font-extrabold tabular-nums text-[#171513]">
-                {minPrice}
+            {isUnpriced ? (
+              <span className="text-xs sm:text-sm font-bold text-[#7C5E2D]">
+                السعر عند الاستفسار
               </span>
-              <span className="text-xs font-bold text-[#8C6D3F]">
-                {SHOP_CONFIG.currencySymbol}
-              </span>
-            </div>
+            ) : (
+              <div className="flex items-baseline gap-1 text-[#171513]">
+                <span className="text-lg sm:text-xl font-extrabold tabular-nums text-[#171513]">
+                  {fixedPrice}
+                </span>
+                <span className="text-xs font-bold text-[#8C6D3F]">
+                  {SHOP_CONFIG.currencySymbol}
+                </span>
+                <span className="text-[10px] text-[#63574D] mr-1">/ للستارة</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* 4. One Clear Action Button: “اختر المقاس واللون” */}
+      {/* 4. Action Button */}
       <div className="px-4 pb-4 sm:px-5 sm:pb-5 pt-1">
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            setOpenProductModal(product);
-          }}
-          className="w-full py-2.5 px-4 rounded-md bg-[#211B17] hover:bg-[#8C6D3F] text-[#F5EFE6] text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer active:scale-[0.99]"
-        >
-          <SlidersHorizontal className="w-3.5 h-3.5 text-[#C8AA78]" />
-          <span>اختر المقاس واللون</span>
-        </button>
+        {isUnpriced ? (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setOpenProductModal(product);
+            }}
+            className="w-full py-2.5 px-4 rounded-md bg-[#1B382A] hover:bg-[#142B20] text-[#E2F7EB] text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer active:scale-[0.99]"
+          >
+            <MessageCircle className="w-3.5 h-3.5 text-emerald-400" />
+            <span>استفسر عبر واتساب</span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setOpenProductModal(product);
+            }}
+            className="w-full py-2.5 px-4 rounded-md bg-[#211B17] hover:bg-[#8C6D3F] text-[#F5EFE6] text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer active:scale-[0.99]"
+          >
+            <SlidersHorizontal className="w-3.5 h-3.5 text-[#C8AA78]" />
+            <span>تحديد المواصفات والطلب</span>
+          </button>
+        )}
       </div>
     </article>
   );

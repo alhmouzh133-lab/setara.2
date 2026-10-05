@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useCart } from '@/lib/cart-context';
 import {
   CUSTOM_CURTAIN_TYPES,
@@ -8,13 +8,12 @@ import {
   CUSTOM_COLOR_PRESETS,
   CustomCurtainItem,
   SHOP_CONFIG,
+  BUSINESS_WHATSAPP_NUMBER,
+  getWhatsAppUrl,
 } from '@/lib/shop-data';
-import { orderStorage } from '@/lib/order-storage';
 import {
   X,
   Scissors,
-  CheckCircle2,
-  AlertCircle,
   Ruler,
   Info,
   Copy,
@@ -22,9 +21,10 @@ import {
   Plus,
   Trash2,
   Layers,
-  MapPin,
+  MessageCircle,
+  ExternalLink,
+  AlertCircle,
   ShoppingBag,
-  ListOrdered,
 } from 'lucide-react';
 
 interface ItemErrorMap {
@@ -32,9 +32,6 @@ interface ItemErrorMap {
     width?: string;
     height?: string;
     quantity?: string;
-    curtainType?: string;
-    fabric?: string;
-    color?: string;
   };
 }
 
@@ -55,8 +52,8 @@ export default function CustomQuoteModal() {
   const {
     isCustomQuoteOpen,
     setIsCustomQuoteOpen,
-    setIsOrdersOpen,
-    openOrderDetails,
+    addCustomItem,
+    setIsCartOpen,
   } = useCart();
 
   // List of independent curtain items
@@ -72,15 +69,11 @@ export default function CustomQuoteModal() {
   });
   const [customerErrors, setCustomerErrors] = useState<Record<string, string>>({});
 
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [submittedData, setSubmittedData] = useState<{
-    quoteRef: string;
-    items: CustomCurtainItem[];
-    customer: typeof customer;
-  } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [hasOpenedWhatsApp, setHasOpenedWhatsApp] = useState(false);
+  const [addedToCartFeedback, setAddedToCartFeedback] = useState(false);
 
-  if (!isCustomQuoteOpen) return null;
+  const isWhatsAppConfigured = Boolean(BUSINESS_WHATSAPP_NUMBER && BUSINESS_WHATSAPP_NUMBER.length >= 7);
 
   // Add a new independent curtain
   const handleAddItem = () => {
@@ -123,7 +116,7 @@ export default function CustomQuoteModal() {
     let hasItemErrors = false;
 
     // Validate each item individually
-    items.forEach((item, index) => {
+    items.forEach((item) => {
       const currentErrors: ItemErrorMap[string] = {};
       const numWidth = parseFloat(item.widthCm);
       const numHeight = parseFloat(item.heightCm);
@@ -172,52 +165,86 @@ export default function CustomQuoteModal() {
     return !hasItemErrors && Object.keys(newCustomerErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  // Formatted Arabic WhatsApp message for Custom Quote
+  const generatedMessage = useMemo(() => {
+    const lines: string[] = [];
+    lines.push(`مرحباً متجر ${SHOP_CONFIG.brandName} (${SHOP_CONFIG.brandTagline})،`);
+    lines.push(`أود طلب عرض سعر لتفصيل ستائر بالمقاسات والمواصفات التالية:`);
+    lines.push(``);
+    lines.push(`📋 *بيانات العميل:*`);
+    lines.push(`• الاسم: ${customer.fullName.trim() || '[الاسم الكريم]'}`);
+    lines.push(`• رقم الهاتف: ${customer.phone.trim() || '[رقم الهاتف]'}`);
+    if (customer.city) {
+      lines.push(`• المدينة / المحافظة: ${customer.city}`);
+    }
+    if (customer.generalNotes.trim()) {
+      lines.push(`• ملاحظات عامة: ${customer.generalNotes.trim()}`);
+    }
+
+    lines.push(``);
+    lines.push(`✂️ *تفاصيل الستائر المطلوبة (${items.length} قطع/ستائر):*`);
+
+    items.forEach((item, idx) => {
+      lines.push(
+        `${idx + 1}. *الستارة ${idx + 1}*` + (item.roomLocation ? ` (${item.roomLocation})` : '') + `\n` +
+        `   - الموديل: ${item.curtainType}\n` +
+        `   - نوع القماش: ${item.fabric}\n` +
+        `   - اللون: ${item.color}` + (item.customColorNote ? ` (${item.customColorNote})` : '') + `\n` +
+        `   - الأبعاد: ${item.widthCm || '...'} سم عرض × ${item.heightCm || '...'} سم ارتفاع\n` +
+        `   - الكمية: ${item.quantity} قطعة\n` +
+        (item.itemNotes ? `   - ملاحظات خاصة: ${item.itemNotes}\n` : '') +
+        `   - التسعير: حسب عرض السعر من المحل`
+      );
+    });
+
+    lines.push(``);
+    lines.push(`📌 *ملاحظة:* أدرك أن السعر النهائي يُحدده المحل بعد تدقيق المقاسات وتوفر القماش.`);
+    lines.push(`أرجو تزويدي بعرض السعر في أقرب وقت. شكراً لكم!`);
+
+    return lines.join('\n');
+  }, [items, customer]);
+
+  if (!isCustomQuoteOpen) return null;
+
+  const handleSendViaWhatsApp = (e: React.MouseEvent) => {
+    if (!validate()) {
+      e.preventDefault();
+      return;
+    }
+
+    if (!isWhatsAppConfigured) {
+      e.preventDefault();
+      return;
+    }
+
+    setHasOpenedWhatsApp(true);
+    const targetUrl = getWhatsAppUrl(generatedMessage);
+    window.open(targetUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleCopy = () => {
     if (!validate()) return;
+    navigator.clipboard?.writeText(generatedMessage);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  };
 
-    const ref = `QUOTE-${Math.floor(100000 + Math.random() * 900000)}`;
-
-    // Save order snapshot locally before showing completion screen
-    const savedRecord = orderStorage.createCustomQuoteOrder({
-      orderRef: ref,
-      items: [...items],
-      customer: {
-        fullName: customer.fullName.trim(),
-        phone: customer.phone.trim(),
-        city: customer.city,
-        notes: customer.generalNotes.trim() || undefined,
-      },
+  const handleAddToCart = () => {
+    if (!validate()) return;
+    items.forEach((it) => {
+      addCustomItem(it);
     });
-
-    setSubmittedData({
-      quoteRef: savedRecord.orderRef,
-      items: [...items],
-      customer: { ...customer },
-    });
-    setIsSubmitted(true);
+    setAddedToCartFeedback(true);
+    setTimeout(() => {
+      setIsCustomQuoteOpen(false);
+      setIsCartOpen(true);
+    }, 1000);
   };
 
   const handleClose = () => {
-    setIsSubmitted(false);
+    setHasOpenedWhatsApp(false);
+    setAddedToCartFeedback(false);
     setIsCustomQuoteOpen(false);
-  };
-
-  const handleViewOrders = () => {
-    const ref = submittedData?.quoteRef;
-    handleClose();
-    if (ref) {
-      openOrderDetails(ref);
-    } else {
-      setIsOrdersOpen(true);
-    }
-  };
-
-  const copyRef = () => {
-    if (!submittedData) return;
-    navigator.clipboard?.writeText(submittedData.quoteRef);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -228,463 +255,391 @@ export default function CustomQuoteModal() {
       >
         {/* Header */}
         <div className="p-4 sm:p-5 border-b border-white/10 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5 text-right">
             <div className="w-8 h-8 rounded-lg bg-[#C8AA78]/15 border border-[#C8AA78]/30 flex items-center justify-center text-[#C8AA78]">
               <Scissors className="w-4 h-4" />
             </div>
-            <div className="text-right">
+            <div>
               <h3 className="text-base sm:text-lg font-bold text-[#F5EFE6]">
-                {isSubmitted ? 'تم حفظ تفاصيل طلبك' : 'طلب تسعير تفصيل ستائر مخصصة'}
+                طلب تفصيل ستائر حسب الطلب
               </h3>
               <p className="text-[11px] sm:text-xs text-[#D8C6AE]">
-                أدخل مقاسات ستارة واحدة أو عدة ستائر في طلب تسعير موحد
+                أدخل مقاسات ستارة واحدة أو عدة ستائر في طلب عرض سعر موحد عبر واتساب
               </p>
             </div>
           </div>
 
           <button
             onClick={handleClose}
+            aria-label="إغلاق"
             className="p-1.5 rounded-lg text-[#D8C6AE] hover:text-[#F5EFE6] hover:bg-white/5 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {isSubmitted && submittedData ? (
-          /* Submission Screen */
-          <div className="p-5 sm:p-8 text-right space-y-6 max-h-[80vh] overflow-y-auto">
-            <div className="flex flex-col items-center justify-center text-center py-2">
-              <div className="w-14 h-14 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center mb-3">
-                <CheckCircle2 className="w-8 h-8" />
-              </div>
-              <h4 className="text-xl sm:text-2xl font-bold text-[#F5EFE6]">
-                تمت العملية بنجاح
-              </h4>
-              <p className="mt-1 text-xs text-emerald-300 font-medium">
-                تم حفظ تفاصيل طلبك
+        {/* Guidance Banner */}
+        <div className="bg-[#2A231E] border-b border-[#C8AA78]/25 px-4 sm:px-5 py-3 flex items-start gap-2.5 text-xs text-[#F5EFE6] text-right">
+          <Info className="w-4 h-4 text-[#C8AA78] shrink-0 mt-0.5" />
+          <p className="leading-relaxed">
+            <strong className="text-[#C8AA78]">سيفتح واتساب برسالة جاهزة؛ اضغط إرسال لإكمال طلبك.</strong>{' '}
+            يؤكّد المحل السعر النهائي بعد مراجعة المقاسات ونوع القماش المختار.
+          </p>
+        </div>
+
+        {/* WhatsApp Config Warning */}
+        {!isWhatsAppConfigured && (
+          <div className="bg-amber-950/70 border-b border-amber-500/40 px-4 sm:px-5 py-3 flex items-start gap-2.5 text-xs text-amber-200 text-right">
+            <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+            <div className="space-y-0.5">
+              <strong className="text-amber-300 block">
+                تنبيه: رقم واتساب غير مهيأ (BUSINESS_WHATSAPP_NUMBER)
+              </strong>
+              <p className="text-[11px] text-amber-200/90 leading-relaxed">
+                يرجى إضافة رقم واتساب المتجر في المتغير البيئي NEXT_PUBLIC_WHATSAPP_NUMBER.
+                يمكن استخدام خيار &quot;نسخ تفاصيل طلب التفصيل&quot; لإرسالها يدوياً.
               </p>
             </div>
+          </div>
+        )}
 
-            {/* Reference Box */}
-            <div className="p-4 bg-[#171513] rounded-lg border border-white/10 flex items-center justify-between">
-              <div className="text-right">
-                <span className="text-[11px] text-[#D8C6AE]/70 block">
-                  رقم المرجع الموحد لطلبك:
-                </span>
-                <span className="text-lg font-mono font-bold text-[#C8AA78] tracking-wider">
-                  {submittedData.quoteRef}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={copyRef}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-white/5 hover:bg-white/10 text-xs text-[#D8C6AE] transition-colors cursor-pointer"
-              >
-                {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copied ? 'تم النسخ' : 'نسخ'}</span>
-              </button>
-            </div>
-
-            {/* Customer Details Summary */}
-            <div className="p-3.5 bg-[#1B1613] rounded-lg border border-white/5 text-xs text-[#D8C6AE] flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <span className="text-[#D8C6AE]/70">مقدم الطلب:</span>{' '}
-                <strong className="text-[#F5EFE6]">{submittedData.customer.fullName}</strong>
-              </div>
-              <div>
-                <span className="text-[#D8C6AE]/70">رقم الهاتف:</span>{' '}
-                <strong className="text-[#F5EFE6]" dir="ltr">{submittedData.customer.phone}</strong>
-              </div>
-              <div>
-                <span className="text-[#D8C6AE]/70">المدينة:</span>{' '}
-                <strong className="text-[#F5EFE6]">{submittedData.customer.city}</strong>
-              </div>
-            </div>
-
-            {/* Itemized Curtains Breakdown */}
-            <div className="space-y-3">
-              <h5 className="font-bold text-[#F5EFE6] text-sm flex items-center gap-2">
-                <Layers className="w-4 h-4 text-[#C8AA78]" />
-                <span>تفاصيل الستائر المطلوبة ({submittedData.items.length}):</span>
-              </h5>
-
-              <div className="space-y-2.5">
-                {submittedData.items.map((item, idx) => (
-                  <div
-                    key={item.id}
-                    className="p-3.5 bg-[#171513] rounded-lg border border-white/10 text-xs space-y-1.5 text-right"
-                  >
-                    <div className="flex items-center justify-between font-bold text-[#F5EFE6] border-b border-white/5 pb-1.5">
-                      <span>الستارة {idx + 1} {item.roomLocation ? `· ${item.roomLocation}` : ''}</span>
-                      <span className="text-[#C8AA78]">{item.quantity} قطعة</span>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[#D8C6AE]">
-                      <div>
-                        <span className="text-[#D8C6AE]/70">الموديل:</span> {item.curtainType}
-                      </div>
-                      <div>
-                        <span className="text-[#D8C6AE]/70">القماش:</span> {item.fabric}
-                      </div>
-                      <div>
-                        <span className="text-[#D8C6AE]/70">اللون:</span> {item.color} {item.customColorNote && `(${item.customColorNote})`}
-                      </div>
-                      <div>
-                        <span className="text-[#D8C6AE]/70">المقاس:</span>{' '}
-                        <strong className="text-[#F5EFE6]">{item.widthCm} سم عرض × {item.heightCm} سم ارتفاع</strong>
-                      </div>
-                    </div>
-                    {item.itemNotes && (
-                      <p className="text-[11px] text-[#D8C6AE]/70 pt-1 border-t border-white/5">
-                        ملاحظات خاصة: {item.itemNotes}
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Actions: عرض طلباتي & متابعة التسوق */}
-            <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">
-              <button
-                type="button"
-                onClick={handleViewOrders}
-                className="w-full sm:flex-1 py-3 px-4 rounded-lg bg-[#C8AA78] hover:bg-[#d5ba8c] text-[#171513] font-bold text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer"
-              >
-                <ListOrdered className="w-4 h-4" />
-                <span>عرض طلباتي</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleClose}
-                className="w-full sm:flex-1 py-3 px-4 rounded-lg bg-white/10 hover:bg-white/15 text-[#F5EFE6] font-semibold text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer border border-white/10"
-              >
-                <ShoppingBag className="w-4 h-4 text-[#C8AA78]" />
-                <span>متابعة التسوق</span>
-              </button>
+        {/* WhatsApp Opened Notification */}
+        {hasOpenedWhatsApp && (
+          <div className="bg-emerald-950/60 border-b border-emerald-500/40 px-4 sm:px-5 py-3 flex items-start gap-2.5 text-xs text-emerald-200 text-right">
+            <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+            <div className="space-y-0.5">
+              <strong className="text-emerald-300 block">
+                تم توجيهك إلى واتساب برسالة تفاصيل الستائر
+              </strong>
+              <p className="text-[11px] text-emerald-200/90 leading-relaxed">
+                اضغط إرسال داخل المحادثة ليقوم فريق سيتارة بدراسة الأبعاد وتزويدك بعرض السعر.
+              </p>
             </div>
           </div>
-        ) : (
-          /* Multi-Curtain Form */
-          <form onSubmit={handleSubmit} className="p-4 sm:p-6 text-right space-y-5 max-h-[80vh] overflow-y-auto">
-            {/* Mandatory Instruction Banner */}
-            <div className="p-3.5 bg-[#2A231E] border border-[#C8AA78]/30 rounded-lg flex items-start gap-2.5 text-xs text-[#F5EFE6] leading-relaxed">
-              <Info className="w-4 h-4 text-[#C8AA78] shrink-0 mt-0.5" />
-              <div>
-                <strong className="text-[#C8AA78] block mb-0.5">
-                  يؤكّد المحل السعر النهائي بعد مراجعة المقاسات والخامة.
-                </strong>
-                <span>
-                  يمكنك إضافة عدة ستائر لمختلف الغرف وحساب أبعاد كل نافذة بصورة مستقلة، ليقوم المتجر بدراسة كمية القماش وإرسال عرض سعر متكامل.
-                </span>
-              </div>
+        )}
+
+        {/* Added to Cart Feedback */}
+        {addedToCartFeedback && (
+          <div className="bg-emerald-950/60 border-b border-emerald-500/40 px-4 sm:px-5 py-3 flex items-center gap-2.5 text-xs text-emerald-200 text-right">
+            <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span>تمت إضافة الستائر المفصلة إلى سلة التسوق! جارٍ فتح السلة...</span>
+          </div>
+        )}
+
+        {/* Form Body */}
+        <div className="p-4 sm:p-6 text-right space-y-5 max-h-[75vh] overflow-y-auto">
+          {/* List of Curtain Cards */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#C8AA78]">
+                قائمة الستائر المطلوبة ({items.length})
+              </span>
+              <span className="text-[11px] text-[#D8C6AE]/70">
+                جميع المقاسات بالسنتيمتر (cm)
+              </span>
             </div>
 
-            {/* List of Curtain Cards */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-[#C8AA78]">
-                  قائمة الستائر المطلوبة ({items.length})
-                </span>
-                <span className="text-[11px] text-[#D8C6AE]/70">
-                  جميع المقاسات بالسنتيمتر (cm)
-                </span>
-              </div>
-
-              {items.map((item, index) => {
-                const err = itemErrors[item.id] || {};
-                return (
-                  <div
-                    key={item.id}
-                    className="p-4 sm:p-5 rounded-xl bg-[#1B1613] border border-white/10 hover:border-[#C8AA78]/30 transition-colors space-y-4 text-right"
-                  >
-                    {/* Card Header with Title and Remove Button */}
-                    <div className="flex items-center justify-between pb-2.5 border-b border-white/10">
-                      <div className="flex items-center gap-2">
-                        <span className="w-6 h-6 rounded-md bg-[#C8AA78]/20 text-[#C8AA78] flex items-center justify-center font-bold text-xs">
-                          {index + 1}
-                        </span>
-                        <h4 className="text-sm font-bold text-[#F5EFE6]">
-                          الستارة {index + 1}
-                        </h4>
-                      </div>
-
-                      {items.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveItem(item.id)}
-                          className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 p-1 rounded hover:bg-white/5 transition-colors cursor-pointer"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          <span>حذف هذه الستارة</span>
-                        </button>
-                      )}
+            {items.map((item, index) => {
+              const err = itemErrors[item.id] || {};
+              return (
+                <div
+                  key={item.id}
+                  className="p-4 sm:p-5 rounded-xl bg-[#1B1613] border border-white/10 hover:border-[#C8AA78]/30 transition-colors space-y-4 text-right"
+                >
+                  {/* Card Header with Title and Remove Button */}
+                  <div className="flex items-center justify-between pb-2.5 border-b border-white/10">
+                    <div className="flex items-center gap-2">
+                      <span className="w-6 h-6 rounded-md bg-[#C8AA78]/20 text-[#C8AA78] flex items-center justify-center font-bold text-xs">
+                        {index + 1}
+                      </span>
+                      <h4 className="text-sm font-bold text-[#F5EFE6]">
+                        الستارة {index + 1}
+                      </h4>
                     </div>
 
-                    {/* Room Name & Design Type */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-xs font-medium text-[#D8C6AE] block mb-1">
-                          اسم الغرفة / مكان التركيب (اختياري)
-                        </label>
-                        <input
-                          type="text"
-                          value={item.roomLocation}
-                          onChange={(e) => handleUpdateItem(item.id, 'roomLocation', e.target.value)}
-                          placeholder="مثال: صالون الضيوف، غرفة المعيشة"
-                          className="w-full px-3 py-2 rounded-lg bg-[#171513] border border-white/15 focus:border-[#C8AA78] text-[#F5EFE6] text-xs placeholder:text-[#D8C6AE]/40 focus:outline-none transition-colors"
-                        />
-                      </div>
+                    {items.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveItem(item.id)}
+                        className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 p-1 rounded hover:bg-white/5 transition-colors cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>حذف هذه الستارة</span>
+                      </button>
+                    )}
+                  </div>
 
-                      <div>
-                        <label className="text-xs font-bold text-[#F5EFE6] block mb-1">
-                          نوع الستارة / الموديل <span className="text-red-400">*</span>
-                        </label>
-                        <select
-                          value={item.curtainType}
-                          onChange={(e) => handleUpdateItem(item.id, 'curtainType', e.target.value)}
-                          className="w-full px-3 py-2 rounded-lg bg-[#171513] border border-white/15 focus:border-[#C8AA78] text-[#F5EFE6] text-xs focus:outline-none transition-colors cursor-pointer"
-                        >
-                          {CUSTOM_CURTAIN_TYPES.map((t) => (
-                            <option key={t} value={t}>
-                              {t}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-
-                    {/* Fabric & Color */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-xs font-bold text-[#F5EFE6] block mb-1">
-                          نوع القماش <span className="text-red-400">*</span>
-                        </label>
-                        <select
-                          value={item.fabric}
-                          onChange={(e) => handleUpdateItem(item.id, 'fabric', e.target.value)}
-                          className="w-full px-3 py-2 rounded-lg bg-[#171513] border border-white/15 focus:border-[#C8AA78] text-[#F5EFE6] text-xs focus:outline-none transition-colors cursor-pointer"
-                        >
-                          {CUSTOM_FABRIC_OPTIONS.map((f) => (
-                            <option key={f.id} value={f.name}>
-                              {f.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="text-xs font-bold text-[#F5EFE6] block mb-1">
-                          الدرجة اللونية <span className="text-red-400">*</span>
-                        </label>
-                        <select
-                          value={item.color}
-                          onChange={(e) => handleUpdateItem(item.id, 'color', e.target.value)}
-                          className="w-full px-3 py-2 rounded-lg bg-[#171513] border border-white/15 focus:border-[#C8AA78] text-[#F5EFE6] text-xs focus:outline-none transition-colors cursor-pointer"
-                        >
-                          {CUSTOM_COLOR_PRESETS.map((c) => (
-                            <option key={c} value={c}>
-                              {c}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-
-                    {/* Dimensions & Quantity (Validated positive values) */}
-                    <div className="p-3 bg-[#171513] rounded-lg border border-white/5 space-y-2">
-                      <div className="flex items-center gap-1.5 text-xs font-semibold text-[#F5EFE6]">
-                        <Ruler className="w-3.5 h-3.5 text-[#C8AA78]" />
-                        <span>أبعاد هذه الستارة (بالسنتيمتر):</span>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div>
-                          <label className="text-[11px] font-medium text-[#D8C6AE] block mb-1">
-                            العرض (سم) <span className="text-red-400">*</span>
-                          </label>
-                          <input
-                            type="number"
-                            min="1"
-                            step="1"
-                            value={item.widthCm}
-                            onChange={(e) => handleUpdateItem(item.id, 'widthCm', e.target.value)}
-                            placeholder="مثال: 220"
-                            className="w-full px-3 py-1.5 rounded-lg bg-[#211B17] border border-white/15 focus:border-[#C8AA78] text-[#F5EFE6] text-xs text-center font-bold tabular-nums focus:outline-none"
-                          />
-                          {err.width && (
-                            <p className="text-red-400 text-[10px] mt-1">{err.width}</p>
-                          )}
-                        </div>
-
-                        <div>
-                          <label className="text-[11px] font-medium text-[#D8C6AE] block mb-1">
-                            الارتفاع (سم) <span className="text-red-400">*</span>
-                          </label>
-                          <input
-                            type="number"
-                            min="1"
-                            step="1"
-                            value={item.heightCm}
-                            onChange={(e) => handleUpdateItem(item.id, 'heightCm', e.target.value)}
-                            placeholder="مثال: 270"
-                            className="w-full px-3 py-1.5 rounded-lg bg-[#211B17] border border-white/15 focus:border-[#C8AA78] text-[#F5EFE6] text-xs text-center font-bold tabular-nums focus:outline-none"
-                          />
-                          {err.height && (
-                            <p className="text-red-400 text-[10px] mt-1">{err.height}</p>
-                          )}
-                        </div>
-
-                        <div>
-                          <label className="text-[11px] font-medium text-[#D8C6AE] block mb-1">
-                            الكمية (قطع) <span className="text-red-400">*</span>
-                          </label>
-                          <input
-                            type="number"
-                            min="1"
-                            max="50"
-                            value={item.quantity}
-                            onChange={(e) => handleUpdateItem(item.id, 'quantity', parseInt(e.target.value) || 1)}
-                            className="w-full px-3 py-1.5 rounded-lg bg-[#211B17] border border-white/15 focus:border-[#C8AA78] text-[#F5EFE6] text-xs text-center font-bold tabular-nums focus:outline-none"
-                          />
-                          {err.quantity && (
-                            <p className="text-red-400 text-[10px] mt-1">{err.quantity}</p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Item Notes */}
+                  {/* Room Name & Design Type */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
+                      <label className="text-xs font-medium text-[#D8C6AE] block mb-1">
+                        اسم الغرفة / مكان التركيب (اختياري)
+                      </label>
                       <input
                         type="text"
-                        value={item.itemNotes}
-                        onChange={(e) => handleUpdateItem(item.id, 'itemNotes', e.target.value)}
-                        placeholder="ملاحظات لهذه الستارة (مثال: سكة تعليق يدوية، تثبيت بالسقف)"
-                        className="w-full px-3 py-1.5 rounded-lg bg-[#171513] border border-white/10 text-[#F5EFE6] text-[11px] placeholder:text-[#D8C6AE]/40 focus:outline-none focus:border-[#C8AA78]"
+                        value={item.roomLocation}
+                        onChange={(e) => handleUpdateItem(item.id, 'roomLocation', e.target.value)}
+                        placeholder="مثال: صالون الضيوف، غرفة النوم"
+                        className="w-full px-3 py-2 rounded-lg bg-[#171513] border border-white/15 focus:border-[#C8AA78] text-[#F5EFE6] text-xs placeholder:text-[#D8C6AE]/40 focus:outline-none transition-colors"
                       />
                     </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-[#F5EFE6] block mb-1">
+                        نوع الستارة / الموديل <span className="text-red-400">*</span>
+                      </label>
+                      <select
+                        value={item.curtainType}
+                        onChange={(e) => handleUpdateItem(item.id, 'curtainType', e.target.value)}
+                        className="w-full px-3 py-2 rounded-lg bg-[#171513] border border-white/15 focus:border-[#C8AA78] text-[#F5EFE6] text-xs focus:outline-none transition-colors cursor-pointer"
+                      >
+                        {CUSTOM_CURTAIN_TYPES.map((t) => (
+                          <option key={t} value={t}>
+                            {t}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
-                );
-              })}
 
-              {/* Add Another Curtain Button */}
-              <button
-                type="button"
-                onClick={handleAddItem}
-                className="w-full py-3 rounded-lg border-2 border-dashed border-[#C8AA78]/40 hover:border-[#C8AA78] bg-[#C8AA78]/5 hover:bg-[#C8AA78]/10 text-[#C8AA78] font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer"
-              >
-                <Plus className="w-4 h-4" />
-                <span>+ إضافة ستارة أخرى لهذا الطلب</span>
-              </button>
-            </div>
+                  {/* Fabric & Color */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-bold text-[#F5EFE6] block mb-1">
+                        نوع القماش <span className="text-red-400">*</span>
+                      </label>
+                      <select
+                        value={item.fabric}
+                        onChange={(e) => handleUpdateItem(item.id, 'fabric', e.target.value)}
+                        className="w-full px-3 py-2 rounded-lg bg-[#171513] border border-white/15 focus:border-[#C8AA78] text-[#F5EFE6] text-xs focus:outline-none transition-colors cursor-pointer"
+                      >
+                        {CUSTOM_FABRIC_OPTIONS.map((f) => (
+                          <option key={f.id} value={f.name}>
+                            {f.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
 
-            {/* Pre-Submission Itemized Summary */}
-            <div className="p-3.5 bg-[#171513] rounded-lg border border-white/10 space-y-2">
-              <div className="flex items-center justify-between text-xs font-bold text-[#F5EFE6] border-b border-white/5 pb-1.5">
-                <span>ملخص الستائر الجاهزة للتسعير:</span>
-                <span className="text-[#C8AA78]">{items.length} ستائر</span>
-              </div>
-              <div className="space-y-1 text-xs text-[#D8C6AE]">
-                {items.map((it, i) => (
-                  <div key={it.id} className="flex items-center justify-between py-0.5">
-                    <span>
-                      الستارة {i + 1} {it.roomLocation && `(${it.roomLocation})`}: {it.fabric} - {it.color}
-                    </span>
-                    <span className="tabular-nums font-mono text-[11px]">
-                      {it.widthCm || '...'} × {it.heightCm || '...'} سم ({it.quantity} قطعة)
-                    </span>
+                    <div>
+                      <label className="text-xs font-bold text-[#F5EFE6] block mb-1">
+                        الدرجة اللونية <span className="text-red-400">*</span>
+                      </label>
+                      <select
+                        value={item.color}
+                        onChange={(e) => handleUpdateItem(item.id, 'color', e.target.value)}
+                        className="w-full px-3 py-2 rounded-lg bg-[#171513] border border-white/15 focus:border-[#C8AA78] text-[#F5EFE6] text-xs focus:outline-none transition-colors cursor-pointer"
+                      >
+                        {CUSTOM_COLOR_PRESETS.map((c) => (
+                          <option key={c} value={c}>
+                            {c}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
-                ))}
-              </div>
-            </div>
 
-            {/* Customer Details (Entered Once) */}
-            <div className="pt-2 border-t border-white/10 space-y-3">
-              <h4 className="text-xs font-bold text-[#F5EFE6]">
-                معلومات التواصل لإرسال عرض السعر الموحد
-              </h4>
+                  {/* Dimensions & Quantity */}
+                  <div className="p-3 bg-[#171513] rounded-lg border border-white/5 space-y-2">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-[#F5EFE6]">
+                      <Ruler className="w-3.5 h-3.5 text-[#C8AA78]" />
+                      <span>أبعاد هذه الستارة (بالسنتيمتر):</span>
+                    </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-medium text-[#D8C6AE] block mb-1">
-                    الاسم الكامل <span className="text-red-400">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={customer.fullName}
-                    onChange={(e) => setCustomer({ ...customer, fullName: e.target.value })}
-                    placeholder="الاسم الأول والعائلة"
-                    className="w-full px-3 py-2 rounded-lg bg-[#171513] border border-white/15 focus:border-[#C8AA78] text-[#F5EFE6] text-xs placeholder:text-[#D8C6AE]/40 focus:outline-none transition-colors"
-                  />
-                  {customerErrors.fullName && (
-                    <p className="text-red-400 text-[10px] mt-1">{customerErrors.fullName}</p>
-                  )}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="text-[11px] font-medium text-[#D8C6AE] block mb-1">
+                          العرض (سم) <span className="text-red-400">*</span>
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          step="1"
+                          value={item.widthCm}
+                          onChange={(e) => handleUpdateItem(item.id, 'widthCm', e.target.value)}
+                          placeholder="مثال: 220"
+                          className="w-full px-3 py-1.5 rounded-lg bg-[#211B17] border border-white/15 focus:border-[#C8AA78] text-[#F5EFE6] text-xs text-center font-bold tabular-nums focus:outline-none"
+                        />
+                        {err.width && (
+                          <p className="text-red-400 text-[10px] mt-1">{err.width}</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="text-[11px] font-medium text-[#D8C6AE] block mb-1">
+                          الارتفاع (سم) <span className="text-red-400">*</span>
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          step="1"
+                          value={item.heightCm}
+                          onChange={(e) => handleUpdateItem(item.id, 'heightCm', e.target.value)}
+                          placeholder="مثال: 270"
+                          className="w-full px-3 py-1.5 rounded-lg bg-[#211B17] border border-white/15 focus:border-[#C8AA78] text-[#F5EFE6] text-xs text-center font-bold tabular-nums focus:outline-none"
+                        />
+                        {err.height && (
+                          <p className="text-red-400 text-[10px] mt-1">{err.height}</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="text-[11px] font-medium text-[#D8C6AE] block mb-1">
+                          الكمية (قطع) <span className="text-red-400">*</span>
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="50"
+                          value={item.quantity}
+                          onChange={(e) => handleUpdateItem(item.id, 'quantity', parseInt(e.target.value) || 1)}
+                          className="w-full px-3 py-1.5 rounded-lg bg-[#211B17] border border-white/15 focus:border-[#C8AA78] text-[#F5EFE6] text-xs text-center font-bold tabular-nums focus:outline-none"
+                        />
+                        {err.quantity && (
+                          <p className="text-red-400 text-[10px] mt-1">{err.quantity}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Item Notes */}
+                  <div>
+                    <input
+                      type="text"
+                      value={item.itemNotes}
+                      onChange={(e) => handleUpdateItem(item.id, 'itemNotes', e.target.value)}
+                      placeholder="ملاحظات خاصة لهذه الستارة (مثال: سكة تعليق يدوية، تثبيت بالسقف)"
+                      className="w-full px-3 py-1.5 rounded-lg bg-[#171513] border border-white/10 text-[#F5EFE6] text-[11px] placeholder:text-[#D8C6AE]/40 focus:outline-none focus:border-[#C8AA78]"
+                    />
+                  </div>
                 </div>
+              );
+            })}
 
-                <div>
-                  <label className="text-xs font-medium text-[#D8C6AE] block mb-1">
-                    رقم الهاتف / واتساب <span className="text-red-400">*</span>
-                  </label>
-                  <input
-                    type="tel"
-                    dir="ltr"
-                    value={customer.phone}
-                    onChange={(e) => setCustomer({ ...customer, phone: e.target.value })}
-                    placeholder="079 000 0000"
-                    className="w-full px-3 py-2 rounded-lg bg-[#171513] border border-white/15 focus:border-[#C8AA78] text-[#F5EFE6] text-xs text-right placeholder:text-[#D8C6AE]/40 focus:outline-none transition-colors"
-                  />
-                  {customerErrors.phone && (
-                    <p className="text-red-400 text-[10px] mt-1">{customerErrors.phone}</p>
-                  )}
-                </div>
-              </div>
+            {/* Add Another Curtain Button */}
+            <button
+              type="button"
+              onClick={handleAddItem}
+              className="w-full py-3 rounded-lg border-2 border-dashed border-[#C8AA78]/40 hover:border-[#C8AA78] bg-[#C8AA78]/5 hover:bg-[#C8AA78]/10 text-[#C8AA78] font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>+ إضافة ستارة أخرى لهذا الطلب</span>
+            </button>
+          </div>
 
+          {/* Customer Details Form */}
+          <div className="pt-3 border-t border-white/10 space-y-3.5">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-[#C8AA78]">
+              معلومات التواصل مع المحل
+            </h4>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="text-xs font-medium text-[#D8C6AE] block mb-1">
-                  المدينة / المحافظة في الأردن
+                  الاسم الكامل <span className="text-red-400">*</span>
                 </label>
                 <input
                   type="text"
-                  value={customer.city}
-                  onChange={(e) => setCustomer({ ...customer, city: e.target.value })}
-                  placeholder="مثال: عمّان - خلدا"
+                  value={customer.fullName}
+                  onChange={(e) => setCustomer({ ...customer, fullName: e.target.value })}
+                  placeholder="الاسم الأول والعائلة"
                   className="w-full px-3 py-2 rounded-lg bg-[#171513] border border-white/15 focus:border-[#C8AA78] text-[#F5EFE6] text-xs placeholder:text-[#D8C6AE]/40 focus:outline-none transition-colors"
                 />
+                {customerErrors.fullName && (
+                  <p className="text-red-400 text-[10px] mt-1">{customerErrors.fullName}</p>
+                )}
               </div>
 
               <div>
                 <label className="text-xs font-medium text-[#D8C6AE] block mb-1">
-                  ملاحظات عامة للطلب (اختياري)
+                  رقم الهاتف / واتساب <span className="text-red-400">*</span>
                 </label>
-                <textarea
-                  rows={2}
-                  value={customer.generalNotes}
-                  onChange={(e) => setCustomer({ ...customer, generalNotes: e.target.value })}
-                  placeholder="أي متطلبات عامة تخص موعد المعاينة أو تفضيلات مجاري الستائر"
-                  className="w-full px-3 py-1.5 rounded-lg bg-[#171513] border border-white/15 focus:border-[#C8AA78] text-[#F5EFE6] text-xs placeholder:text-[#D8C6AE]/40 focus:outline-none transition-colors resize-none"
+                <input
+                  type="tel"
+                  dir="ltr"
+                  value={customer.phone}
+                  onChange={(e) => setCustomer({ ...customer, phone: e.target.value })}
+                  placeholder="079 000 0000"
+                  className="w-full px-3 py-2 rounded-lg bg-[#171513] border border-white/15 focus:border-[#C8AA78] text-[#F5EFE6] text-xs text-right placeholder:text-[#D8C6AE]/40 focus:outline-none transition-colors"
                 />
+                {customerErrors.phone && (
+                  <p className="text-red-400 text-[10px] mt-1">{customerErrors.phone}</p>
+                )}
               </div>
             </div>
 
-            {/* Bottom Actions */}
-            <div className="pt-3 border-t border-white/10 flex flex-col sm:flex-row items-center gap-3">
-              <button
-                type="submit"
-                className="w-full sm:flex-1 py-3.5 rounded-lg bg-[#C8AA78] hover:bg-[#d5ba8c] text-[#171513] font-bold text-xs sm:text-sm transition-all shadow-md active:scale-95 cursor-pointer"
-              >
-                إرسال طلب التسعير الموحد ({items.length} ستائر)
-              </button>
+            <div>
+              <label className="text-xs font-medium text-[#D8C6AE] block mb-1">
+                المدينة / المحافظة في الأردن
+              </label>
+              <input
+                type="text"
+                value={customer.city}
+                onChange={(e) => setCustomer({ ...customer, city: e.target.value })}
+                placeholder="مثال: عمّان - دابوق"
+                className="w-full px-3 py-2 rounded-lg bg-[#171513] border border-white/15 focus:border-[#C8AA78] text-[#F5EFE6] text-xs placeholder:text-[#D8C6AE]/40 focus:outline-none transition-colors"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-medium text-[#D8C6AE] block mb-1">
+                ملاحظات عامة (اختياري)
+              </label>
+              <textarea
+                rows={2}
+                value={customer.generalNotes}
+                onChange={(e) => setCustomer({ ...customer, generalNotes: e.target.value })}
+                placeholder="أي متطلبات عامة تخص المعاينة المنزلية أو خيارات التركيب"
+                className="w-full px-3 py-1.5 rounded-lg bg-[#171513] border border-white/15 focus:border-[#C8AA78] text-[#F5EFE6] text-xs placeholder:text-[#D8C6AE]/40 focus:outline-none transition-colors resize-none"
+              />
+            </div>
+          </div>
+
+          {/* Action Buttons Row */}
+          <div className="pt-3 border-t border-white/10 space-y-2.5">
+            {/* Primary: Send via WhatsApp */}
+            <button
+              type="button"
+              onClick={handleSendViaWhatsApp}
+              disabled={!isWhatsAppConfigured}
+              className="w-full py-3.5 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-neutral-800 disabled:text-neutral-500 disabled:cursor-not-allowed text-white font-bold text-sm flex items-center justify-center gap-2.5 transition-all shadow-md active:scale-[0.99] cursor-pointer"
+            >
+              <MessageCircle className="w-5 h-5 shrink-0" />
+              <span>إرسال طلب التفصيل عبر واتساب ({items.length} ستائر)</span>
+              <ExternalLink className="w-4 h-4 shrink-0" />
+            </button>
+
+            {/* Options Row: Copy fallback & Add to Cart */}
+            <div className="flex flex-col sm:flex-row items-center gap-2.5">
               <button
                 type="button"
-                onClick={handleClose}
-                className="w-full sm:w-auto px-5 py-3.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-[#D8C6AE] transition-colors"
+                onClick={handleCopy}
+                className="w-full sm:flex-1 py-2.5 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-[#D8C6AE] hover:text-[#F5EFE6] border border-white/10 flex items-center justify-center gap-2 transition-colors cursor-pointer"
               >
-                إلغاء
+                {copied ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    <span className="text-emerald-400 font-medium">تم نسخ تفاصيل طلب التفصيل!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5 text-[#C8AA78]" />
+                    <span>نسخ تفاصيل طلب التفصيل</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleAddToCart}
+                className="w-full sm:flex-1 py-2.5 px-3 rounded-lg bg-[#C8AA78]/15 hover:bg-[#C8AA78]/25 text-xs text-[#C8AA78] border border-[#C8AA78]/30 flex items-center justify-center gap-2 transition-colors cursor-pointer"
+              >
+                <ShoppingBag className="w-3.5 h-3.5" />
+                <span>إضافة القطع إلى السلة للمتابعة لاحقاً</span>
               </button>
             </div>
-          </form>
-        )}
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -7,7 +7,7 @@ import { ArrowLeft } from 'lucide-react';
 
 interface CategorySectionProps {
   categories?: CategoryInfo[];
-  onSelectCategory: (category: 'all' | 'sheer' | 'blackout' | 'roller') => void;
+  onSelectCategory: (category: string) => void;
 }
 
 export default function CategorySection({

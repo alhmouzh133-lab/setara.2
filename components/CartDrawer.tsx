@@ -4,7 +4,7 @@ import React from 'react';
 import Image from 'next/image';
 import { useCart } from '@/lib/cart-context';
 import { SHOP_CONFIG } from '@/lib/shop-data';
-import { X, Trash2, Plus, Minus, ShoppingBag, ArrowLeft, Truck, AlertTriangle } from 'lucide-react';
+import { X, Trash2, Plus, Minus, ShoppingBag, MessageCircle, Truck } from 'lucide-react';
 
 export default function CartDrawer() {
   const {
@@ -21,7 +21,7 @@ export default function CartDrawer() {
 
   if (!isCartOpen) return null;
 
-  const handleProceedToCheckout = () => {
+  const handleProceedToWhatsApp = () => {
     setIsCartOpen(false);
     setIsCheckoutOpen(true);
   };
@@ -65,7 +65,7 @@ export default function CartDrawer() {
                   سلتك فارغة حالياً
                 </h3>
                 <p className="mt-1 text-xs text-[#D8C6AE]/80 max-w-xs">
-                  تصفح مجموعتنا من الستائر الجاهزة وأضف ما يناسب ذوقك ومقاسات منزلك.
+                  تصفح مجموعتنا من الستائر الجاهزة أو أضف ستائر مفصلة بالمقاسات المناسبة لمنزلك.
                 </p>
                 <button
                   onClick={() => setIsCartOpen(false)}
@@ -93,19 +93,26 @@ export default function CartDrawer() {
                   <div className="flex-1 flex flex-col justify-between">
                     <div>
                       <div className="flex items-start justify-between gap-2">
-                        <h4 className="text-sm font-bold text-[#F5EFE6] leading-snug">
-                          {item.productName}
-                        </h4>
+                        <div>
+                          <h4 className="text-sm font-bold text-[#F5EFE6] leading-snug">
+                            {item.productName}
+                          </h4>
+                          {item.isCustom && (
+                            <span className="inline-block mt-0.5 px-1.5 py-0.5 bg-[#C8AA78]/20 text-[#C8AA78] text-[10px] rounded font-medium">
+                              تفصيل حسب الطلب
+                            </span>
+                          )}
+                        </div>
                         <button
                           onClick={() => removeItem(item.id)}
                           aria-label="حذف القطعة"
-                          className="text-[#D8C6AE]/50 hover:text-red-400 transition-colors p-1"
+                          className="text-[#D8C6AE]/50 hover:text-red-400 transition-colors p-1 cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
 
-                      {/* Selected Variant Attributes */}
+                      {/* Attributes */}
                       <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-[#D8C6AE]">
                         <span className="flex items-center gap-1">
                           <span
@@ -117,15 +124,22 @@ export default function CartDrawer() {
                         <span>·</span>
                         <span>{item.size.label}</span>
                       </div>
+
+                      {/* Selected Curtain Options */}
+                      {(item.curtainStyle || item.fabricChoice || item.liningOption) && (
+                        <div className="mt-1 text-[11px] text-[#C8AA78]">
+                          {[item.curtainStyle, item.fabricChoice, item.liningOption].filter(Boolean).join(' · ')}
+                        </div>
+                      )}
                     </div>
 
-                    {/* Quantity Controls & Price */}
+                    {/* Quantity & Price */}
                     <div className="mt-3 flex items-center justify-between">
                       <div className="flex items-center gap-2 bg-[#171513] border border-white/10 rounded p-0.5">
                         <button
                           type="button"
                           onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          className="w-6 h-6 flex items-center justify-center rounded hover:bg-white/10 text-xs text-[#F5EFE6]"
+                          className="w-6 h-6 flex items-center justify-center rounded hover:bg-white/10 text-xs text-[#F5EFE6] cursor-pointer"
                         >
                           <Minus className="w-3 h-3" />
                         </button>
@@ -135,19 +149,31 @@ export default function CartDrawer() {
                         <button
                           type="button"
                           onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          className="w-6 h-6 flex items-center justify-center rounded hover:bg-white/10 text-xs text-[#F5EFE6]"
+                          className="w-6 h-6 flex items-center justify-center rounded hover:bg-white/10 text-xs text-[#F5EFE6] cursor-pointer"
                         >
                           <Plus className="w-3 h-3" />
                         </button>
                       </div>
 
                       <div className="text-left rtl:text-left">
-                        <span className="text-xs text-[#D8C6AE]/70 block">
-                          {item.unitPrice} {SHOP_CONFIG.currencySymbol} / قطعة
-                        </span>
-                        <span className="text-sm font-bold text-[#C8AA78] tabular-nums">
-                          {item.unitPrice * item.quantity} {SHOP_CONFIG.currencySymbol}
-                        </span>
+                        {item.isCustom ? (
+                          <span className="text-xs font-medium text-[#C8AA78]">
+                            السعر بعد مراجعة المقاسات والخامة
+                          </span>
+                        ) : item.isUnpriced ? (
+                          <span className="text-xs font-bold text-[#C8AA78]">
+                            السعر عند الاستفسار
+                          </span>
+                        ) : (
+                          <>
+                            <span className="text-[11px] text-[#D8C6AE]/70 block">
+                              {item.unitPrice} {SHOP_CONFIG.currencySymbol} / قطعة
+                            </span>
+                            <span className="text-sm font-bold text-[#C8AA78] tabular-nums">
+                              {item.unitPrice * item.quantity} {SHOP_CONFIG.currencySymbol}
+                            </span>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -156,10 +182,10 @@ export default function CartDrawer() {
             )}
           </div>
 
-          {/* Footer & Checkout Action */}
+          {/* Footer & WhatsApp Action */}
           {items.length > 0 && (
             <div className="p-5 bg-[#1B1613] border-t border-white/10 space-y-4">
-              {/* Delivery Note: strictly follows instruction: 'Delivery charges are تُحدّد لاحقًا; do not silently treat them as free.' */}
+              {/* Delivery Note */}
               <div className="p-3 bg-[#241E1A] rounded-lg border border-white/5 flex items-start gap-2.5 text-xs text-[#D8C6AE]">
                 <Truck className="w-4 h-4 text-[#C8AA78] shrink-0 mt-0.5" />
                 <div className="space-y-0.5">
@@ -167,7 +193,7 @@ export default function CartDrawer() {
                     رسوم التوصيل: {SHOP_CONFIG.deliveryPricingNote}
                   </span>
                   <p className="text-[11px] text-[#D8C6AE]/80">
-                    سيتم تأكيد رسوم الشحن بالتواصل الهاتفي بناءً على مكان سكنك في الأردن.
+                    سيتم تأكيد رسوم الشحن بالتواصل المباشر بناءً على عنوانك في الأردن.
                   </p>
                 </div>
               </div>
@@ -183,22 +209,22 @@ export default function CartDrawer() {
                 </span>
               </div>
 
-              {/* Checkout Button */}
+              {/* Send Order via WhatsApp Button */}
               <button
                 type="button"
-                onClick={handleProceedToCheckout}
-                className="w-full py-3.5 rounded-lg bg-[#C8AA78] hover:bg-[#d5ba8c] text-[#171513] font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md active:scale-[0.99] cursor-pointer"
+                onClick={handleProceedToWhatsApp}
+                className="w-full py-3.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md active:scale-[0.99] cursor-pointer"
               >
-                <span>متابعة الطلب التجريبي</span>
-                <ArrowLeft className="w-4 h-4" />
+                <MessageCircle className="w-4 h-4" />
+                <span>تأكيد الطلب عبر واتساب</span>
               </button>
 
               <div className="flex items-center justify-between text-[11px] text-[#D8C6AE]/60 pt-1">
-                <span>نموذج تجريبي (Phase 1)</span>
+                <span>تواصل مباشر مع المتجر</span>
                 <button
                   type="button"
                   onClick={clearCart}
-                  className="hover:text-red-400 transition-colors"
+                  className="hover:text-red-400 transition-colors cursor-pointer"
                 >
                   إفراغ السلة
                 </button>

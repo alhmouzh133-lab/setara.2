@@ -2,12 +2,12 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { SHOP_CONFIG } from '@/lib/shop-data';
+import { SHOP_CONFIG, getWhatsAppUrl } from '@/lib/shop-data';
 import { useCart } from '@/lib/cart-context';
-import { MapPin, MessageSquare, AlertCircle } from 'lucide-react';
+import { MapPin, MessageSquare, AlertCircle, MessageCircle } from 'lucide-react';
 
 export default function Footer() {
-  const { setIsCustomQuoteOpen, setIsOrdersOpen } = useCart();
+  const { setIsCustomQuoteOpen } = useCart();
 
   const handleScrollToTop = () => {
     if (typeof window !== 'undefined') {
@@ -87,14 +87,6 @@ export default function Footer() {
                   طلب تسعير تفصيل خاص
                 </button>
               </li>
-              <li>
-                <button
-                  onClick={() => setIsOrdersOpen(true)}
-                  className="hover:text-[#F5EFE6] transition-colors"
-                >
-                  طلباتي ومتابعة السجل
-                </button>
-              </li>
             </ul>
           </div>
 
@@ -109,6 +101,17 @@ export default function Footer() {
                 <span className="leading-relaxed">
                   {SHOP_CONFIG.contactConfirmed}
                 </span>
+              </div>
+              <div>
+                <a
+                  href={getWhatsAppUrl('مرحباً متجر سيتارة، أود الاستفسار عن الستائر المتاحة لديكم.')}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-emerald-950/50 hover:bg-emerald-900/60 border border-emerald-500/40 text-emerald-300 text-xs font-semibold transition-colors mt-1"
+                >
+                  <MessageCircle className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>محادثة واتساب: 0798187000 (962798187000+)</span>
+                </a>
               </div>
               <div className="p-3 bg-[#1C1714] rounded-md border border-[#C8AA78]/20 space-y-1.5 text-[11px]">
                 <div className="flex items-center gap-1.5 text-[#C8AA78] font-semibold">

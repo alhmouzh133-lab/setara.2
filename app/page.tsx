@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { CartProvider } from '@/lib/cart-context';
-import { PRODUCTS, CATEGORIES, Product, CategoryInfo } from '@/lib/shop-data';
+import { PRODUCTS, CATEGORIES } from '@/lib/shop-data';
 import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
 import CategorySection from '@/components/CategorySection';
@@ -13,12 +13,9 @@ import ProductModal from '@/components/ProductModal';
 import CartDrawer from '@/components/CartDrawer';
 import CheckoutModal from '@/components/CheckoutModal';
 import CustomQuoteModal from '@/components/CustomQuoteModal';
-import OrdersModal from '@/components/OrdersModal';
 
 export default function Home() {
-  const [selectedCategory, setSelectedCategory] = useState<'all' | 'sheer' | 'blackout' | 'roller'>('all');
-  const [products, setProducts] = useState<Product[]>(PRODUCTS);
-  const [categories, setCategories] = useState<CategoryInfo[]>(CATEGORIES);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -36,33 +33,6 @@ export default function Home() {
 
     // 3. Ensure viewport begins cleanly at the top hero section
     window.scrollTo(0, 0);
-
-    // 4. Fetch dynamic catalog from database (reflects admin changes without redeployment)
-    fetch('/api/products')
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data?.products && Array.isArray(data.products) && data.products.length > 0) {
-          setProducts(data.products);
-        }
-      })
-      .catch(() => {});
-
-    fetch('/api/categories')
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data?.categories && Array.isArray(data.categories) && data.categories.length > 0) {
-          setCategories(
-            data.categories.map((c: any) => ({
-              id: c.id,
-              name: c.name,
-              subtitle: c.subtitle || '',
-              description: c.description || '',
-              image: c.image,
-            }))
-          );
-        }
-      })
-      .catch(() => {});
   }, []);
 
   return (
@@ -78,13 +48,13 @@ export default function Home() {
 
           {/* 2. Visual Category Cards (LUXINTERIORS inspired) */}
           <CategorySection
-            categories={categories}
+            categories={CATEGORIES}
             onSelectCategory={setSelectedCategory}
           />
 
-          {/* 3. Ready-Made Curtains & Catalog (Alternating Light surface for crystal clear fabric visibility) */}
+          {/* 3. Ready-Made Curtains & Catalog */}
           <ProductSection
-            products={products}
+            products={PRODUCTS}
             selectedCategory={selectedCategory}
             onSelectCategory={setSelectedCategory}
           />
@@ -101,7 +71,6 @@ export default function Home() {
         <CartDrawer />
         <CheckoutModal />
         <CustomQuoteModal />
-        <OrdersModal />
       </div>
     </CartProvider>
   );

@@ -1,516 +1,520 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Image from 'next/image';
-import { ColorOption, Product, SHOP_CONFIG, SizeOption } from '@/lib/shop-data';
+import {
+  ColorOption,
+  FabricOption,
+  Product,
+  SHOP_CONFIG,
+  SizeOption,
+  CENTRAL_FABRICS,
+  CENTRAL_COLORS,
+  resolveCurtainImage,
+  getWhatsAppUrl,
+} from '@/lib/shop-data';
 import { useCart } from '@/lib/cart-context';
 import {
   X,
   Check,
   ShoppingBag,
-  Sparkles,
   AlertCircle,
   Plus,
   Minus,
-  Info,
-  Loader2,
-  RefreshCw,
+  MessageCircle,
+  ExternalLink,
+  Ruler,
+  Layers,
 } from 'lucide-react';
 
 interface ProductModalContentProps {
   product: Product;
   onClose: () => void;
-  onAddToCart: (product: Product, color: ColorOption, size: SizeOption, quantity: number) => void;
-}
-
-interface PendingTarget {
-  reqId: number;
-  url: string;
-  color: ColorOption;
-  thumbIndex: number;
+  onAddToCart: (
+    product: Product,
+    color: ColorOption,
+    size: SizeOption,
+    quantity: number,
+    options?: {
+      curtainType?: string;
+      curtainTypeName?: string;
+      fabricId?: string;
+      fabricName?: string;
+      curtainStyle?: string;
+      liningOption?: string;
+      resolvedImage?: string;
+    }
+  ) => void;
 }
 
 function ProductModalContent({ product, onClose, onAddToCart }: ProductModalContentProps) {
-  // Initial state: first color variant
-  const initialColor = product.colors[0] || null;
-  const initialImage = initialColor?.image || product.images[0];
+  const isElectricProduct = product.id === 'curtain-electric' || product.curtainType === 'electric';
 
-  const [selectedColor, setSelectedColor] = useState<ColorOption | null>(initialColor);
-  const [selectedSize, setSelectedSize] = useState<SizeOption | null>(null);
+  // 1. Curtain Type Selection (electric / manual / roller)
+  // Electric product is fixed to 'electric' and cannot be switched
+  const [curtainType, setCurtainType] = useState<'electric' | 'manual' | 'roller'>(
+    isElectricProduct ? 'electric' : (product.curtainType as any) || (product.category === 'roller' ? 'roller' : 'electric')
+  );
+
+  // Available fabric choices: Electric product uses ELECTRIC_FABRICS (with "لينين"), others use CENTRAL_FABRICS
+  const availableFabrics = useMemo(() => {
+    return product.fabricOptions || CENTRAL_FABRICS;
+  }, [product.fabricOptions]);
+
+  // 2. Central Fabric Selection
+  const initialFabricId = useMemo(() => {
+    if (product.defaultFabricId) return product.defaultFabricId;
+    if (product.slug.includes('zebra')) return 'zebra';
+    if (product.slug.includes('screen')) return 'screen';
+    if (product.slug.includes('blackout')) return 'blackout';
+    return 'linen';
+  }, [product]);
+
+  const [fabricId, setFabricId] = useState<string>(initialFabricId);
+
+  // 3. Color Selection
+  const [selectedColor, setSelectedColor] = useState<ColorOption>(
+    CENTRAL_COLORS[0]
+  );
+
+  // 4. Style & Lining (for electric and manual curtains)
+  const [selectedStyle, setSelectedStyle] = useState<string>('ويفي');
+  const [selectedLining, setSelectedLining] = useState<string>('بطانة 50%');
+
+  // 5. Quantity & Errors
   const [quantity, setQuantity] = useState<number>(1);
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  // Stable Image Switcher State:
-  // displayedImage is the currently committed, visible photograph.
-  // When a new color/thumbnail is requested, displayedImage remains completely visible until the new one finishes decoding.
-  const [displayedImage, setDisplayedImage] = useState<string>(initialImage);
-  const [activeThumbnailIndex, setActiveThumbnailIndex] = useState<number>(0);
-  const [isImageLoading, setIsImageLoading] = useState<boolean>(false);
-  const [imageLoadError, setImageLoadError] = useState<boolean>(false);
-  const [pendingTarget, setPendingTarget] = useState<PendingTarget | null>(null);
+  // Current fabric details object
+  const currentFabric = useMemo(() => {
+    return availableFabrics.find((f) => f.id === fabricId) || availableFabrics[0];
+  }, [availableFabrics, fabricId]);
 
-  // Monotonic request ID counter to ensure only the LAST rapid selection resolves
-  const requestIdRef = useRef<number>(0);
+  // Pricing calculation according to strict rules:
+  // Electric: 120 JOD
+  // Manual: 70 JOD
+  // Roller: unpriced (quote required)
+  // Fabric and color changes NEVER alter these prices!
+  const isRoller = !isElectricProduct && curtainType === 'roller';
+  const unitPrice = isRoller ? null : (isElectricProduct || curtainType === 'electric') ? 120 : 70;
+  const totalPrice = unitPrice ? unitPrice * quantity : null;
 
-  // Gallery photographs genuinely belonging to the selected variant only
-  const currentGallery = React.useMemo(() => {
-    if (selectedColor?.gallery && selectedColor.gallery.length > 0) {
-      return selectedColor.gallery;
-    }
-    if (selectedColor?.image) {
-      return [selectedColor.image];
-    }
-    return product.images;
-  }, [selectedColor, product.images]);
+  const curtainTypeName = isElectricProduct
+    ? 'ستائر كهربائية'
+    : curtainType === 'electric'
+    ? 'ستائر كهربائية'
+    : curtainType === 'manual'
+    ? 'ستارة عادية'
+    : 'ستارة رول';
 
-  // Available size options genuinely configured and enabled for the selected color
-  const availableSizes = React.useMemo<SizeOption[]>(() => {
-    if (!selectedColor) return [];
+  // 6. Stable Image Resolution Engine
+  // Resolves displayed image from: curtainType + fabricId + color.id + style + lining
+  const targetImageUrl = useMemo(() => {
+    return resolveCurtainImage(
+      curtainType,
+      fabricId,
+      selectedColor.id,
+      !isRoller ? selectedStyle : undefined,
+      !isRoller ? selectedLining : undefined
+    );
+  }, [curtainType, fabricId, selectedColor.id, isRoller, selectedStyle, selectedLining]);
 
-    if (product.variants && product.variants.length > 0) {
-      // Find variants for this color that are explicitly available
-      const colorVariants = product.variants.filter(
-        (v) => (v.colorId === selectedColor.id || v.colorId === selectedColor.name) && v.isAvailable
-      );
+  // Active committed display state (strictly in sync with the image actually shown)
+  const [displayed, setDisplayed] = useState({
+    curtainType,
+    curtainTypeName,
+    fabricId,
+    fabricName: currentFabric.name,
+    colorId: selectedColor.id,
+    colorName: selectedColor.name,
+    colorHex: selectedColor.hex,
+    style: !isRoller ? selectedStyle : undefined,
+    lining: !isRoller ? selectedLining : undefined,
+    imageUrl: targetImageUrl,
+  });
 
-      return colorVariants.map((v) => {
-        const sizeDef = product.sizes.find((s) => s.id === v.sizeId);
-        return {
-          id: v.sizeId,
-          variantId: v.id,
-          label: sizeDef?.label || 'مقاس قياسي',
-          widthCm: sizeDef?.widthCm || 150,
-          heightCm: sizeDef?.heightCm || 260,
-          price: Number(v.price),
-          stockQuantity: Number(v.stockQuantity),
-        };
-      });
-    }
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const isLoading = displayed.imageUrl !== targetImageUrl && failedUrl !== targetImageUrl;
+  const loadError = failedUrl === targetImageUrl;
 
-    // Fallback for static demo products without explicit variants array
-    return product.sizes;
-  }, [selectedColor, product.variants, product.sizes]);
+  const activeRequestIdRef = useRef<number>(0);
 
-  // Handle color selection
-  const handleSelectColor = (color: ColorOption) => {
-    // 1. Clicking already selected color does not reload or reset gallery
-    if (selectedColor?.id === color.id && displayedImage === color.image) {
+  // Trigger smooth, stable image switch whenever targetImageUrl changes
+  useEffect(() => {
+    if (displayed.imageUrl === targetImageUrl) {
       return;
     }
 
-    setValidationError(null);
-    setImageLoadError(false);
+    const reqId = ++activeRequestIdRef.current;
 
-    // Color-specific size validation: retain selected size only if valid for the new color. Otherwise clear it.
-    if (selectedSize) {
-      let matchingVariant: any = null;
-      if (product.variants && product.variants.length > 0) {
-        matchingVariant = product.variants.find(
-          (v) => (v.colorId === color.id || v.colorId === color.name) && v.sizeId === selectedSize.id && v.isAvailable
-        );
-      } else {
-        matchingVariant = product.sizes.find((s) => s.id === selectedSize.id);
-      }
-
-      if (matchingVariant) {
-        const sizeDef = product.sizes.find((s) => s.id === selectedSize.id);
-        setSelectedSize({
-          id: selectedSize.id,
-          variantId: matchingVariant.id,
-          label: sizeDef?.label || selectedSize.label,
-          widthCm: sizeDef?.widthCm || selectedSize.widthCm,
-          heightCm: sizeDef?.heightCm || selectedSize.heightCm,
-          price: Number(matchingVariant.price),
-          stockQuantity: Number(matchingVariant.stockQuantity ?? 10),
-        });
-      } else {
-        setSelectedSize(null);
-      }
-    }
-
-    const targetUrl = color.image;
-    const reqId = ++requestIdRef.current;
-
-    // Check if target image is already currently displayed
-    if (targetUrl === displayedImage) {
-      setSelectedColor(color);
-      setActiveThumbnailIndex(0);
-      setPendingTarget(null);
-      setIsImageLoading(false);
-      return;
-    }
-
-    // Keep the previous photograph 100% visible while the next loads and decodes
-    setIsImageLoading(true);
-
-    const newTarget: PendingTarget = {
-      reqId,
-      url: targetUrl,
-      color,
-      thumbIndex: 0,
-    };
-    setPendingTarget(newTarget);
-
-    // Browser-side decoding check
     if (typeof window !== 'undefined') {
       const img = new window.Image();
-      img.src = targetUrl;
+      img.src = targetImageUrl;
 
-      const commit = () => {
-        if (requestIdRef.current === reqId) {
-          setSelectedColor(color);
-          setDisplayedImage(targetUrl);
-          setActiveThumbnailIndex(0);
-          setPendingTarget(null);
-          setIsImageLoading(false);
-          setImageLoadError(false);
+      const commitSuccess = () => {
+        // Discard stale older requests during rapid clicking
+        if (activeRequestIdRef.current === reqId) {
+          setDisplayed({
+            curtainType,
+            curtainTypeName,
+            fabricId,
+            fabricName: currentFabric.name,
+            colorId: selectedColor.id,
+            colorName: selectedColor.name,
+            colorHex: selectedColor.hex,
+            style: !isRoller ? selectedStyle : undefined,
+            lining: !isRoller ? selectedLining : undefined,
+            imageUrl: targetImageUrl,
+          });
+          setFailedUrl(null);
+        }
+      };
+
+      const commitError = () => {
+        if (activeRequestIdRef.current === reqId) {
+          setFailedUrl(targetImageUrl);
         }
       };
 
       if ('decode' in img && typeof img.decode === 'function') {
         img
           .decode()
-          .then(commit)
+          .then(commitSuccess)
           .catch(() => {
-            img.onload = commit;
-            img.onerror = () => {
-              if (requestIdRef.current === reqId) {
-                setIsImageLoading(false);
-                setImageLoadError(true);
-                setPendingTarget(null);
-              }
-            };
+            img.onload = commitSuccess;
+            img.onerror = commitError;
           });
       } else {
-        img.onload = commit;
-        img.onerror = () => {
-          if (requestIdRef.current === reqId) {
-            setIsImageLoading(false);
-            setImageLoadError(true);
-            setPendingTarget(null);
-          }
-        };
+        img.onload = commitSuccess;
+        img.onerror = commitError;
       }
-    } else {
-      setSelectedColor(color);
-      setDisplayedImage(targetUrl);
-      setActiveThumbnailIndex(0);
-      setPendingTarget(null);
-      setIsImageLoading(false);
     }
-  };
+  }, [
+    targetImageUrl,
+    curtainType,
+    curtainTypeName,
+    fabricId,
+    currentFabric.name,
+    selectedColor.id,
+    selectedColor.name,
+    selectedColor.hex,
+    isRoller,
+    selectedStyle,
+    selectedLining,
+    displayed.imageUrl,
+  ]);
 
-  // Handle individual thumbnail selection within the current variant's genuine gallery
-  const handleSelectThumbnail = (imgUrl: string, index: number) => {
-    if (displayedImage === imgUrl && activeThumbnailIndex === index) {
-      return;
-    }
-
-    const reqId = ++requestIdRef.current;
-    setIsImageLoading(true);
-    setImageLoadError(false);
-
-    if (selectedColor) {
-      setPendingTarget({
-        reqId,
-        url: imgUrl,
-        color: selectedColor,
-        thumbIndex: index,
-      });
-    }
-
-    if (typeof window !== 'undefined') {
-      const img = new window.Image();
-      img.src = imgUrl;
-
-      const commitThumb = () => {
-        if (requestIdRef.current === reqId) {
-          setDisplayedImage(imgUrl);
-          setActiveThumbnailIndex(index);
-          setPendingTarget(null);
-          setIsImageLoading(false);
-        }
-      };
-
-      if ('decode' in img && typeof img.decode === 'function') {
-        img.decode().then(commitThumb).catch(commitThumb);
-      } else {
-        img.onload = commitThumb;
-        img.onerror = () => {
-          if (requestIdRef.current === reqId) {
-            setIsImageLoading(false);
-            setImageLoadError(true);
-            setPendingTarget(null);
-          }
-        };
-      }
-    } else {
-      setDisplayedImage(imgUrl);
-      setActiveThumbnailIndex(index);
-      setPendingTarget(null);
-      setIsImageLoading(false);
-    }
-  };
-
-  const handlePendingLoaded = (reqId: number) => {
-    if (requestIdRef.current === reqId && pendingTarget && pendingTarget.reqId === reqId) {
-      setSelectedColor(pendingTarget.color);
-      setDisplayedImage(pendingTarget.url);
-      setActiveThumbnailIndex(pendingTarget.thumbIndex);
-      setPendingTarget(null);
-      setIsImageLoading(false);
-      setImageLoadError(false);
-    }
-  };
-
-  const handlePendingError = (reqId: number) => {
-    if (requestIdRef.current === reqId) {
-      setIsImageLoading(false);
-      setImageLoadError(true);
-      setPendingTarget(null);
-    }
-  };
-
-  // Handle size selection (preserves selected color & image)
-  const handleSelectSize = (size: SizeOption) => {
-    setSelectedSize(size);
+  // Handlers for switching
+  const handleSelectType = (type: 'electric' | 'manual' | 'roller') => {
+    if (isElectricProduct) return; // Prevent switching electric product
+    setCurtainType(type);
     setValidationError(null);
   };
 
-  const currentUnitPrice = selectedSize ? selectedSize.price : null;
-  const currentTotalPrice = currentUnitPrice ? currentUnitPrice * quantity : null;
+  const handleSelectFabric = (fId: string) => {
+    setFabricId(fId);
+    setValidationError(null);
+  };
 
+  const handleSelectColor = (color: ColorOption) => {
+    setSelectedColor(color);
+    setValidationError(null);
+  };
+
+  // WhatsApp direct inquiry action
+  const handleWhatsAppInquiry = () => {
+    const heightStr = 'ارتفاع 300 سم';
+    const message = `مرحباً متجر سيتارة، أود الاستفسار عن ${curtainTypeName} (القماش: ${currentFabric.name}، اللون: ${selectedColor.name}، ${heightStr}، عدد: ${quantity} قطعة).`;
+    const targetUrl = getWhatsAppUrl(message);
+    window.open(targetUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  // Add to cart action
   const handleAdd = () => {
     setValidationError(null);
 
-    if (!selectedColor && !selectedSize) {
-      setValidationError('يرجى تحديد اللون والمقاس المطلوبين قبل الإضافة إلى السلة.');
-      return;
-    }
-    if (!selectedColor) {
-      setValidationError('يرجى اختيار لون الستارة المناسب.');
-      return;
-    }
-    if (!selectedSize) {
-      setValidationError('يرجى اختيار مقاس الستارة المطلوب.');
-      return;
-    }
+    const sizeToUse: SizeOption = isRoller
+      ? {
+          id: `roller-size-300`,
+          label: 'ارتفاع 300 سم (العرض حسب الطلب)',
+          widthCm: 250,
+          heightCm: 300,
+          price: 0,
+        }
+      : {
+          id: `${curtainType}-std-250-300`,
+          label: '250 × 300 سم (مقاس معياري)',
+          widthCm: 250,
+          heightCm: 300,
+          price: unitPrice || 120,
+        };
 
-    onAddToCart(product, selectedColor, selectedSize, quantity);
+    onAddToCart(
+      product,
+      selectedColor,
+      sizeToUse,
+      quantity,
+      {
+        curtainType,
+        curtainTypeName,
+        fabricId,
+        fabricName: currentFabric.name,
+        curtainStyle: !isRoller ? selectedStyle : undefined,
+        liningOption: !isRoller ? selectedLining : undefined,
+        resolvedImage: displayed.imageUrl,
+      }
+    );
     onClose();
-  };
-
-  const retryImageLoad = () => {
-    setImageLoadError(false);
-    if (selectedColor?.image) {
-      handleSelectColor(selectedColor);
-    }
   };
 
   return (
     <div
-      className="relative w-full max-w-4xl bg-[#211B17] text-[#F5EFE6] border border-[#C8AA78]/30 rounded-xl shadow-2xl overflow-hidden my-auto"
+      className="relative w-full max-w-4xl bg-[#211B17] text-[#F5EFE6] border border-[#C8AA78]/30 rounded-xl shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col md:flex-row"
       onClick={(e) => e.stopPropagation()}
     >
       {/* Close Button */}
       <button
         onClick={onClose}
         aria-label="إغلاق"
-        className="absolute top-4 left-4 z-30 p-2 rounded-full bg-[#171513]/80 hover:bg-[#171513] text-[#F5EFE6] hover:text-[#C8AA78] border border-white/10 transition-colors cursor-pointer"
+        className="absolute top-3 left-3 sm:top-4 sm:left-4 z-40 p-2 rounded-full bg-[#171513]/90 hover:bg-[#171513] text-[#F5EFE6] hover:text-[#C8AA78] border border-white/10 transition-colors cursor-pointer shadow-md"
       >
         <X className="w-5 h-5" />
       </button>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 max-h-[85vh] overflow-y-auto">
-        {/* Gallery Column */}
-        <div className="p-6 md:p-8 bg-[#1B1613] flex flex-col justify-between border-b md:border-b-0 md:border-l border-white/10">
-          <div>
-            {/* Primary Image View with Strict Dimensions & Stability */}
-            <div className="relative aspect-[4/3] w-full rounded-lg overflow-hidden bg-[#2A231E] border border-white/10 shadow-inner">
-              {/* Main Visible Photograph (Keeps previous image visible without ever blanking) */}
-              <Image
-                src={displayedImage}
-                alt={`${product.name} - ${selectedColor ? selectedColor.name : ''}`}
-                fill
-                sizes="(max-width: 768px) 100vw, 50vw"
-                className="object-cover object-center select-none"
-                priority
-                referrerPolicy="no-referrer"
-                onError={() => setImageLoadError(true)}
-              />
+      {/* Visual Gallery Column (Sticky / Anchored preview on desktop) */}
+      <div className="w-full md:w-[48%] lg:w-[46%] p-5 sm:p-6 md:p-7 bg-[#1B1613] flex flex-col justify-between border-b md:border-b-0 md:border-l border-white/10 shrink-0 md:overflow-y-auto">
+        <div>
+          {/* Main Image Container */}
+          <div className="relative aspect-[4/3] w-full rounded-lg overflow-hidden bg-[#2A231E] border border-white/10 shadow-inner">
+            {/* Currently Committed Visible Image */}
+            <Image
+              src={displayed.imageUrl}
+              alt={`${displayed.curtainTypeName} - ${displayed.fabricName} - ${displayed.colorName}`}
+              fill
+              sizes="(max-width: 768px) 100vw, 50vw"
+              className="object-cover object-center select-none"
+              priority
+              referrerPolicy="no-referrer"
+            />
 
-              {/* Incoming Preload Layer: Loads Next.js optimized photo seamlessly while previous photo remains 100% visible beneath */}
-              {pendingTarget && (
-                <Image
-                  key={`pending_${pendingTarget.reqId}_${pendingTarget.url}`}
-                  src={pendingTarget.url}
-                  alt=""
-                  fill
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                  className="object-cover object-center select-none opacity-0 pointer-events-none"
-                  priority
-                  referrerPolicy="no-referrer"
-                  onLoad={() => handlePendingLoaded(pendingTarget.reqId)}
-                  onError={() => handlePendingError(pendingTarget.reqId)}
-                />
-              )}
-
-              {/* Discreet Loading Indicator in Corner without blanking */}
-              {isImageLoading && (
-                <div className="absolute top-2.5 left-2.5 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#171513]/85 text-[#C8AA78] text-[11px] backdrop-blur-xs border border-white/10 shadow-xs">
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                  <span>جارٍ التحديث...</span>
-                </div>
-              )}
-
-              {/* Explicit Color Badge */}
-              <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1.5">
-                <span className="px-2.5 py-0.5 text-[10px] font-semibold bg-[#171513]/85 text-[#F5EFE6] rounded-xs backdrop-blur-xs border border-white/10 shadow-xs flex items-center gap-1.5">
-                  {selectedColor && (
-                    <span
-                      className="w-2 h-2 rounded-full border border-black/30"
-                      style={{ backgroundColor: selectedColor.hex }}
-                    />
-                  )}
-                  <span>
-                    {selectedColor ? `معاينة: ${selectedColor.name}` : 'معاينة اللون'}
-                  </span>
-                </span>
-              </div>
-
-              {/* Graceful Error Handling Overlay if image fails to load */}
-              {imageLoadError && (
-                <div className="absolute inset-0 z-20 bg-black/80 backdrop-blur-xs flex flex-col items-center justify-center p-4 text-center">
-                  <AlertCircle className="w-7 h-7 text-amber-400 mb-1.5" />
-                  <p className="text-xs font-bold text-[#F5EFE6]">
-                    تعذر تحميل صورة اللون المختار مؤقتاً
-                  </p>
-                  <p className="text-[11px] text-[#D8C6AE]/75 mt-0.5">
-                    الخامة متاحة ومؤكدة بالمواصفات الموضحة
-                  </p>
-                  <button
-                    type="button"
-                    onClick={retryImageLoad}
-                    className="mt-2.5 px-3 py-1 bg-white/10 hover:bg-white/20 rounded text-xs text-[#C8AA78] flex items-center gap-1 transition-colors cursor-pointer"
-                  >
-                    <RefreshCw className="w-3 h-3" />
-                    <span>إعادة المحاولة</span>
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Stable Thumbnail Selector (Genuinely belongs to selected color) */}
-            <div className="mt-4">
-              <span className="text-[10px] text-[#D8C6AE]/70 block mb-1.5 font-medium">
-                معرض لقطات {selectedColor ? selectedColor.name : 'المنتج'} ({currentGallery.length === 1 ? 'صورة واحدة' : `${currentGallery.length} لقطات`}):
+            {/* Badges strictly matching the displayed image */}
+            <div className="absolute top-3 right-3 flex flex-wrap gap-1.5 max-w-[85%]">
+              <span className="px-2.5 py-1 text-[11px] font-bold text-[#171513] bg-[#C8AA78] rounded-md shadow-xs">
+                {displayed.curtainTypeName}
               </span>
-              <div className="flex items-center gap-2 overflow-x-auto pb-1">
-                {currentGallery.map((img, idx) => {
-                  const isActive = activeThumbnailIndex === idx && displayedImage === img;
-                  return (
-                    <button
-                      key={`${selectedColor?.id || 'base'}_${img}_${idx}`}
-                      type="button"
-                      onClick={() => handleSelectThumbnail(img, idx)}
-                      className={`relative w-14 h-14 rounded-md overflow-hidden border-2 transition-all shrink-0 cursor-pointer ${
-                        isActive
-                          ? 'border-[#C8AA78] scale-105 shadow-sm ring-1 ring-[#C8AA78]/30'
-                          : 'border-white/10 opacity-75 hover:opacity-100 hover:border-white/30'
-                      }`}
-                    >
-                      <Image
-                        src={img}
-                        alt={`${product.name} لقطة ${idx + 1}`}
-                        fill
-                        sizes="56px"
-                        className="object-cover"
-                        referrerPolicy="no-referrer"
-                      />
-                    </button>
-                  );
-                })}
-              </div>
+              <span className="px-2 py-1 text-[11px] font-semibold text-[#F5EFE6] bg-[#171513]/85 backdrop-blur-xs rounded-md border border-white/10">
+                {displayed.fabricName}
+              </span>
+              {displayed.style && (
+                <span className="px-2 py-1 text-[11px] font-medium text-[#D8C6AE] bg-[#171513]/85 backdrop-blur-xs rounded-md border border-white/10">
+                  {displayed.style}
+                </span>
+              )}
+              {displayed.lining && (
+                <span className="px-2 py-1 text-[11px] font-medium text-[#C8AA78] bg-[#171513]/85 backdrop-blur-xs rounded-md border border-white/10">
+                  {displayed.lining}
+                </span>
+              )}
             </div>
+
+            {/* Subtle Loading Indicator during fetch & decode */}
+            {isLoading && (
+              <div className="absolute bottom-3 left-3 px-2.5 py-1 bg-black/75 backdrop-blur-xs rounded-md border border-white/10 text-[10px] text-white/90 flex items-center gap-1.5 shadow-sm">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#C8AA78] animate-ping" />
+                <span>جاري تحديث المعاينة...</span>
+              </div>
+            )}
+
+            {/* Explicit Error State */}
+            {loadError && (
+              <div className="absolute inset-0 bg-[#2A231E]/95 flex flex-col items-center justify-center p-4 text-center">
+                <AlertCircle className="w-7 h-7 text-[#C8AA78] mb-2" />
+                <p className="text-xs font-semibold text-[#F5EFE6]">تعذر تحميل صورة هذه التشكيلة</p>
+                <p className="text-[10px] text-[#D8C6AE]/70 mt-0.5">يمكنك إتمام الطلب بالمواصفات المختارة وسنوافيكم بكافة التفاصيل</p>
+              </div>
+            )}
           </div>
 
-          {/* Fabric Specifications */}
-          <div className="mt-6 pt-5 border-t border-white/10 space-y-2 text-xs text-[#D8C6AE]">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-3.5 h-3.5 text-[#C8AA78]" />
-              <span className="font-semibold text-[#F5EFE6]">نوع القماش:</span>
-              <span>{product.fabric}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Info className="w-3.5 h-3.5 text-[#C8AA78]" />
-              <span className="font-semibold text-[#F5EFE6]">مستوى حجب الضوء:</span>
-              <span>{product.lightBlocking}</span>
-            </div>
+          {/* Live Visual Indicators strictly matching displayed image */}
+          <div className="mt-3 flex items-center justify-between text-[11px] text-[#D8C6AE]/75 px-1">
+            <span className="flex items-center gap-1.5">
+              <span
+                className="w-3 h-3 rounded-full border border-black/40"
+                style={{ backgroundColor: displayed.colorHex }}
+              />
+              <span>معاينة اللون: <strong className="text-[#F5EFE6]">{displayed.colorName}</strong></span>
+            </span>
+            <span>
+              الخامة: <strong className="text-[#C8AA78]">{displayed.fabricName}</strong>
+              {displayed.style && <span className="text-[#D8C6AE]/70"> ({displayed.style})</span>}
+            </span>
           </div>
         </div>
 
-        {/* Purchase Module & Variant Selection */}
-        <div className="p-6 md:p-8 flex flex-col justify-between text-right">
+        {/* Specifications Summary */}
+        <div className="mt-4 p-3.5 bg-[#171513] rounded-lg border border-white/5 space-y-2 text-xs text-[#D8C6AE]">
+          <div className="flex items-center justify-between border-b border-white/5 pb-1.5">
+            <span className="text-[#D8C6AE]/70">المقاس المعياري:</span>
+            <span className="font-semibold text-[#F5EFE6]">
+              {isRoller ? 'ارتفاع 300 سم (العرض حسب الطلب)' : '250 سم عرض × 300 سم ارتفاع'}
+            </span>
+          </div>
+          <div className="flex items-center justify-between border-b border-white/5 pb-1.5">
+            <span className="text-[#D8C6AE]/70">طبيعة القماش:</span>
+            <span className="font-semibold text-[#C8AA78]">{currentFabric.description}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[#D8C6AE]/70">حياكة الحاشية:</span>
+            <span className="font-semibold text-emerald-400">مشمولة في السعر</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Options & Configuration Column (Independently scrolling on desktop) */}
+      <div className="w-full md:w-[52%] lg:w-[54%] p-5 sm:p-6 md:p-8 flex flex-col justify-between text-right overflow-y-auto max-h-[52vh] md:max-h-[92vh]">
           <div>
-            {/* Category & Title */}
+            {/* Header & Title */}
             <span className="text-xs uppercase tracking-wider text-[#C8AA78] font-bold block mb-1">
-              {product.categoryName}
+              تحديد مواصفات الستارة
             </span>
             <h2 className="text-2xl sm:text-3xl font-bold text-[#F5EFE6]">
-              {product.name}
+              {curtainTypeName} — {currentFabric.name}
             </h2>
 
-            <p className="mt-2 text-xs sm:text-sm text-[#D8C6AE] leading-relaxed">
-              {product.description}
-            </p>
-
-            {/* Dynamic Live Price Display */}
-            <div className="mt-4 p-3.5 bg-[#171513] rounded-lg border border-white/10 flex items-center justify-between">
+            {/* Price Box */}
+            <div className="mt-3.5 p-3.5 bg-[#171513] rounded-lg border border-white/10 flex items-center justify-between">
               <div>
                 <span className="text-[11px] text-[#D8C6AE]/70 block">
-                  {selectedSize ? 'سعر المقاس المختار:' : 'سعر الستارة:'}
+                  {isRoller ? 'حالة السعر:' : 'سعر الستارة المعيارية (250 × 300 سم):'}
                 </span>
                 <div className="flex items-baseline gap-1.5 mt-0.5">
-                  {currentUnitPrice ? (
+                  {isRoller ? (
+                    <span className="text-lg sm:text-xl font-bold text-[#C8AA78]">
+                      السعر عند الاستفسار
+                    </span>
+                  ) : (
                     <>
-                      <span className="text-2xl font-bold text-[#C8AA78] tabular-nums">
-                        {currentUnitPrice}
+                      <span className="text-2xl font-extrabold text-[#C8AA78] tabular-nums">
+                        {unitPrice}
                       </span>
                       <span className="text-xs text-[#D8C6AE]">{SHOP_CONFIG.currencySymbol}</span>
                       {quantity > 1 && (
                         <span className="text-xs text-[#D8C6AE]/70 mr-2 tabular-nums">
-                          (الإجمالي: {currentTotalPrice} {SHOP_CONFIG.currencySymbol})
+                          (الإجمالي: {totalPrice} {SHOP_CONFIG.currencySymbol})
                         </span>
                       )}
                     </>
-                  ) : (
-                    <span className="text-xs text-[#D8C6AE]/80 font-medium">
-                      اختر المقاس لعرض السعر الدقيق
-                    </span>
                   )}
                 </div>
               </div>
 
               <span className="text-[11px] text-[#D8C6AE]/60">
-                جاهزة للتعليق
+                {isRoller ? 'سحب بحبل' : 'سعر ثابت لكافة الأقمشة'}
               </span>
             </div>
 
-            {/* 1. REQUIRED Color Selection (Preserves size and quantity) */}
+            {/* 1. SELECTION: CURTAIN TYPE (Shown only for non-electric cards) */}
+            {!isElectricProduct && (
+              <div className="mt-5">
+                <label className="text-xs font-bold text-[#F5EFE6] block mb-1.5">
+                  1. نوع الستارة وآلية التشغيل
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleSelectType('electric')}
+                    className={`p-2 rounded-lg border text-xs text-center transition-all cursor-pointer ${
+                      curtainType === 'electric'
+                        ? 'bg-[#2E251F] border-[#C8AA78] text-[#F5EFE6] font-bold shadow-xs'
+                        : 'bg-[#171513] border-white/10 text-[#D8C6AE] hover:border-white/30'
+                    }`}
+                  >
+                    <span className="block font-bold">كهربائية</span>
+                    <span className="text-[10px] text-[#C8AA78] block mt-0.5">120 د.أ</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleSelectType('manual')}
+                    className={`p-2 rounded-lg border text-xs text-center transition-all cursor-pointer ${
+                      curtainType === 'manual'
+                        ? 'bg-[#2E251F] border-[#C8AA78] text-[#F5EFE6] font-bold shadow-xs'
+                        : 'bg-[#171513] border-white/10 text-[#D8C6AE] hover:border-white/30'
+                    }`}
+                  >
+                    <span className="block font-bold">عادية</span>
+                    <span className="text-[10px] text-[#C8AA78] block mt-0.5">70 د.أ</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleSelectType('roller')}
+                    className={`p-2 rounded-lg border text-xs text-center transition-all cursor-pointer ${
+                      curtainType === 'roller'
+                        ? 'bg-[#2E251F] border-[#C8AA78] text-[#F5EFE6] font-bold shadow-xs'
+                        : 'bg-[#171513] border-white/10 text-[#D8C6AE] hover:border-white/30'
+                    }`}
+                  >
+                    <span className="block font-bold">ستارة رول</span>
+                    <span className="text-[10px] text-[#D8C6AE]/70 block mt-0.5">عند الاستفسار</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* SELECTION: FABRIC (Numbered 1 for electric, 2 for others) */}
             <div className="mt-5">
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-bold text-[#F5EFE6] flex items-center gap-1">
+                  <Layers className="w-3.5 h-3.5 text-[#C8AA78]" />
+                  <span>
+                    {isElectricProduct ? '1. خامة القماش' : '2. خامة القماش (مشتركة لكافة الأنواع)'}
+                  </span>
+                </label>
+                <span className="text-xs text-[#C8AA78] font-semibold">{currentFabric.name}</span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {availableFabrics.map((fabric) => {
+                  const isSelected = fabricId === fabric.id;
+                  return (
+                    <button
+                      key={fabric.id}
+                      type="button"
+                      onClick={() => handleSelectFabric(fabric.id)}
+                      className={`p-2.5 rounded-lg border text-right transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-[#2E251F] border-[#C8AA78] text-[#F5EFE6] font-bold shadow-xs ring-1 ring-[#C8AA78]/50'
+                          : 'bg-[#171513] border-white/10 text-[#D8C6AE] hover:border-white/30'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold">{fabric.name}</span>
+                        {isSelected && <Check className="w-3.5 h-3.5 text-[#C8AA78] shrink-0" />}
+                      </div>
+                      <span className="text-[10px] text-[#D8C6AE]/60 block mt-0.5 line-clamp-1">
+                        {fabric.badge}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* SELECTION: COLOR (Numbered 2 for electric, 3 for others) */}
+            <div className="mt-5">
+              <div className="flex items-center justify-between mb-1.5">
                 <label className="text-xs font-bold text-[#F5EFE6] flex items-center gap-1.5">
-                  <span>1. اختر اللون</span>
+                  <span>{isElectricProduct ? '2. اختر اللون' : '3. اختر اللون'}</span>
                   <span className="text-red-400">*</span>
                 </label>
                 <span className="text-xs text-[#C8AA78] font-semibold">
-                  {selectedColor ? selectedColor.name : 'لم يتم الاختيار'}
+                  {selectedColor.name}
                 </span>
               </div>
 
               <div className="flex flex-wrap gap-2">
-                {product.colors.map((color) => {
-                  const isSelected = selectedColor?.id === color.id;
+                {CENTRAL_COLORS.map((color) => {
+                  const isSelected = selectedColor.id === color.id;
                   return (
                     <button
                       key={color.id}
@@ -518,7 +522,7 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
                       onClick={() => handleSelectColor(color)}
                       className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all cursor-pointer ${
                         isSelected
-                          ? 'bg-[#2E251F] border-[#C8AA78] text-[#F5EFE6] shadow-sm'
+                          ? 'bg-[#2E251F] border-[#C8AA78] text-[#F5EFE6] shadow-sm ring-1 ring-[#C8AA78]'
                           : 'bg-[#171513] border-white/10 text-[#D8C6AE] hover:border-white/30'
                       }`}
                     >
@@ -534,59 +538,84 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
               </div>
             </div>
 
-            {/* 2. REQUIRED Size Variant Selection (Derived strictly from color's available variants) */}
-            <div className="mt-5">
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-bold text-[#F5EFE6] flex items-center gap-1.5">
-                  <span>2. اختر المقاس</span>
-                  <span className="text-red-400">*</span>
-                </label>
-                <span className="text-xs text-[#C8AA78] font-semibold">
-                  {selectedSize
-                    ? `${selectedSize.label} (${selectedSize.price} ${SHOP_CONFIG.currencySymbol})`
-                    : availableSizes.length === 0
-                    ? 'غير متوفر'
-                    : 'لم يتم الاختيار'}
-                </span>
-              </div>
-
-              {availableSizes.length === 0 ? (
-                <div className="p-3.5 bg-[#171513] border border-amber-500/30 rounded-lg text-center text-xs text-[#D8C6AE] flex items-center justify-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-[#C8AA78] shrink-0" />
-                  <span>لا توجد مقاسات متاحة لهذا اللون</span>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  {availableSizes.map((size) => {
-                    const isSelected = selectedSize?.id === size.id;
-                    return (
-                      <button
-                        key={size.id}
-                        type="button"
-                        onClick={() => handleSelectSize(size)}
-                        className={`flex flex-col items-center justify-center p-2.5 rounded-lg border text-right transition-all cursor-pointer ${
-                          isSelected
-                            ? 'bg-[#2E251F] border-[#C8AA78] text-[#F5EFE6] shadow-sm'
-                            : 'bg-[#171513] border-white/10 text-[#D8C6AE] hover:border-white/30'
-                        }`}
-                      >
-                        <span className="text-xs font-bold">{size.label}</span>
-                        <span className="text-xs font-semibold text-[#C8AA78] mt-0.5 tabular-nums">
-                          {size.price} {SHOP_CONFIG.currencySymbol}
-                        </span>
-                        {size.stockQuantity !== undefined && size.stockQuantity <= 3 && size.stockQuantity > 0 && (
-                          <span className="text-[10px] text-amber-400 mt-0.5">
-                            بقي {size.stockQuantity} فقط
+            {/* SELECTION: STYLE & LINING (For Fabric Curtains) */}
+            {!isRoller && (
+              <div className="space-y-4 mt-5 pt-3 border-t border-white/5">
+                {/* Style: Wave vs American */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-bold text-[#F5EFE6]">
+                      {isElectricProduct ? '3. طريقة التفصيل (الموديل)' : '4. طريقة التفصيل (الموديل)'}
+                    </label>
+                    <span className="text-xs text-[#C8AA78] font-semibold">{selectedStyle}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {['ويفي', 'أمريكي'].map((style) => {
+                      const isSelected = selectedStyle === style;
+                      return (
+                        <button
+                          key={style}
+                          type="button"
+                          onClick={() => setSelectedStyle(style)}
+                          className={`p-2 rounded-lg border text-xs text-center transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-[#2E251F] border-[#C8AA78] text-[#F5EFE6] font-bold shadow-xs'
+                              : 'bg-[#171513] border-white/10 text-[#D8C6AE] hover:border-white/30'
+                          }`}
+                        >
+                          <span className="font-bold">{style}</span>
+                          <span className="text-[10px] text-[#D8C6AE]/60 block mt-0.5">
+                            {style === 'ويفي' ? 'ثنيات انسيابية متوازنة' : 'طيات أمريكية كلاسيكية'}
                           </span>
-                        )}
-                      </button>
-                    );
-                  })}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              )}
+
+                {/* Lining: 50%, 80%, 100% */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-bold text-[#F5EFE6]">
+                      {isElectricProduct ? '4. خيار البطانة والعزل' : '5. خيار البطانة والعزل'}
+                    </label>
+                    <span className="text-xs text-[#C8AA78] font-semibold">{selectedLining}</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {['بطانة 50%', 'بطانة 80%', 'تعتيم 100% — Blackout'].map((lining) => {
+                      const isSelected = selectedLining === lining;
+                      return (
+                        <button
+                          key={lining}
+                          type="button"
+                          onClick={() => setSelectedLining(lining)}
+                          className={`p-2 rounded-lg border text-[11px] text-center transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-[#2E251F] border-[#C8AA78] text-[#F5EFE6] font-bold shadow-xs'
+                              : 'bg-[#171513] border-white/10 text-[#D8C6AE] hover:border-white/30'
+                          }`}
+                        >
+                          <span>{lining}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Standard Dimensions Info */}
+            <div className="mt-5 p-3 rounded-lg bg-[#171513] border border-white/10 flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2">
+                <Ruler className="w-4 h-4 text-[#C8AA78]" />
+                <span className="text-[#D8C6AE]/75">المقاس المعروض:</span>
+              </div>
+              <span className="font-bold text-[#F5EFE6]">
+                {isRoller ? 'ارتفاع 300 سم (العرض حسب مساحة نافذتك)' : '250 سم عرض × 300 سم ارتفاع'}
+              </span>
             </div>
 
-            {/* 3. Quantity Counter */}
+            {/* Quantity Counter */}
             <div className="mt-5 flex items-center justify-between">
               <label className="text-xs font-bold text-[#F5EFE6]">
                 الكمية (عدد القطع)
@@ -613,7 +642,6 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
               </div>
             </div>
 
-            {/* Validation Error Message */}
             {validationError && (
               <div className="mt-4 p-3 bg-red-950/40 border border-red-800/60 rounded-lg flex items-center gap-2.5 text-xs text-red-200">
                 <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
@@ -623,41 +651,48 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
           </div>
 
           {/* Modal Bottom CTA */}
-          <div className="mt-6 pt-4 border-t border-white/10">
-            {(() => {
-              const isPurchasable = Boolean(
-                selectedColor &&
-                selectedSize &&
-                availableSizes.some((s) => s.id === selectedSize.id)
-              );
+          <div className="mt-6 pt-4 border-t border-white/10 space-y-2">
+            {isRoller ? (
+              <>
+                {/* Primary WhatsApp Action for Roller */}
+                <button
+                  type="button"
+                  onClick={handleWhatsAppInquiry}
+                  className="w-full py-3.5 px-6 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm flex items-center justify-center gap-2.5 transition-all shadow-md active:scale-[0.99] cursor-pointer"
+                >
+                  <MessageCircle className="w-5 h-5 shrink-0" />
+                  <span>استفسر عبر واتساب</span>
+                  <ExternalLink className="w-4 h-4 shrink-0 opacity-80" />
+                </button>
 
-              return (
+                {/* Secondary Option: Add to Cart as Unpriced Item */}
                 <button
                   type="button"
                   onClick={handleAdd}
-                  disabled={!isPurchasable}
-                  className="w-full py-3.5 px-6 rounded-lg bg-[#C8AA78] hover:bg-[#d5ba8c] disabled:opacity-40 disabled:cursor-not-allowed text-[#171513] font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md active:scale-[0.99] cursor-pointer"
+                  className="w-full py-2.5 px-4 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-[#D8C6AE] hover:text-[#F5EFE6] border border-white/10 flex items-center justify-center gap-2 transition-colors cursor-pointer"
                 >
-                  <ShoppingBag className="w-4 h-4" />
-                  <span>
-                    {!selectedColor
-                      ? 'حدد اللون المطلوب أولاً'
-                      : availableSizes.length === 0
-                      ? 'لا توجد مقاسات متاحة لهذا اللون'
-                      : !selectedSize
-                      ? 'حدد المقاس المطلوب للإضافة'
-                      : `إضافة إلى السلة · ${currentTotalPrice} ${SHOP_CONFIG.currencySymbol}`}
-                  </span>
+                  <ShoppingBag className="w-3.5 h-3.5 text-[#C8AA78]" />
+                  <span>إضافة لاستفسار السلة (بدون سعر فوري)</span>
                 </button>
-              );
-            })()}
+              </>
+            ) : (
+              /* Add to Cart Action for Fabric Curtains */
+              <button
+                type="button"
+                onClick={handleAdd}
+                className="w-full py-3.5 px-6 rounded-lg bg-[#C8AA78] hover:bg-[#d5ba8c] text-[#171513] font-bold text-sm sm:text-base flex items-center justify-center gap-2 transition-all shadow-md active:scale-[0.99] cursor-pointer"
+              >
+                <ShoppingBag className="w-4 h-4" />
+                <span>إضافة إلى السلة · {totalPrice} {SHOP_CONFIG.currencySymbol}</span>
+              </button>
+            )}
+
             <p className="text-[11px] text-center text-[#D8C6AE]/60 mt-1.5">
               {SHOP_CONFIG.deliveryPricingNote}
             </p>
           </div>
         </div>
       </div>
-    </div>
   );
 }
 

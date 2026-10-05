@@ -7,8 +7,8 @@ import { CheckCircle2 } from 'lucide-react';
 
 interface ProductSectionProps {
   products?: Product[];
-  selectedCategory: 'all' | 'sheer' | 'blackout' | 'roller';
-  onSelectCategory: (category: 'all' | 'sheer' | 'blackout' | 'roller') => void;
+  selectedCategory: string;
+  onSelectCategory: (category: string) => void;
 }
 
 export default function ProductSection({
@@ -22,8 +22,8 @@ export default function ProductSection({
       ? currentProducts
       : currentProducts.filter((p) => p.category === selectedCategory);
 
-  const sheerCount = currentProducts.filter((p) => p.category === 'sheer').length;
-  const blackoutCount = currentProducts.filter((p) => p.category === 'blackout').length;
+  const electricCount = currentProducts.filter((p) => p.category === 'electric').length;
+  const manualCount = currentProducts.filter((p) => p.category === 'manual').length;
   const rollerCount = currentProducts.filter((p) => p.category === 'roller').length;
 
   return (
@@ -59,24 +59,24 @@ export default function ProductSection({
               جميع الستائر ({currentProducts.length})
             </button>
             <button
-              onClick={() => onSelectCategory('sheer')}
+              onClick={() => onSelectCategory('electric')}
               className={`px-3.5 py-1.5 text-xs sm:text-sm font-medium rounded-md transition-all cursor-pointer ${
-                selectedCategory === 'sheer'
+                selectedCategory === 'electric'
                   ? 'bg-[#171513] text-[#F5EFE6] font-bold shadow-xs border border-[#C8AA78]'
                   : 'text-[#241E1A] hover:text-[#000000] hover:bg-[#DDD0C0]'
               }`}
             >
-              ستائر شفافة ({sheerCount})
+              ستائر كهربائية ({electricCount})
             </button>
             <button
-              onClick={() => onSelectCategory('blackout')}
+              onClick={() => onSelectCategory('manual')}
               className={`px-3.5 py-1.5 text-xs sm:text-sm font-medium rounded-md transition-all cursor-pointer ${
-                selectedCategory === 'blackout'
+                selectedCategory === 'manual'
                   ? 'bg-[#171513] text-[#F5EFE6] font-bold shadow-xs border border-[#C8AA78]'
                   : 'text-[#241E1A] hover:text-[#000000] hover:bg-[#DDD0C0]'
               }`}
             >
-              ستائر تعتيم ({blackoutCount})
+              ستائر عادية ({manualCount})
             </button>
             <button
               onClick={() => onSelectCategory('roller')}
