@@ -5,6 +5,25 @@
 // image resolution across curtain types (Electric, Manual, Roller).
 // ============================================================================
 
+export interface ScreenColorOption {
+  id: string;
+  name: string;
+  sampleCode: string;
+  hex: string;
+  image: string;
+}
+
+export const SCREEN_COLORS: ScreenColorOption[] = [
+  { id: 'offwhite', name: 'أوف وايت', sampleCode: '2073-1 / 2071-1', hex: '#F3EFEA', image: '/images/roller_screen_ivory.jpg' },
+  { id: 'sand_beige', name: 'بيج رملي', sampleCode: '2073-3 / 2071-3', hex: '#D4C5B9', image: '/images/roller_screen_sand.jpg' },
+  { id: 'medium_gray', name: 'رمادي متوسط', sampleCode: '2073-4', hex: '#8C8885', image: '/images/roller_screen_charcoal.jpg' },
+  { id: 'charcoal_gray', name: 'رمادي فحمي', sampleCode: '2073-8 / 2071-6', hex: '#4A4846', image: '/images/screen_charcoal.jpg' },
+  { id: 'textured_beige', name: 'بيج بنسيج متقاطع', sampleCode: '2090-2', hex: '#CDBCA9', image: '/images/roller_screen.jpg' },
+  { id: 'textured_gray', name: 'رمادي بنسيج متقاطع', sampleCode: '2090-4', hex: '#7A7672', image: '/images/roller_screen_charcoal.jpg' },
+  { id: 'striped_beige', name: 'بيج مخطط', sampleCode: '2073-10', hex: '#C4B29E', image: '/images/prod_solar.jpg' },
+  { id: 'striped_gray', name: 'رمادي مخطط', sampleCode: '2073-11', hex: '#635F5B', image: '/images/curtain_charcoal_roller.jpg' },
+];
+
 export interface ColorOption {
   id: string; // 'ivory' | 'sand' | 'cocoa' | 'charcoal' | 'white'
   name: string;
@@ -64,6 +83,8 @@ export interface Product {
   liningOptions?: string[]; // e.g. ['بطانة 50%', 'بطانة 80%', 'تعتيم 100% — Blackout']
   pricingMeta?: FabricCurtainPricingMetadata;
   fabricOptions?: FabricOption[];
+  isMadeToMeasureScreen?: boolean;
+  screenColors?: ScreenColorOption[];
 }
 
 export interface CategoryInfo {
@@ -599,32 +620,25 @@ export const PRODUCTS: Product[] = [
     curtainType: 'roller',
     category: 'roller',
     categoryName: 'ستائر رول',
-    shortDesc: 'ستارة رول شبكية تكسر الوهج وأشعة الشمس مع وضوح الرؤية للخارج، بسحب بحبل.',
-    description: 'نسيج شبكي ميكروي معاصر يخفف حدة الضوء والوهج بنعومة داخل الغرفة مع الحفاظ على وضوح الرؤية الخارجية نهاراً. تعمل بحبل سحب يدوي سلس، بارتفاع معياري 300 سم.',
+    shortDesc: 'ستارة رول سكرين شبكية تفصيل حسب المقاس بدقة، بسعر 20 د.أ لكل متر مربع.',
+    description: 'ستارة رول سكرين شبكية معاصرة مصنعة خصيصاً حسب مقاسات نافذتك بدقة. تكسر الوهج والحرارة مع الحفاظ على وضوح الرؤية للخارج. السعر 20 د.أ لكل متر مربع.',
     fabric: 'ألياف شبكية واقية من الأشعة فوق البنفسجية والحرارة (Solar Mesh)',
     lightBlocking: 'ترشيح الوهج مع وضوح الرؤية للخارج',
     mainImage: '/images/roller_screen.jpg',
-    images: ['/images/roller_screen.jpg', '/images/prod_solar.jpg', '/images/solar_offwhite.jpg'],
+    images: ['/images/roller_screen.jpg', '/images/roller_screen_ivory.jpg', '/images/roller_screen_sand.jpg'],
     defaultFabricId: 'screen',
-    isUnpriced: true,
-    priceDisplay: 'السعر عند الاستفسار',
-    standardHeightCm: 300,
+    isUnpriced: false,
+    priceDisplay: '20 د.أ / م²',
+    isMadeToMeasureScreen: true,
+    screenColors: SCREEN_COLORS,
     colors: CENTRAL_COLORS,
-    sizes: [
-      {
-        id: 'std-r-screen',
-        label: 'ارتفاع معياري 300 سم (العرض حسب الطلب)',
-        widthCm: 250,
-        heightCm: 300,
-        price: 0,
-      },
-    ],
+    sizes: [],
     care: ['تنظيف جاف بالفرشاة أو مسح رطب خفيف', 'مقاوم للبقع والبهتان'],
     features: [
+      'تفصيل دقيق حسب المقاس (العرض × الطول)',
+      'سعر مباشر حسب المساحة: 20 د.أ لكل متر مربع',
       'آلية سحب بحبل متين وسلس',
       'كسر وهج الشاشات وحفظ الإطلالة الخارجية',
-      'ارتفاع معياري معروض: 300 سم',
-      'السعر عند الاستفسار عبر واتساب',
     ],
     isFeatured: true,
   },

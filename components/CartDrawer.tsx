@@ -200,7 +200,7 @@ export default function CartDrawer() {
 
               {/* Subtotal */}
               <div className="flex items-center justify-between text-sm">
-                <span className="text-[#D8C6AE]">مجموع الستائر الجاهزة:</span>
+                <span className="text-[#D8C6AE]">مجموع المنتجات:</span>
                 <span className="text-xl font-bold text-[#F5EFE6] tabular-nums">
                   {subtotal}{' '}
                   <span className="text-xs font-normal text-[#C8AA78]">

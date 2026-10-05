@@ -77,7 +77,11 @@ export default function CheckoutModal() {
       const opts = [item.curtainStyle, item.fabricChoice, item.liningOption].filter(Boolean).join('، ');
       const nameWithOpts = opts ? `${item.productName} (${opts})` : item.productName;
 
-      if (item.isUnpriced) {
+      if (item.productId === 'roller-screen') {
+        productLines.push(
+          `• رول سكرين — ${item.color.name} — ${item.size.widthCm}×${item.size.heightCm} سم — عدد ${item.quantity} — ${lineTotal} د.أ`
+        );
+      } else if (item.isUnpriced) {
         productLines.push(
           `• ${nameWithOpts} — ${item.color.name} — ${item.size.label} — عدد ${item.quantity} — السعر عند الاستفسار`
         );
@@ -106,7 +110,7 @@ export default function CheckoutModal() {
     // Subtotal (only if priced ready-made items exist) & Delivery
     lines.push(``);
     if (pricedReadyMadeItems.length > 0) {
-      lines.push(`مجموع الجاهز: ${subtotal} د.أ`);
+      lines.push(`مجموع المنتجات: ${subtotal} د.أ`);
     }
     lines.push(`التوصيل: يُحدد بالتواصل.`);
 

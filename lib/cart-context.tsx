@@ -137,12 +137,15 @@ const cartStore = {
     const curtainStyle = options?.curtainStyle || (curtainType !== 'roller' ? 'ويفي' : undefined);
     const liningOption = options?.liningOption || (curtainType !== 'roller' ? 'بطانة 50%' : undefined);
 
-    const isUnpriced = curtainType === 'roller' || Boolean(product.isUnpriced);
+    const isScreenScreen = product.id === 'roller-screen';
+    const isUnpriced = isScreenScreen ? false : (curtainType === 'roller' || Boolean(product.isUnpriced));
     const unitPrice = isUnpriced ? 0 : size.price;
 
     const styleKey = curtainStyle || '';
     const liningKey = liningOption || '';
-    const compositeId = `${curtainType}_${fabricId}_${color.id}_${size.id}_${styleKey}_${liningKey}`;
+    const compositeId = isScreenScreen
+      ? `roller_screen_${color.id}_${size.widthCm || 0}_${size.heightCm || 0}`
+      : `${curtainType}_${fabricId}_${color.id}_${size.id}_${styleKey}_${liningKey}`;
 
     const existingIndex = memoryCart.findIndex((item) => item.id === compositeId);
     if (existingIndex > -1) {

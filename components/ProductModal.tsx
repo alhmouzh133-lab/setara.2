@@ -12,6 +12,8 @@ import {
   CENTRAL_COLORS,
   resolveCurtainImage,
   getWhatsAppUrl,
+  SCREEN_COLORS,
+  ScreenColorOption,
 } from '@/lib/shop-data';
 import { useCart } from '@/lib/cart-context';
 import {
@@ -49,6 +51,20 @@ interface ProductModalContentProps {
 
 function ProductModalContent({ product, onClose, onAddToCart }: ProductModalContentProps) {
   const isElectricProduct = product.id === 'curtain-electric' || product.curtainType === 'electric';
+  const isMadeToMeasureScreen = Boolean(product.isMadeToMeasureScreen);
+  const screenColors = product.screenColors || SCREEN_COLORS;
+
+  const [selectedScreenColor, setSelectedScreenColor] = useState<ScreenColorOption>(
+    screenColors[0]
+  );
+  const [widthCm, setWidthCm] = useState<string>('');
+  const [heightCm, setHeightCm] = useState<string>('');
+
+  const numWidth = parseFloat(widthCm) || 0;
+  const numHeight = parseFloat(heightCm) || 0;
+  const hasValidDimensions = numWidth > 0 && numHeight > 0;
+  const areaM2 = hasValidDimensions ? (numWidth * numHeight) / 10000 : 0;
+  const unitPricePerPiece = hasValidDimensions ? areaM2 * 20 : 0;
 
   // 1. Curtain Type Selection (electric / manual / roller)
   // Electric product is fixed to 'electric' and cannot be switched
@@ -97,19 +113,29 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
   // Fabric and color changes NEVER alter these prices!
   const isRoller = !isElectricProduct && curtainType === 'roller';
   const unitPrice = isRoller ? null : (isElectricProduct || curtainType === 'electric') ? 120 : 70;
-  const totalPrice = unitPrice ? unitPrice * quantity : null;
+  const totalPrice = isMadeToMeasureScreen
+    ? unitPricePerPiece * quantity
+    : unitPrice
+    ? unitPrice * quantity
+    : null;
 
   const curtainTypeName = isElectricProduct
     ? 'ستائر كهربائية'
+    : isMadeToMeasureScreen
+    ? 'رول سكرين'
     : curtainType === 'electric'
     ? 'ستائر كهربائية'
     : curtainType === 'manual'
     ? 'ستارة عادية'
     : 'ستارة رول';
 
+  const displayFabricName = isMadeToMeasureScreen ? selectedScreenColor.name : currentFabric.name;
+
   // 6. Stable Image Resolution Engine
-  // Resolves displayed image from: curtainType + fabricId + color.id + style + lining
   const targetImageUrl = useMemo(() => {
+    if (isMadeToMeasureScreen) {
+      return selectedScreenColor.image;
+    }
     return resolveCurtainImage(
       curtainType,
       fabricId,
@@ -117,19 +143,19 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
       !isRoller ? selectedStyle : undefined,
       !isRoller ? selectedLining : undefined
     );
-  }, [curtainType, fabricId, selectedColor.id, isRoller, selectedStyle, selectedLining]);
+  }, [isMadeToMeasureScreen, selectedScreenColor, curtainType, fabricId, selectedColor.id, isRoller, selectedStyle, selectedLining]);
 
   // Active committed display state (strictly in sync with the image actually shown)
   const [displayed, setDisplayed] = useState({
     curtainType,
     curtainTypeName,
     fabricId,
-    fabricName: currentFabric.name,
-    colorId: selectedColor.id,
-    colorName: selectedColor.name,
-    colorHex: selectedColor.hex,
-    style: !isRoller ? selectedStyle : undefined,
-    lining: !isRoller ? selectedLining : undefined,
+    fabricName: displayFabricName,
+    colorId: isMadeToMeasureScreen ? selectedScreenColor.id : selectedColor.id,
+    colorName: isMadeToMeasureScreen ? selectedScreenColor.name : selectedColor.name,
+    colorHex: isMadeToMeasureScreen ? selectedScreenColor.hex : selectedColor.hex,
+    style: !isRoller && !isMadeToMeasureScreen ? selectedStyle : undefined,
+    lining: !isRoller && !isMadeToMeasureScreen ? selectedLining : undefined,
     imageUrl: targetImageUrl,
   });
 
@@ -158,12 +184,12 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
             curtainType,
             curtainTypeName,
             fabricId,
-            fabricName: currentFabric.name,
-            colorId: selectedColor.id,
-            colorName: selectedColor.name,
-            colorHex: selectedColor.hex,
-            style: !isRoller ? selectedStyle : undefined,
-            lining: !isRoller ? selectedLining : undefined,
+            fabricName: displayFabricName,
+            colorId: isMadeToMeasureScreen ? selectedScreenColor.id : selectedColor.id,
+            colorName: isMadeToMeasureScreen ? selectedScreenColor.name : selectedColor.name,
+            colorHex: isMadeToMeasureScreen ? selectedScreenColor.hex : selectedColor.hex,
+            style: !isRoller && !isMadeToMeasureScreen ? selectedStyle : undefined,
+            lining: !isRoller && !isMadeToMeasureScreen ? selectedLining : undefined,
             imageUrl: targetImageUrl,
           });
           setFailedUrl(null);
@@ -194,7 +220,7 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
     curtainType,
     curtainTypeName,
     fabricId,
-    currentFabric.name,
+    displayFabricName,
     selectedColor.id,
     selectedColor.name,
     selectedColor.hex,
@@ -202,6 +228,8 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
     selectedStyle,
     selectedLining,
     displayed.imageUrl,
+    isMadeToMeasureScreen,
+    selectedScreenColor,
   ]);
 
   // Handlers for switching
@@ -223,8 +251,8 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
 
   // WhatsApp direct inquiry action
   const handleWhatsAppInquiry = () => {
-    const heightStr = 'ارتفاع 300 سم';
-    const message = `مرحباً متجر سيتارة، أود الاستفسار عن ${curtainTypeName} (القماش: ${currentFabric.name}، اللون: ${selectedColor.name}، ${heightStr}، عدد: ${quantity} قطعة).`;
+    const heightStr = isMadeToMeasureScreen && numHeight ? `ارتفاع ${numHeight} سم` : 'ارتفاع 300 سم';
+    const message = `مرحباً متجر سيتارة، أود الاستفسار عن ${curtainTypeName} (الخامة/النقشة: ${displayFabricName}، ${heightStr}، عدد: ${quantity} قطعة).`;
     const targetUrl = getWhatsAppUrl(message);
     window.open(targetUrl, '_blank', 'noopener,noreferrer');
   };
@@ -232,6 +260,41 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
   // Add to cart action
   const handleAdd = () => {
     setValidationError(null);
+
+    if (isMadeToMeasureScreen) {
+      if (!hasValidDimensions) {
+        setValidationError('يرجى إدخال قيم صحيحة وموجبة للعرض والطول قبل الإضافة للسلة.');
+        return;
+      }
+
+      onAddToCart(
+        product,
+        {
+          id: selectedScreenColor.id,
+          name: selectedScreenColor.name,
+          hex: selectedScreenColor.hex,
+          image: selectedScreenColor.image,
+          gallery: [selectedScreenColor.image],
+        },
+        {
+          id: `screen_${numWidth}_${numHeight}`,
+          label: `${numWidth} × ${numHeight} سم (${areaM2.toFixed(2)} م²)`,
+          widthCm: numWidth,
+          heightCm: numHeight,
+          price: unitPricePerPiece,
+        },
+        quantity,
+        {
+          curtainType: 'roller',
+          curtainTypeName: 'رول سكرين',
+          fabricId: 'screen',
+          fabricName: `${selectedScreenColor.name} (${selectedScreenColor.sampleCode})`,
+          resolvedImage: selectedScreenColor.image,
+        }
+      );
+      onClose();
+      return;
+    }
 
     const sizeToUse: SizeOption = isRoller
       ? {
@@ -413,159 +476,38 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
               </span>
             </div>
 
-            {/* 1. SELECTION: CURTAIN TYPE (Shown only for non-electric cards) */}
-            {!isElectricProduct && (
-              <div className="mt-5">
-                <label className="text-xs font-bold text-[#F5EFE6] block mb-1.5">
-                  1. نوع الستارة وآلية التشغيل
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleSelectType('electric')}
-                    className={`p-2 rounded-lg border text-xs text-center transition-all cursor-pointer ${
-                      curtainType === 'electric'
-                        ? 'bg-[#2E251F] border-[#C8AA78] text-[#F5EFE6] font-bold shadow-xs'
-                        : 'bg-[#171513] border-white/10 text-[#D8C6AE] hover:border-white/30'
-                    }`}
-                  >
-                    <span className="block font-bold">كهربائية</span>
-                    <span className="text-[10px] text-[#C8AA78] block mt-0.5">120 د.أ</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleSelectType('manual')}
-                    className={`p-2 rounded-lg border text-xs text-center transition-all cursor-pointer ${
-                      curtainType === 'manual'
-                        ? 'bg-[#2E251F] border-[#C8AA78] text-[#F5EFE6] font-bold shadow-xs'
-                        : 'bg-[#171513] border-white/10 text-[#D8C6AE] hover:border-white/30'
-                    }`}
-                  >
-                    <span className="block font-bold">عادية</span>
-                    <span className="text-[10px] text-[#C8AA78] block mt-0.5">70 د.أ</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleSelectType('roller')}
-                    className={`p-2 rounded-lg border text-xs text-center transition-all cursor-pointer ${
-                      curtainType === 'roller'
-                        ? 'bg-[#2E251F] border-[#C8AA78] text-[#F5EFE6] font-bold shadow-xs'
-                        : 'bg-[#171513] border-white/10 text-[#D8C6AE] hover:border-white/30'
-                    }`}
-                  >
-                    <span className="block font-bold">ستارة رول</span>
-                    <span className="text-[10px] text-[#D8C6AE]/70 block mt-0.5">عند الاستفسار</span>
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* SELECTION: FABRIC (Numbered 1 for electric, 2 for others) */}
-            <div className="mt-5">
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-bold text-[#F5EFE6] flex items-center gap-1">
-                  <Layers className="w-3.5 h-3.5 text-[#C8AA78]" />
-                  <span>
-                    {isElectricProduct ? '1. خامة القماش' : '2. خامة القماش (مشتركة لكافة الأنواع)'}
-                  </span>
-                </label>
-                <span className="text-xs text-[#C8AA78] font-semibold">{currentFabric.name}</span>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {availableFabrics.map((fabric) => {
-                  const isSelected = fabricId === fabric.id;
-                  return (
-                    <button
-                      key={fabric.id}
-                      type="button"
-                      onClick={() => handleSelectFabric(fabric.id)}
-                      className={`p-2.5 rounded-lg border text-right transition-all cursor-pointer ${
-                        isSelected
-                          ? 'bg-[#2E251F] border-[#C8AA78] text-[#F5EFE6] font-bold shadow-xs ring-1 ring-[#C8AA78]/50'
-                          : 'bg-[#171513] border-white/10 text-[#D8C6AE] hover:border-white/30'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold">{fabric.name}</span>
-                        {isSelected && <Check className="w-3.5 h-3.5 text-[#C8AA78] shrink-0" />}
-                      </div>
-                      <span className="text-[10px] text-[#D8C6AE]/60 block mt-0.5 line-clamp-1">
-                        {fabric.badge}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* SELECTION: COLOR (Numbered 2 for electric, 3 for others) */}
-            <div className="mt-5">
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-bold text-[#F5EFE6] flex items-center gap-1.5">
-                  <span>{isElectricProduct ? '2. اختر اللون' : '3. اختر اللون'}</span>
-                  <span className="text-red-400">*</span>
-                </label>
-                <span className="text-xs text-[#C8AA78] font-semibold">
-                  {selectedColor.name}
-                </span>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                {CENTRAL_COLORS.map((color) => {
-                  const isSelected = selectedColor.id === color.id;
-                  return (
-                    <button
-                      key={color.id}
-                      type="button"
-                      onClick={() => handleSelectColor(color)}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all cursor-pointer ${
-                        isSelected
-                          ? 'bg-[#2E251F] border-[#C8AA78] text-[#F5EFE6] shadow-sm ring-1 ring-[#C8AA78]'
-                          : 'bg-[#171513] border-white/10 text-[#D8C6AE] hover:border-white/30'
-                      }`}
-                    >
-                      <span
-                        className="w-3.5 h-3.5 rounded-full border border-black/30 shrink-0"
-                        style={{ backgroundColor: color.hex }}
-                      />
-                      <span>{color.name}</span>
-                      {isSelected && <Check className="w-3.5 h-3.5 text-[#C8AA78]" />}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* SELECTION: STYLE & LINING (For Fabric Curtains) */}
-            {!isRoller && (
-              <div className="space-y-4 mt-5 pt-3 border-t border-white/5">
-                {/* Style: Wave vs American */}
+            {/* IS MADE TO MEASURE SCREEN UI OR STANDARD CURTAIN OPTIONS */}
+            {isMadeToMeasureScreen ? (
+              <div className="space-y-4 mt-4">
+                {/* 1. Color / Pattern Selection */}
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-xs font-bold text-[#F5EFE6]">
-                      {isElectricProduct ? '3. طريقة التفصيل (الموديل)' : '4. طريقة التفصيل (الموديل)'}
+                    <label className="text-xs font-bold text-[#F5EFE6] flex items-center gap-1.5">
+                      <span>1. اختر اللون أو النقشة</span>
+                      <span className="text-red-400">*</span>
                     </label>
-                    <span className="text-xs text-[#C8AA78] font-semibold">{selectedStyle}</span>
+                    <span className="text-xs text-[#C8AA78] font-semibold">{selectedScreenColor.name}</span>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
-                    {['ويفي', 'أمريكي'].map((style) => {
-                      const isSelected = selectedStyle === style;
+                    {screenColors.map((sc) => {
+                      const isSelected = selectedScreenColor.id === sc.id;
                       return (
                         <button
-                          key={style}
+                          key={sc.id}
                           type="button"
-                          onClick={() => setSelectedStyle(style)}
-                          className={`p-2 rounded-lg border text-xs text-center transition-all cursor-pointer ${
+                          onClick={() => setSelectedScreenColor(sc)}
+                          className={`p-2.5 rounded-lg border text-right transition-all cursor-pointer ${
                             isSelected
-                              ? 'bg-[#2E251F] border-[#C8AA78] text-[#F5EFE6] font-bold shadow-xs'
+                              ? 'bg-[#2E251F] border-[#C8AA78] text-[#F5EFE6] font-bold shadow-xs ring-1 ring-[#C8AA78]/50'
                               : 'bg-[#171513] border-white/10 text-[#D8C6AE] hover:border-white/30'
                           }`}
                         >
-                          <span className="font-bold">{style}</span>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold">{sc.name}</span>
+                            {isSelected && <Check className="w-3.5 h-3.5 text-[#C8AA78] shrink-0" />}
+                          </div>
                           <span className="text-[10px] text-[#D8C6AE]/60 block mt-0.5">
-                            {style === 'ويفي' ? 'ثنيات انسيابية متوازنة' : 'طيات أمريكية كلاسيكية'}
+                            رمز: {sc.sampleCode}
                           </span>
                         </button>
                       );
@@ -573,35 +515,257 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
                   </div>
                 </div>
 
-                {/* Lining: 50%, 80%, 100% */}
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-xs font-bold text-[#F5EFE6]">
-                      {isElectricProduct ? '4. خيار البطانة والعزل' : '5. خيار البطانة والعزل'}
+                {/* 2. Width & Height Inputs */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-bold text-[#F5EFE6] block mb-1">
+                      2. العرض (سم) <span className="text-red-400">*</span>
                     </label>
-                    <span className="text-xs text-[#C8AA78] font-semibold">{selectedLining}</span>
+                    <input
+                      type="number"
+                      min="1"
+                      max="1000"
+                      value={widthCm}
+                      onChange={(e) => {
+                        setWidthCm(e.target.value);
+                        setValidationError(null);
+                      }}
+                      placeholder="مثال: 150"
+                      className="w-full px-3 py-2 bg-[#171513] border border-white/10 rounded-lg text-sm text-[#F5EFE6] focus:border-[#C8AA78] outline-none tabular-nums"
+                    />
                   </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    {['بطانة 50%', 'بطانة 80%', 'تعتيم 100% — Blackout'].map((lining) => {
-                      const isSelected = selectedLining === lining;
+                  <div>
+                    <label className="text-xs font-bold text-[#F5EFE6] block mb-1">
+                      3. الطول / الارتفاع (سم) <span className="text-red-400">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="1000"
+                      value={heightCm}
+                      onChange={(e) => {
+                        setHeightCm(e.target.value);
+                        setValidationError(null);
+                      }}
+                      placeholder="مثال: 200"
+                      className="w-full px-3 py-2 bg-[#171513] border border-white/10 rounded-lg text-sm text-[#F5EFE6] focus:border-[#C8AA78] outline-none tabular-nums"
+                    />
+                  </div>
+                </div>
+
+                {/* Calculation Summary Box */}
+                <div className="p-3.5 bg-[#171513] rounded-lg border border-white/10 space-y-1.5 text-xs">
+                  <div className="flex items-center justify-between text-[#D8C6AE]">
+                    <span>المساحة المحسوبة:</span>
+                    <span className="font-bold text-[#F5EFE6] tabular-nums">
+                      {hasValidDimensions ? `${areaM2.toFixed(2)} م²` : '---'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-[#D8C6AE]">
+                    <span>سعر المتر المربع:</span>
+                    <span className="font-semibold text-[#C8AA78]">20 د.أ / م²</span>
+                  </div>
+                  <div className="flex items-center justify-between pt-1.5 border-t border-white/5">
+                    <span className="font-bold text-[#F5EFE6]">سعر القطعة الواحدة:</span>
+                    <span className="font-extrabold text-[#C8AA78] text-sm tabular-nums">
+                      {hasValidDimensions ? `${unitPricePerPiece.toFixed(2)} د.أ` : 'أدخل المقاسات أولاً'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* 1. SELECTION: CURTAIN TYPE (Shown only for non-electric cards) */}
+                {!isElectricProduct && (
+                  <div className="mt-5">
+                    <label className="text-xs font-bold text-[#F5EFE6] block mb-1.5">
+                      1. نوع الستارة وآلية التشغيل
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleSelectType('electric')}
+                        className={`p-2 rounded-lg border text-xs text-center transition-all cursor-pointer ${
+                          curtainType === 'electric'
+                            ? 'bg-[#2E251F] border-[#C8AA78] text-[#F5EFE6] font-bold shadow-xs'
+                            : 'bg-[#171513] border-white/10 text-[#D8C6AE] hover:border-white/30'
+                        }`}
+                      >
+                        <span className="block font-bold">كهربائية</span>
+                        <span className="text-[10px] text-[#C8AA78] block mt-0.5">120 د.أ</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleSelectType('manual')}
+                        className={`p-2 rounded-lg border text-xs text-center transition-all cursor-pointer ${
+                          curtainType === 'manual'
+                            ? 'bg-[#2E251F] border-[#C8AA78] text-[#F5EFE6] font-bold shadow-xs'
+                            : 'bg-[#171513] border-white/10 text-[#D8C6AE] hover:border-white/30'
+                        }`}
+                      >
+                        <span className="block font-bold">عادية</span>
+                        <span className="text-[10px] text-[#C8AA78] block mt-0.5">70 د.أ</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleSelectType('roller')}
+                        className={`p-2 rounded-lg border text-xs text-center transition-all cursor-pointer ${
+                          curtainType === 'roller'
+                            ? 'bg-[#2E251F] border-[#C8AA78] text-[#F5EFE6] font-bold shadow-xs'
+                            : 'bg-[#171513] border-white/10 text-[#D8C6AE] hover:border-white/30'
+                        }`}
+                      >
+                        <span className="block font-bold">ستارة رول</span>
+                        <span className="text-[10px] text-[#D8C6AE]/70 block mt-0.5">عند الاستفسار</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* SELECTION: FABRIC (Numbered 1 for electric, 2 for others) */}
+                <div className="mt-5">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-bold text-[#F5EFE6] flex items-center gap-1">
+                      <Layers className="w-3.5 h-3.5 text-[#C8AA78]" />
+                      <span>
+                        {isElectricProduct ? '1. خامة القماش' : '2. خامة القماش (مشتركة لكافة الأنواع)'}
+                      </span>
+                    </label>
+                    <span className="text-xs text-[#C8AA78] font-semibold">{currentFabric.name}</span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {availableFabrics.map((fabric) => {
+                      const isSelected = fabricId === fabric.id;
                       return (
                         <button
-                          key={lining}
+                          key={fabric.id}
                           type="button"
-                          onClick={() => setSelectedLining(lining)}
-                          className={`p-2 rounded-lg border text-[11px] text-center transition-all cursor-pointer ${
+                          onClick={() => handleSelectFabric(fabric.id)}
+                          className={`p-2.5 rounded-lg border text-right transition-all cursor-pointer ${
                             isSelected
-                              ? 'bg-[#2E251F] border-[#C8AA78] text-[#F5EFE6] font-bold shadow-xs'
+                              ? 'bg-[#2E251F] border-[#C8AA78] text-[#F5EFE6] font-bold shadow-xs ring-1 ring-[#C8AA78]/50'
                               : 'bg-[#171513] border-white/10 text-[#D8C6AE] hover:border-white/30'
                           }`}
                         >
-                          <span>{lining}</span>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold">{fabric.name}</span>
+                            {isSelected && <Check className="w-3.5 h-3.5 text-[#C8AA78] shrink-0" />}
+                          </div>
+                          <span className="text-[10px] text-[#D8C6AE]/60 block mt-0.5 line-clamp-1">
+                            {fabric.badge}
+                          </span>
                         </button>
                       );
                     })}
                   </div>
                 </div>
-              </div>
+
+                {/* SELECTION: COLOR (Numbered 2 for electric, 3 for others) */}
+                <div className="mt-5">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-bold text-[#F5EFE6] flex items-center gap-1.5">
+                      <span>{isElectricProduct ? '2. اختر اللون' : '3. اختر اللون'}</span>
+                      <span className="text-red-400">*</span>
+                    </label>
+                    <span className="text-xs text-[#C8AA78] font-semibold">
+                      {selectedColor.name}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {CENTRAL_COLORS.map((color) => {
+                      const isSelected = selectedColor.id === color.id;
+                      return (
+                        <button
+                          key={color.id}
+                          type="button"
+                          onClick={() => handleSelectColor(color)}
+                          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-[#2E251F] border-[#C8AA78] text-[#F5EFE6] shadow-sm ring-1 ring-[#C8AA78]'
+                              : 'bg-[#171513] border-white/10 text-[#D8C6AE] hover:border-white/30'
+                          }`}
+                        >
+                          <span
+                            className="w-3.5 h-3.5 rounded-full border border-black/30 shrink-0"
+                            style={{ backgroundColor: color.hex }}
+                          />
+                          <span>{color.name}</span>
+                          {isSelected && <Check className="w-3.5 h-3.5 text-[#C8AA78]" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* SELECTION: STYLE & LINING (For Fabric Curtains) */}
+                {!isRoller && (
+                  <div className="space-y-4 mt-5 pt-3 border-t border-white/5">
+                    {/* Style: Wave vs American */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-xs font-bold text-[#F5EFE6]">
+                          {isElectricProduct ? '3. طريقة التفصيل (الموديل)' : '4. طريقة التفصيل (الموديل)'}
+                        </label>
+                        <span className="text-xs text-[#C8AA78] font-semibold">{selectedStyle}</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        {['ويفي', 'أمريكي'].map((style) => {
+                          const isSelected = selectedStyle === style;
+                          return (
+                            <button
+                              key={style}
+                              type="button"
+                              onClick={() => setSelectedStyle(style)}
+                              className={`p-2 rounded-lg border text-xs text-center transition-all cursor-pointer ${
+                                isSelected
+                                  ? 'bg-[#2E251F] border-[#C8AA78] text-[#F5EFE6] font-bold shadow-xs'
+                                  : 'bg-[#171513] border-white/10 text-[#D8C6AE] hover:border-white/30'
+                              }`}
+                            >
+                              <span className="font-bold">{style}</span>
+                              <span className="text-[10px] text-[#D8C6AE]/60 block mt-0.5">
+                                {style === 'ويفي' ? 'ثنيات انسيابية متوازنة' : 'طيات أمريكية كلاسيكية'}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Lining: 50%, 80%, 100% */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-xs font-bold text-[#F5EFE6]">
+                          {isElectricProduct ? '4. خيار البطانة والعزل' : '5. خيار البطانة والعزل'}
+                        </label>
+                        <span className="text-xs text-[#C8AA78] font-semibold">{selectedLining}</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        {['بطانة 50%', 'بطانة 80%', 'تعتيم 100% — Blackout'].map((lining) => {
+                          const isSelected = selectedLining === lining;
+                          return (
+                            <button
+                              key={lining}
+                              type="button"
+                              onClick={() => setSelectedLining(lining)}
+                              className={`p-2 rounded-lg border text-[11px] text-center transition-all cursor-pointer ${
+                                isSelected
+                                  ? 'bg-[#2E251F] border-[#C8AA78] text-[#F5EFE6] font-bold shadow-xs'
+                                  : 'bg-[#171513] border-white/10 text-[#D8C6AE] hover:border-white/30'
+                              }`}
+                            >
+                              <span>{lining}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
 
             {/* Standard Dimensions Info */}
@@ -611,7 +775,7 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
                 <span className="text-[#D8C6AE]/75">المقاس المعروض:</span>
               </div>
               <span className="font-bold text-[#F5EFE6]">
-                {isRoller ? 'ارتفاع 300 سم (العرض حسب مساحة نافذتك)' : '250 سم عرض × 300 سم ارتفاع'}
+                {isMadeToMeasureScreen ? 'تفصيل دقيق حسب مقاس نافذتك (العرض × الطول)' : isRoller ? 'ارتفاع 300 سم (العرض حسب مساحة نافذتك)' : '250 سم عرض × 300 سم ارتفاع'}
               </span>
             </div>
 
@@ -652,7 +816,21 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
 
           {/* Modal Bottom CTA */}
           <div className="mt-6 pt-4 border-t border-white/10 space-y-2">
-            {isRoller ? (
+            {isMadeToMeasureScreen ? (
+              <button
+                type="button"
+                onClick={handleAdd}
+                disabled={!hasValidDimensions}
+                className="w-full py-3.5 px-6 rounded-lg bg-[#C8AA78] hover:bg-[#d5ba8c] disabled:opacity-40 text-[#171513] font-bold text-sm sm:text-base flex items-center justify-center gap-2 transition-all shadow-md active:scale-[0.99] cursor-pointer"
+              >
+                <ShoppingBag className="w-4 h-4" />
+                <span>
+                  {hasValidDimensions
+                    ? `إضافة إلى السلة · ${totalPrice?.toFixed(2)} ${SHOP_CONFIG.currencySymbol}`
+                    : 'يرجى إدخال العرض والطول أولاً'}
+                </span>
+              </button>
+            ) : isRoller ? (
               <>
                 {/* Primary WhatsApp Action for Roller */}
                 <button
