@@ -138,13 +138,20 @@ const cartStore = {
     const liningOption = options?.liningOption || (curtainType !== 'roller' ? 'بطانة 50%' : undefined);
 
     const isScreenScreen = product.id === 'roller-screen';
-    const isUnpriced = isScreenScreen ? false : (curtainType === 'roller' || Boolean(product.isUnpriced));
+    const isBlackoutCustom = product.id === 'roller-blackout';
+    const isZebraCustom = product.id === 'roller-zebra';
+    const isPricedRoller = isScreenScreen || isBlackoutCustom || isZebraCustom;
+    const isUnpriced = isPricedRoller ? false : (curtainType === 'roller' || Boolean(product.isUnpriced));
     const unitPrice = isUnpriced ? 0 : size.price;
 
     const styleKey = curtainStyle || '';
     const liningKey = liningOption || '';
     const compositeId = isScreenScreen
       ? `roller_screen_${color.id}_${size.widthCm || 0}_${size.heightCm || 0}`
+      : isBlackoutCustom
+      ? `roller_blackout_${color.id}_${size.widthCm || 0}_${size.heightCm || 0}`
+      : isZebraCustom
+      ? `roller_zebra_${(fabricName || '').replace(/\s+/g, '_')}_${color.id}_${size.widthCm || 0}_${size.heightCm || 0}`
       : `${curtainType}_${fabricId}_${color.id}_${size.id}_${styleKey}_${liningKey}`;
 
     const existingIndex = memoryCart.findIndex((item) => item.id === compositeId);

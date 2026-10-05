@@ -11,9 +11,16 @@ import {
   CENTRAL_FABRICS,
   CENTRAL_COLORS,
   resolveCurtainImage,
+  resolveZebraImages,
   getWhatsAppUrl,
   SCREEN_COLORS,
   ScreenColorOption,
+  BLACKOUT_COLORS,
+  BlackoutColorOption,
+  ZEBRA_COLORS,
+  ZebraColorOption,
+  ZEBRA_MODELS,
+  ZebraModelOption,
 } from '@/lib/shop-data';
 import { useCart } from '@/lib/cart-context';
 import {
@@ -52,11 +59,34 @@ interface ProductModalContentProps {
 function ProductModalContent({ product, onClose, onAddToCart }: ProductModalContentProps) {
   const isElectricProduct = product.id === 'curtain-electric' || product.curtainType === 'electric';
   const isMadeToMeasureScreen = Boolean(product.isMadeToMeasureScreen);
+  const isMadeToMeasureBlackout = Boolean(product.isMadeToMeasureBlackout);
+  const isMadeToMeasureZebra = Boolean(product.isMadeToMeasureZebra);
+  const isCustomRoller = isMadeToMeasureScreen || isMadeToMeasureBlackout || isMadeToMeasureZebra;
+
   const screenColors = product.screenColors || SCREEN_COLORS;
+  const blackoutColors = product.blackoutColors || BLACKOUT_COLORS;
+  const zebraModels = product.zebraModels || ZEBRA_MODELS;
+  const zebraColors = product.zebraColors || ZEBRA_COLORS;
 
   const [selectedScreenColor, setSelectedScreenColor] = useState<ScreenColorOption>(
     screenColors[0]
   );
+  const [selectedBlackoutColor, setSelectedBlackoutColor] = useState<BlackoutColorOption>(
+    blackoutColors[0]
+  );
+  const [selectedZebraModel, setSelectedZebraModel] = useState<ZebraModelOption>(
+    zebraModels[0]
+  );
+  const [selectedZebraColor, setSelectedZebraColor] = useState<ZebraColorOption>(
+    zebraColors[0]
+  );
+
+  const activeColorOption = isMadeToMeasureZebra
+    ? selectedZebraColor
+    : isMadeToMeasureBlackout
+    ? selectedBlackoutColor
+    : selectedScreenColor;
+
   const [widthCm, setWidthCm] = useState<string>('');
   const [heightCm, setHeightCm] = useState<string>('');
 
@@ -113,7 +143,7 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
   // Fabric and color changes NEVER alter these prices!
   const isRoller = !isElectricProduct && curtainType === 'roller';
   const unitPrice = isRoller ? null : (isElectricProduct || curtainType === 'electric') ? 120 : 70;
-  const totalPrice = isMadeToMeasureScreen
+  const totalPrice = isCustomRoller
     ? unitPricePerPiece * quantity
     : unitPrice
     ? unitPrice * quantity
@@ -123,18 +153,29 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
     ? 'ستائر كهربائية'
     : isMadeToMeasureScreen
     ? 'رول سكرين'
+    : isMadeToMeasureBlackout
+    ? 'رول بلاك أوت'
+    : isMadeToMeasureZebra
+    ? 'رول زيبرا'
     : curtainType === 'electric'
     ? 'ستائر كهربائية'
     : curtainType === 'manual'
     ? 'ستارة عادية'
     : 'ستارة رول';
 
-  const displayFabricName = isMadeToMeasureScreen ? selectedScreenColor.name : currentFabric.name;
+  const displayFabricName = isCustomRoller ? (isMadeToMeasureZebra ? `${selectedZebraModel.name} — ${activeColorOption.name}` : activeColorOption.name) : currentFabric.name;
 
   // 6. Stable Image Resolution Engine
   const targetImageUrl = useMemo(() => {
     if (isMadeToMeasureScreen) {
-      return selectedScreenColor.image;
+      return selectedScreenColor.installedImage || selectedScreenColor.image;
+    }
+    if (isMadeToMeasureBlackout) {
+      return selectedBlackoutColor.installedImage || selectedBlackoutColor.image;
+    }
+    if (isMadeToMeasureZebra) {
+      const zebraAssets = resolveZebraImages(selectedZebraModel.id, selectedZebraColor.id);
+      return zebraAssets.mainImage;
     }
     return resolveCurtainImage(
       curtainType,
@@ -143,31 +184,61 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
       !isRoller ? selectedStyle : undefined,
       !isRoller ? selectedLining : undefined
     );
-  }, [isMadeToMeasureScreen, selectedScreenColor, curtainType, fabricId, selectedColor.id, isRoller, selectedStyle, selectedLining]);
-
-  // Active committed display state (strictly in sync with the image actually shown)
-  const [displayed, setDisplayed] = useState({
+  }, [
+    isMadeToMeasureScreen,
+    isMadeToMeasureBlackout,
+    isMadeToMeasureZebra,
+    selectedScreenColor,
+    selectedBlackoutColor,
+    selectedZebraModel.id,
+    selectedZebraColor.id,
     curtainType,
-    curtainTypeName,
     fabricId,
-    fabricName: displayFabricName,
-    colorId: isMadeToMeasureScreen ? selectedScreenColor.id : selectedColor.id,
-    colorName: isMadeToMeasureScreen ? selectedScreenColor.name : selectedColor.name,
-    colorHex: isMadeToMeasureScreen ? selectedScreenColor.hex : selectedColor.hex,
-    style: !isRoller && !isMadeToMeasureScreen ? selectedStyle : undefined,
-    lining: !isRoller && !isMadeToMeasureScreen ? selectedLining : undefined,
-    imageUrl: targetImageUrl,
-  });
+    selectedColor.id,
+    isRoller,
+    selectedStyle,
+    selectedLining,
+  ]);
 
+  const fabricDetailImageUrl = useMemo(() => {
+    if (isMadeToMeasureZebra) {
+      return resolveZebraImages(selectedZebraModel.id, selectedZebraColor.id).detailImage;
+    }
+    if (isMadeToMeasureBlackout) {
+      return selectedBlackoutColor.image;
+    }
+    if (isMadeToMeasureScreen) {
+      return selectedScreenColor.image;
+    }
+    return activeColorOption.image;
+  }, [
+    isMadeToMeasureZebra,
+    isMadeToMeasureBlackout,
+    isMadeToMeasureScreen,
+    selectedZebraModel.id,
+    selectedZebraColor.id,
+    selectedBlackoutColor.image,
+    selectedScreenColor.image,
+    activeColorOption.image,
+  ]);
+
+  const activeColorName = isCustomRoller ? activeColorOption.name : selectedColor.name;
+  const activeColorHex = isCustomRoller ? activeColorOption.hex : selectedColor.hex;
+  const activeStyleName = !isRoller && !isCustomRoller ? selectedStyle : undefined;
+  const activeLiningName = !isRoller && !isCustomRoller ? selectedLining : undefined;
+
+  // Track the image currently loaded and displayed
+  const [committedImageUrl, setCommittedImageUrl] = useState<string>(targetImageUrl);
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
-  const isLoading = displayed.imageUrl !== targetImageUrl && failedUrl !== targetImageUrl;
+
+  const isLoading = committedImageUrl !== targetImageUrl && failedUrl !== targetImageUrl;
   const loadError = failedUrl === targetImageUrl;
 
   const activeRequestIdRef = useRef<number>(0);
 
   // Trigger smooth, stable image switch whenever targetImageUrl changes
   useEffect(() => {
-    if (displayed.imageUrl === targetImageUrl) {
+    if (committedImageUrl === targetImageUrl) {
       return;
     }
 
@@ -180,18 +251,7 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
       const commitSuccess = () => {
         // Discard stale older requests during rapid clicking
         if (activeRequestIdRef.current === reqId) {
-          setDisplayed({
-            curtainType,
-            curtainTypeName,
-            fabricId,
-            fabricName: displayFabricName,
-            colorId: isMadeToMeasureScreen ? selectedScreenColor.id : selectedColor.id,
-            colorName: isMadeToMeasureScreen ? selectedScreenColor.name : selectedColor.name,
-            colorHex: isMadeToMeasureScreen ? selectedScreenColor.hex : selectedColor.hex,
-            style: !isRoller && !isMadeToMeasureScreen ? selectedStyle : undefined,
-            lining: !isRoller && !isMadeToMeasureScreen ? selectedLining : undefined,
-            imageUrl: targetImageUrl,
-          });
+          setCommittedImageUrl(targetImageUrl);
           setFailedUrl(null);
         }
       };
@@ -215,22 +275,7 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
         img.onerror = commitError;
       }
     }
-  }, [
-    targetImageUrl,
-    curtainType,
-    curtainTypeName,
-    fabricId,
-    displayFabricName,
-    selectedColor.id,
-    selectedColor.name,
-    selectedColor.hex,
-    isRoller,
-    selectedStyle,
-    selectedLining,
-    displayed.imageUrl,
-    isMadeToMeasureScreen,
-    selectedScreenColor,
-  ]);
+  }, [targetImageUrl, committedImageUrl]);
 
   // Handlers for switching
   const handleSelectType = (type: 'electric' | 'manual' | 'roller') => {
@@ -251,7 +296,7 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
 
   // WhatsApp direct inquiry action
   const handleWhatsAppInquiry = () => {
-    const heightStr = isMadeToMeasureScreen && numHeight ? `ارتفاع ${numHeight} سم` : 'ارتفاع 300 سم';
+    const heightStr = isCustomRoller && numHeight ? `ارتفاع ${numHeight} سم` : 'ارتفاع 300 سم';
     const message = `مرحباً متجر سيتارة، أود الاستفسار عن ${curtainTypeName} (الخامة/النقشة: ${displayFabricName}، ${heightStr}، عدد: ${quantity} قطعة).`;
     const targetUrl = getWhatsAppUrl(message);
     window.open(targetUrl, '_blank', 'noopener,noreferrer');
@@ -261,23 +306,31 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
   const handleAdd = () => {
     setValidationError(null);
 
-    if (isMadeToMeasureScreen) {
+    if (isCustomRoller) {
       if (!hasValidDimensions) {
         setValidationError('يرجى إدخال قيم صحيحة وموجبة للعرض والطول قبل الإضافة للسلة.');
         return;
       }
 
+      const prefix = isMadeToMeasureBlackout ? 'blackout' : isMadeToMeasureZebra ? 'zebra' : 'screen';
+      const typeName = isMadeToMeasureBlackout ? 'رول بلاك أوت' : isMadeToMeasureZebra ? 'رول زيبرا' : 'رول سكرين';
+      const fabricIdName = isMadeToMeasureBlackout ? 'blackout' : isMadeToMeasureZebra ? 'zebra' : 'screen';
+
+      const fabricNameStr = isMadeToMeasureZebra
+        ? `${selectedZebraModel.name} — ${selectedZebraColor.name}`
+        : `${activeColorOption.name}${('sampleCode' in activeColorOption) ? ` (${activeColorOption.sampleCode})` : ''}`;
+
       onAddToCart(
         product,
         {
-          id: selectedScreenColor.id,
-          name: selectedScreenColor.name,
-          hex: selectedScreenColor.hex,
-          image: selectedScreenColor.image,
-          gallery: [selectedScreenColor.image],
+          id: activeColorOption.id,
+          name: activeColorOption.name,
+          hex: activeColorOption.hex,
+          image: targetImageUrl || activeColorOption.image,
+          gallery: [targetImageUrl, fabricDetailImageUrl].filter(Boolean),
         },
         {
-          id: `screen_${numWidth}_${numHeight}`,
+          id: `${prefix}_${numWidth}_${numHeight}`,
           label: `${numWidth} × ${numHeight} سم (${areaM2.toFixed(2)} م²)`,
           widthCm: numWidth,
           heightCm: numHeight,
@@ -286,10 +339,10 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
         quantity,
         {
           curtainType: 'roller',
-          curtainTypeName: 'رول سكرين',
-          fabricId: 'screen',
-          fabricName: `${selectedScreenColor.name} (${selectedScreenColor.sampleCode})`,
-          resolvedImage: selectedScreenColor.image,
+          curtainTypeName: typeName,
+          fabricId: fabricIdName,
+          fabricName: fabricNameStr,
+          resolvedImage: targetImageUrl,
         }
       );
       onClose();
@@ -324,7 +377,7 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
         fabricName: currentFabric.name,
         curtainStyle: !isRoller ? selectedStyle : undefined,
         liningOption: !isRoller ? selectedLining : undefined,
-        resolvedImage: displayed.imageUrl,
+        resolvedImage: targetImageUrl,
       }
     );
     onClose();
@@ -351,8 +404,8 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
           <div className="relative aspect-[4/3] w-full rounded-lg overflow-hidden bg-[#2A231E] border border-white/10 shadow-inner">
             {/* Currently Committed Visible Image */}
             <Image
-              src={displayed.imageUrl}
-              alt={`${displayed.curtainTypeName} - ${displayed.fabricName} - ${displayed.colorName}`}
+              src={committedImageUrl}
+              alt={`${curtainTypeName} - ${displayFabricName} - ${activeColorName}`}
               fill
               sizes="(max-width: 768px) 100vw, 50vw"
               className="object-cover object-center select-none"
@@ -363,19 +416,19 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
             {/* Badges strictly matching the displayed image */}
             <div className="absolute top-3 right-3 flex flex-wrap gap-1.5 max-w-[85%]">
               <span className="px-2.5 py-1 text-[11px] font-bold text-[#171513] bg-[#C8AA78] rounded-md shadow-xs">
-                {displayed.curtainTypeName}
+                {curtainTypeName}
               </span>
               <span className="px-2 py-1 text-[11px] font-semibold text-[#F5EFE6] bg-[#171513]/85 backdrop-blur-xs rounded-md border border-white/10">
-                {displayed.fabricName}
+                {displayFabricName}
               </span>
-              {displayed.style && (
+              {activeStyleName && (
                 <span className="px-2 py-1 text-[11px] font-medium text-[#D8C6AE] bg-[#171513]/85 backdrop-blur-xs rounded-md border border-white/10">
-                  {displayed.style}
+                  {activeStyleName}
                 </span>
               )}
-              {displayed.lining && (
+              {activeLiningName && (
                 <span className="px-2 py-1 text-[11px] font-medium text-[#C8AA78] bg-[#171513]/85 backdrop-blur-xs rounded-md border border-white/10">
-                  {displayed.lining}
+                  {activeLiningName}
                 </span>
               )}
             </div>
@@ -403,15 +456,36 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
             <span className="flex items-center gap-1.5">
               <span
                 className="w-3 h-3 rounded-full border border-black/40"
-                style={{ backgroundColor: displayed.colorHex }}
+                style={{ backgroundColor: activeColorHex }}
               />
-              <span>معاينة اللون: <strong className="text-[#F5EFE6]">{displayed.colorName}</strong></span>
+              <span>معاينة اللون: <strong className="text-[#F5EFE6]">{activeColorName}</strong></span>
             </span>
             <span>
-              الخامة: <strong className="text-[#C8AA78]">{displayed.fabricName}</strong>
-              {displayed.style && <span className="text-[#D8C6AE]/70"> ({displayed.style})</span>}
+              الخامة: <strong className="text-[#C8AA78]">{displayFabricName}</strong>
+              {activeStyleName && <span className="text-[#D8C6AE]/70"> ({activeStyleName})</span>}
             </span>
           </div>
+
+          {isCustomRoller && (
+            <div className="mt-4 p-3 bg-[#171513] rounded-lg border border-white/10 space-y-2">
+              <span className="text-[11px] font-bold text-[#C8AA78] block">
+                🔎 عينة نسيج القماش الفعلية (تفاصيل عن قرب):
+              </span>
+              <div className="relative aspect-[3/1] w-full rounded-md overflow-hidden bg-[#2A231E] border border-white/5">
+                <Image
+                  src={fabricDetailImageUrl}
+                  alt={`عينة نسيج ${displayFabricName || activeColorName}`}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 300px"
+                  className="object-cover object-center"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+              <p className="text-[10px] text-[#D8C6AE]/60 text-center">
+                توضح الصورة أعلاه نسيج وتفاصيل ولون مادة الستارة الفعلية بدقة فائقة.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Specifications Summary */}
@@ -476,50 +550,130 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
               </span>
             </div>
 
-            {/* IS MADE TO MEASURE SCREEN UI OR STANDARD CURTAIN OPTIONS */}
-            {isMadeToMeasureScreen ? (
+            {/* IS CUSTOM ROLLER UI (SCREEN OR BLACKOUT) OR STANDARD CURTAIN OPTIONS */}
+            {isCustomRoller ? (
               <div className="space-y-4 mt-4">
-                {/* 1. Color / Pattern Selection */}
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-xs font-bold text-[#F5EFE6] flex items-center gap-1.5">
-                      <span>1. اختر اللون أو النقشة</span>
-                      <span className="text-red-400">*</span>
-                    </label>
-                    <span className="text-xs text-[#C8AA78] font-semibold">{selectedScreenColor.name}</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    {screenColors.map((sc) => {
-                      const isSelected = selectedScreenColor.id === sc.id;
-                      return (
-                        <button
-                          key={sc.id}
-                          type="button"
-                          onClick={() => setSelectedScreenColor(sc)}
-                          className={`p-2.5 rounded-lg border text-right transition-all cursor-pointer ${
-                            isSelected
-                              ? 'bg-[#2E251F] border-[#C8AA78] text-[#F5EFE6] font-bold shadow-xs ring-1 ring-[#C8AA78]/50'
-                              : 'bg-[#171513] border-white/10 text-[#D8C6AE] hover:border-white/30'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold">{sc.name}</span>
-                            {isSelected && <Check className="w-3.5 h-3.5 text-[#C8AA78] shrink-0" />}
-                          </div>
-                          <span className="text-[10px] text-[#D8C6AE]/60 block mt-0.5">
-                            رمز: {sc.sampleCode}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
+                {isMadeToMeasureZebra ? (
+                  <>
+                    {/* 1. Zebra Model Selection */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-xs font-bold text-[#F5EFE6] flex items-center gap-1.5">
+                          <span>1. موديل الزيبرا</span>
+                          <span className="text-red-400">*</span>
+                        </label>
+                        <span className="text-xs text-[#C8AA78] font-semibold">{selectedZebraModel.name}</span>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {zebraModels.map((model) => {
+                          const isSelected = selectedZebraModel.id === model.id;
+                          return (
+                            <button
+                              key={model.id}
+                              type="button"
+                              onClick={() => setSelectedZebraModel(model)}
+                              className={`p-2.5 rounded-lg border text-right transition-all cursor-pointer ${
+                                isSelected
+                                  ? 'bg-[#2E251F] border-[#C8AA78] text-[#F5EFE6] font-bold shadow-xs ring-1 ring-[#C8AA78]/50'
+                                  : 'bg-[#171513] border-white/10 text-[#D8C6AE] hover:border-white/30'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold">{model.name}</span>
+                                {isSelected && <Check className="w-3.5 h-3.5 text-[#C8AA78] shrink-0" />}
+                              </div>
+                              <span className="text-[10px] text-[#D8C6AE]/60 block mt-0.5 line-clamp-1">
+                                {model.description}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
 
-                {/* 2. Width & Height Inputs */}
+                    {/* 2. Zebra Color Selection */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-xs font-bold text-[#F5EFE6] flex items-center gap-1.5">
+                          <span>2. لون الزيبرا</span>
+                          <span className="text-red-400">*</span>
+                        </label>
+                        <span className="text-xs text-[#C8AA78] font-semibold">{selectedZebraColor.name}</span>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {zebraColors.map((color) => {
+                          const isSelected = selectedZebraColor.id === color.id;
+                          return (
+                            <button
+                              key={color.id}
+                              type="button"
+                              onClick={() => setSelectedZebraColor(color)}
+                              className={`p-2 rounded-lg border flex items-center gap-2 transition-all cursor-pointer ${
+                                isSelected
+                                  ? 'bg-[#2E251F] border-[#C8AA78] text-[#F5EFE6] font-bold shadow-xs ring-1 ring-[#C8AA78]/50'
+                                  : 'bg-[#171513] border-white/10 text-[#D8C6AE] hover:border-white/30'
+                              }`}
+                            >
+                              <span
+                                className="w-3.5 h-3.5 rounded-full border border-black/20 shrink-0"
+                                style={{ backgroundColor: color.hex }}
+                              />
+                              <span className="text-xs font-semibold truncate">{color.name}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  /* 1. Color / Pattern Selection */
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-xs font-bold text-[#F5EFE6] flex items-center gap-1.5">
+                        <span>1. اختر اللون أو النقشة</span>
+                        <span className="text-red-400">*</span>
+                      </label>
+                      <span className="text-xs text-[#C8AA78] font-semibold">{activeColorOption.name}</span>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {(isMadeToMeasureBlackout ? blackoutColors : screenColors).map((opt) => {
+                        const isSelected = activeColorOption.id === opt.id;
+                        return (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            onClick={() => {
+                              if (isMadeToMeasureBlackout) {
+                                setSelectedBlackoutColor(opt as BlackoutColorOption);
+                              } else {
+                                setSelectedScreenColor(opt as ScreenColorOption);
+                              }
+                            }}
+                            className={`p-2.5 rounded-lg border text-right transition-all cursor-pointer ${
+                              isSelected
+                                ? 'bg-[#2E251F] border-[#C8AA78] text-[#F5EFE6] font-bold shadow-xs ring-1 ring-[#C8AA78]/50'
+                                : 'bg-[#171513] border-white/10 text-[#D8C6AE] hover:border-white/30'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-bold">{opt.name}</span>
+                              {isSelected && <Check className="w-3.5 h-3.5 text-[#C8AA78] shrink-0" />}
+                            </div>
+                            <span className="text-[10px] text-[#D8C6AE]/60 block mt-0.5">
+                              رمز: {opt.sampleCode}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Width & Height Inputs */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-xs font-bold text-[#F5EFE6] block mb-1">
-                      2. العرض (سم) <span className="text-red-400">*</span>
+                      {isMadeToMeasureZebra ? '3. العرض (سم)' : '2. العرض (سم)'} <span className="text-red-400">*</span>
                     </label>
                     <input
                       type="number"
@@ -536,7 +690,7 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
                   </div>
                   <div>
                     <label className="text-xs font-bold text-[#F5EFE6] block mb-1">
-                      3. الطول / الارتفاع (سم) <span className="text-red-400">*</span>
+                      {isMadeToMeasureZebra ? '4. الطول / الارتفاع (سم)' : '3. الطول / الارتفاع (سم)'} <span className="text-red-400">*</span>
                     </label>
                     <input
                       type="number"
@@ -816,7 +970,7 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
 
           {/* Modal Bottom CTA */}
           <div className="mt-6 pt-4 border-t border-white/10 space-y-2">
-            {isMadeToMeasureScreen ? (
+            {isCustomRoller ? (
               <button
                 type="button"
                 onClick={handleAdd}

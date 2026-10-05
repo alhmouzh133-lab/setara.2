@@ -77,9 +77,9 @@ export default function CheckoutModal() {
       const opts = [item.curtainStyle, item.fabricChoice, item.liningOption].filter(Boolean).join('، ');
       const nameWithOpts = opts ? `${item.productName} (${opts})` : item.productName;
 
-      if (item.productId === 'roller-screen') {
+      if (item.productId === 'roller-screen' || item.productId === 'roller-blackout' || item.productId === 'roller-zebra') {
         productLines.push(
-          `• رول سكرين — ${item.color.name} — ${item.size.widthCm}×${item.size.heightCm} سم — عدد ${item.quantity} — ${lineTotal} د.أ`
+          `• ${item.productName} — ${item.fabricChoice} — ${item.size.widthCm}×${item.size.heightCm} سم — عدد ${item.quantity} — ${lineTotal} د.أ`
         );
       } else if (item.isUnpriced) {
         productLines.push(
