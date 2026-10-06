@@ -2,6 +2,8 @@ import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  distDir: process.env.NODE_ENV === 'development' ? '.next-dev' : '.next',
+  allowedDevOrigins: ['*.run.app', 'localhost', '127.0.0.1'],
   eslint: {
     ignoreDuringBuilds: true,
   },

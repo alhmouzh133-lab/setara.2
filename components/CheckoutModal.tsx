@@ -77,7 +77,21 @@ export default function CheckoutModal() {
       const opts = [item.curtainStyle, item.fabricChoice, item.liningOption].filter(Boolean).join('، ');
       const nameWithOpts = opts ? `${item.productName} (${opts})` : item.productName;
 
-      if (item.productId === 'roller-screen' || item.productId === 'roller-blackout' || item.productId === 'roller-zebra') {
+      if (item.productId === 'curtain-track-aluminum' || item.curtainType === 'track') {
+        productLines.push(
+          `• ${item.productName} — طول ${item.size.widthCm} سم — عدد ${item.quantity} — ${lineTotal} د.أ`
+        );
+      } else if (item.productId === 'curtain-electric' || item.productId === 'curtain-manual') {
+        const liningStr = item.liningOption
+          ? item.liningOption.includes('عزل') || item.liningOption.includes('بطانة')
+            ? item.liningOption
+            : `عزل ${item.liningOption}`
+          : '';
+        const opts = [item.fabricChoice, item.curtainStyle, liningStr].filter(Boolean).join('، ');
+        productLines.push(
+          `• ${item.productName} (${opts}) — ${item.color.name} — ${item.size.widthCm}×${item.size.heightCm} سم — عدد ${item.quantity} — ${lineTotal} د.أ`
+        );
+      } else if (item.productId === 'roller-screen' || item.productId === 'roller-blackout' || item.productId === 'roller-zebra') {
         productLines.push(
           `• ${item.productName} — ${item.fabricChoice} — ${item.size.widthCm}×${item.size.heightCm} سم — عدد ${item.quantity} — ${lineTotal} د.أ`
         );

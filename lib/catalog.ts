@@ -14,95 +14,42 @@ export interface ScreenColorOption {
   installedImage?: string;
 }
 
-export interface ZebraModelOption {
-  id: string;
-  name: string;
-  description: string;
-}
-
-export const ZEBRA_MODELS: ZebraModelOption[] = [
-  { id: 'sada', name: 'سادة', description: 'شرائح أفقية معتمة ملساء مع شرائح شفافة' },
-  { id: 'linen_look', name: 'بملمس كتاني', description: 'نسيج كتاني بارز وأنيق في الشرائح المعتمة' },
-  { id: 'patterned', name: 'منقوشة', description: 'نقوش وزخارف ناعمة داخل الشرائح المعتمة' },
-  { id: 'wide_slats', name: 'شرائح عريضة', description: 'شرائح أفقية أعرض لإطلالة عصرية جريئة' },
-  { id: 'extra_dark', name: 'تعتيم أعلى', description: 'شرائح معتمة أكثر كثافة لحجب إضافي للضوء' },
-];
-
 export interface ZebraColorOption {
   id: string;
   name: string;
+  sampleCode?: string;
   hex: string;
   image: string;
-  installedImage?: string;
+  installedImage: string;
 }
 
 export const ZEBRA_COLORS: ZebraColorOption[] = [
-  { id: 'white', name: 'أبيض', hex: '#FFFFFF', image: '/images/zebra_white.jpg', installedImage: '/images/zebra_inst_white.jpg' },
-  { id: 'offwhite', name: 'أوف وايت', hex: '#F5F2EB', image: '/images/zebra_offwhite.jpg', installedImage: '/images/zebra_inst_offwhite.jpg' },
-  { id: 'sand', name: 'بيج رملي', hex: '#D6C7B2', image: '/images/zebra_sand.jpg', installedImage: '/images/zebra_inst_sand.jpg' },
-  { id: 'light_gray', name: 'رمادي فاتح', hex: '#C5CAD0', image: '/images/zebra_light_gray.jpg', installedImage: '/images/zebra_inst_light_gray.jpg' },
-  { id: 'charcoal', name: 'رمادي فحمي', hex: '#4E5259', image: '/images/zebra_charcoal.jpg', installedImage: '/images/zebra_inst_charcoal.jpg' },
-  { id: 'brown', name: 'بني', hex: '#6E5643', image: '/images/zebra_brown.jpg', installedImage: '/images/zebra_inst_brown.jpg' },
-  { id: 'black', name: 'أسود', hex: '#1C1C1E', image: '/images/zebra_black.jpg', installedImage: '/images/zebra_inst_black.jpg' },
-  { id: 'navy', name: 'كحلي', hex: '#1B2A4A', image: '/images/zebra_navy.jpg', installedImage: '/images/zebra_inst_navy.jpg' },
+  { id: 'white', name: 'أبيض كلاسيكي', sampleCode: 'سادة', hex: '#FFFFFF', image: '/images/zebra_white.jpg', installedImage: '/images/zebra_inst_white.jpg' },
+  { id: 'offwhite', name: 'أوف وايت كريمي', sampleCode: 'سادة', hex: '#F5F2EB', image: '/images/zebra_offwhite.jpg', installedImage: '/images/zebra_inst_offwhite.jpg' },
+  { id: 'sand', name: 'بيج رملي دافئ', sampleCode: 'سادة', hex: '#D6C7B2', image: '/images/zebra_sand.jpg', installedImage: '/images/zebra_inst_sand.jpg' },
+  { id: 'light_gray', name: 'رمادي فاتح هادئ', sampleCode: 'سادة', hex: '#C5CAD0', image: '/images/zebra_light_gray.jpg', installedImage: '/images/zebra_inst_light_gray.jpg' },
+  { id: 'charcoal', name: 'رمادي فحمي ملكي', sampleCode: 'سادة', hex: '#4E5259', image: '/images/zebra_charcoal.jpg', installedImage: '/images/zebra_inst_charcoal.jpg' },
+  { id: 'brown', name: 'بني شوكولاتة', sampleCode: 'سادة', hex: '#6E5643', image: '/images/zebra_brown.jpg', installedImage: '/images/zebra_inst_brown.jpg' },
+  { id: 'black', name: 'أسود معتم', sampleCode: 'سادة', hex: '#1C1C1E', image: '/images/zebra_black.jpg', installedImage: '/images/zebra_inst_black.jpg' },
+  { id: 'navy', name: 'كحلي داكن', sampleCode: 'سادة', hex: '#1B2A4A', image: '/images/zebra_navy.jpg', installedImage: '/images/zebra_inst_navy.jpg' },
+  { id: 'linen', name: 'ملمس كتاني طبيعي', sampleCode: 'نسيج كتان', hex: '#C9B89F', image: '/images/zebra_sand.jpg', installedImage: '/images/zebra_inst_linen.jpg' },
+  { id: 'patterned', name: 'نقوش وزخارف ناعمة', sampleCode: 'منقوش', hex: '#DCD4C8', image: '/images/zebra_det_pattern.jpg', installedImage: '/images/zebra_inst_pattern.jpg' },
+  { id: 'wide_slats', name: 'شرائح عريضة مودرن', sampleCode: 'شرائح عريضة', hex: '#EBEAE6', image: '/images/zebra_white.jpg', installedImage: '/images/zebra_inst_wide.jpg' },
+  { id: 'extra_dark', name: 'تعتيم إضافي داكن', sampleCode: 'تعتيم عالي', hex: '#2F3337', image: '/images/zebra_charcoal.jpg', installedImage: '/images/zebra_inst_dark.jpg' },
 ];
 
 /**
- * Resolves both the main installed preview image and the fabric-detail close-up image
- * based on the composite selection: productId ('roller-zebra') + selectedModelId + selectedColorId.
+ * Resolves the preview image directly from the selected zebra variant.
  */
 export function resolveZebraImages(
-  modelId: string,
-  colorId: string
+  colorOrModelId: string,
+  maybeColorId?: string
 ): { mainImage: string; detailImage: string } {
-  const colorSwatch = ZEBRA_COLORS.find((c) => c.id === colorId) || ZEBRA_COLORS[0];
-
-  // Specific model-based overrides that showcase the distinct physical properties
-  if (modelId === 'linen_look') {
-    return {
-      mainImage: '/images/zebra_inst_linen.jpg',
-      detailImage: colorSwatch.image || '/images/zebra_sand.jpg',
-    };
-  }
-
-  if (modelId === 'patterned') {
-    return {
-      mainImage: '/images/zebra_inst_pattern.jpg',
-      detailImage: '/images/zebra_det_pattern.jpg',
-    };
-  }
-
-  if (modelId === 'wide_slats') {
-    return {
-      mainImage: '/images/zebra_inst_wide.jpg',
-      detailImage: colorSwatch.image || '/images/zebra_white.jpg',
-    };
-  }
-
-  if (modelId === 'extra_dark') {
-    return {
-      mainImage: '/images/zebra_inst_dark.jpg',
-      detailImage: colorSwatch.image || '/images/zebra_charcoal.jpg',
-    };
-  }
-
-  // Default 'sada' (smooth plain bands) resolved directly by color
-  const colorMap: Record<string, string> = {
-    white: '/images/zebra_inst_white.jpg',
-    offwhite: '/images/zebra_inst_offwhite.jpg',
-    sand: '/images/zebra_inst_sand.jpg',
-    light_gray: '/images/zebra_inst_light_gray.jpg',
-    charcoal: '/images/zebra_inst_charcoal.jpg',
-    brown: '/images/zebra_inst_brown.jpg',
-    black: '/images/zebra_inst_black.jpg',
-    navy: '/images/zebra_inst_navy.jpg',
-  };
-
-  const main = colorMap[colorId] || colorSwatch.installedImage || colorSwatch.image || '/images/zebra_inst_white.jpg';
-
+  const targetId = maybeColorId || colorOrModelId;
+  const match = ZEBRA_COLORS.find((c) => c.id === targetId || c.id === colorOrModelId) || ZEBRA_COLORS[0];
   return {
-    mainImage: main,
-    detailImage: colorSwatch.image,
+    mainImage: match.installedImage,
+    detailImage: match.image,
   };
 }
 
@@ -172,8 +119,8 @@ export interface Product {
   id: string;
   slug: string;
   name: string;
-  curtainType: 'electric' | 'manual' | 'roller';
-  category: 'electric' | 'manual' | 'roller' | string;
+  curtainType: 'electric' | 'manual' | 'roller' | 'track' | string;
+  category: 'electric' | 'manual' | 'roller' | 'tracks' | string;
   categoryName: string;
   shortDesc: string;
   description: string;
@@ -199,8 +146,8 @@ export interface Product {
   isMadeToMeasureBlackout?: boolean;
   blackoutColors?: BlackoutColorOption[];
   isMadeToMeasureZebra?: boolean;
-  zebraModels?: ZebraModelOption[];
   zebraColors?: ZebraColorOption[];
+  isTrackAccessory?: boolean;
 }
 
 export interface CategoryInfo {
@@ -296,6 +243,62 @@ export const ELECTRIC_FABRICS: FabricOption[] = [
 ];
 
 // ----------------------------------------------------------------------------
+// 1c. Dedicated Manual Fabric Options (ستائر عادية)
+// Fabrics: لينين، جاكار، ديم أوت، بلاك أوت، أفوال، كروشيه، تي ان، مخمل
+// Treat Velvet / فلفت / مخمل as one fabric option.
+// ----------------------------------------------------------------------------
+export const MANUAL_FABRICS: FabricOption[] = [
+  {
+    id: 'flax_linen',
+    name: 'لينين',
+    description: 'قماش لينين راقٍ بنسيج أوروبي فاخر ومظهر طبيعي متهدل بطيات مميزة.',
+    badge: 'طبيعي فاخر',
+  },
+  {
+    id: 'jacquard',
+    name: 'جاكار',
+    description: 'نسيج جاكار منسوج بنقوش وزخارف فخمة تمنح الغرفة طابعاً ملكياً راقياً.',
+    badge: 'نقوش ملكية',
+  },
+  {
+    id: 'dimout',
+    name: 'ديم أوت',
+    description: 'قماش ديم أوت لحجب ناعم للضوء والحرارة بنسبة 70-80% مع حفظ انسيابية الستارة.',
+    badge: 'حجب ناعم 80%',
+  },
+  {
+    id: 'blackout',
+    name: 'بلاك أوت',
+    description: 'قماش معتم تماماً بنسبة 100% يحجب الضوء الخارجي ويحفظ برودة الغرفة وسكونها.',
+    badge: 'تعتيم 100%',
+  },
+  {
+    id: 'voile',
+    name: 'أفوال',
+    description: 'شيفون أفوال خفيف انسيابي ينسدل برقة فوق النوافذ ويسمح بتدفق ناعم لضوء النهار.',
+    badge: 'شفاف لطيف',
+  },
+  {
+    id: 'crochet',
+    name: 'كروشيه',
+    description: 'نسيج كروشيه كلاسيكي بتطريزات راقية للمجالس والصالونات الأنيقة.',
+    badge: 'كلاسيكي مطرز',
+  },
+  {
+    id: 'tn',
+    name: 'تي ان',
+    description: 'قماش تي إن متين وعصري بمقاومة عالية للتجعد وملمس ناعم يدوم طويلاً.',
+    badge: 'عصري متين',
+  },
+  {
+    id: 'velvet',
+    name: 'مخمل',
+    description: 'مخمل فاخر بملمس ناعم وعزل حراري وصوتي عالي مع ثنيات فخمة متناسقة.',
+    badge: 'فاخر ثقيل',
+  },
+];
+
+// ----------------------------------------------------------------------------
 // 2. Centralized Color Definitions
 // ----------------------------------------------------------------------------
 export const CENTRAL_COLORS: ColorOption[] = [
@@ -381,86 +384,171 @@ export const IMAGE_MAP: Record<string, string> = {
   'roller:chiffon:white': '/images/roller_chiffon_white.jpg',
 
   // --- ELECTRIC CURTAINS ---
+  'electric:flax_linen:ivory': '/images/curtain_electric.jpg',
+  'electric:flax_linen:ivory:wave': '/images/elec_flax_ivory_w.jpg',
+  'electric:flax_linen:ivory:american': '/images/elec_flax_ivory_am.jpg',
+  'electric:flax_linen:ivory:wave:lining50': '/images/elec_flax_ivory_w.jpg',
+  'electric:flax_linen:ivory:wave:lining80': '/images/elec_flax_iv_w_80.jpg',
+  'electric:flax_linen:ivory:wave:lining100': '/images/elec_flax_iv_w_100.jpg',
+  'electric:flax_linen:ivory:american:lining50': '/images/elec_flax_ivory_am.jpg',
+  'electric:flax_linen:ivory:american:lining80': '/images/elec_flax_iv_am_80.jpg',
+  'electric:flax_linen:ivory:american:lining100': '/images/elec_flax_iv_am_100.jpg',
+
+  'electric:flax_linen:sand': '/images/elec_flax_sand_w.jpg',
+  'electric:flax_linen:sand:wave': '/images/elec_flax_sand_w.jpg',
+  'electric:flax_linen:sand:american': '/images/elec_flax_sand_am.jpg',
+  'electric:flax_linen:sand:wave:lining80': '/images/elec_flax_sand_w_80.jpg',
+
+  'electric:flax_linen:cocoa': '/images/elec_flax_cocoa_w.jpg',
+  'electric:flax_linen:cocoa:wave': '/images/elec_flax_cocoa_w.jpg',
+  'electric:flax_linen:cocoa:american': '/images/elec_flax_cocoa_am.jpg',
+
+  'electric:flax_linen:charcoal': '/images/elec_flax_charcoal_w.jpg',
+  'electric:flax_linen:charcoal:wave': '/images/elec_flax_charcoal_w.jpg',
+  'electric:flax_linen:charcoal:american': '/images/elec_flax_charcoal_am.jpg',
+
+  'electric:flax_linen:white': '/images/elec_flax_white_w.jpg',
+  'electric:flax_linen:white:wave': '/images/elec_flax_white_w.jpg',
+  'electric:flax_linen:white:american': '/images/elec_flax_white_am.jpg',
+
+  'electric:jacquard:ivory': '/images/jacquard_iv_w.jpg',
+  'electric:jacquard:ivory:wave': '/images/jacquard_iv_w.jpg',
+  'electric:jacquard:ivory:american': '/images/jacquard_iv_am.jpg',
+  'electric:jacquard:sand': '/images/nordic_sand.jpg',
+  'electric:jacquard:sand:wave': '/images/nordic_sand.jpg',
+  'electric:jacquard:sand:american': '/images/nordic_sand.jpg',
+  'electric:jacquard:cocoa': '/images/lustre_cocoa.jpg',
+  'electric:jacquard:cocoa:wave': '/images/lustre_cocoa.jpg',
+  'electric:jacquard:cocoa:american': '/images/lustre_cocoa.jpg',
+  'electric:jacquard:charcoal': '/images/lustre_warmgrey.jpg',
+  'electric:jacquard:charcoal:wave': '/images/lustre_warmgrey.jpg',
+  'electric:jacquard:charcoal:american': '/images/lustre_warmgrey.jpg',
+  'electric:jacquard:white': '/images/prod_raw_linen.jpg',
+  'electric:jacquard:white:wave': '/images/prod_raw_linen.jpg',
+  'electric:jacquard:white:american': '/images/prod_raw_linen.jpg',
+
+  'electric:dimout:ivory': '/images/elec_linen_iv_w_80.jpg',
+  'electric:dimout:ivory:wave': '/images/elec_linen_iv_w_80.jpg',
+  'electric:dimout:ivory:american': '/images/elec_linen_iv_am_80.jpg',
+  'electric:dimout:ivory:wave:lining50': '/images/elec_linen_iv_w_50.jpg',
+  'electric:dimout:ivory:wave:lining80': '/images/elec_linen_iv_w_80.jpg',
+  'electric:dimout:ivory:wave:lining100': '/images/elec_linen_iv_w_100.jpg',
+  'electric:dimout:ivory:american:lining50': '/images/elec_linen_iv_am_50.jpg',
+  'electric:dimout:ivory:american:lining80': '/images/elec_linen_iv_am_80.jpg',
+  'electric:dimout:ivory:american:lining100': '/images/elec_linen_iv_am_100.jpg',
+  'electric:dimout:sand': '/images/nordic_sand.jpg',
+  'electric:dimout:sand:wave': '/images/nordic_sand.jpg',
+  'electric:dimout:sand:american': '/images/elec_flax_sand_am.jpg',
+  'electric:dimout:cocoa': '/images/lustre_cocoa.jpg',
+  'electric:dimout:cocoa:wave': '/images/lustre_cocoa.jpg',
+  'electric:dimout:cocoa:american': '/images/elec_flax_cocoa_am.jpg',
+  'electric:dimout:charcoal': '/images/curtain_linen_charcoal.jpg',
+  'electric:dimout:charcoal:wave': '/images/curtain_linen_charcoal.jpg',
+  'electric:dimout:charcoal:american': '/images/elec_flax_charcoal_am.jpg',
+  'electric:dimout:white': '/images/raw_linen_white.jpg',
+  'electric:dimout:white:wave': '/images/raw_linen_white.jpg',
+  'electric:dimout:white:american': '/images/elec_flax_white_am.jpg',
+
+  'electric:blackout:ivory': '/images/curtain_blackout_ivory.jpg',
+  'electric:blackout:ivory:wave': '/images/curtain_blackout_ivory.jpg',
+  'electric:blackout:ivory:american': '/images/elec_blackout_iv_am.jpg',
+  'electric:blackout:sand': '/images/curtain_blackout_sand.jpg',
+  'electric:blackout:sand:wave': '/images/curtain_blackout_sand.jpg',
+  'electric:blackout:sand:american': '/images/elec_blackout_sand_am.jpg',
+  'electric:blackout:cocoa': '/images/blackout_cocoa_w.jpg',
+  'electric:blackout:cocoa:wave': '/images/blackout_cocoa_w.jpg',
+  'electric:blackout:cocoa:american': '/images/blackout_cocoa_am.jpg',
+  'electric:blackout:charcoal': '/images/curtain_blackout_charcoal.jpg',
+  'electric:blackout:charcoal:wave': '/images/curtain_blackout_charcoal.jpg',
+  'electric:blackout:charcoal:american': '/images/elec_blackout_charcoal_am.jpg',
+  'electric:blackout:white': '/images/curtain_blackout_white.jpg',
+  'electric:blackout:white:wave': '/images/curtain_blackout_white.jpg',
+  'electric:blackout:white:american': '/images/blackout_white_am.jpg',
+
+  'electric:voile:ivory': '/images/chiffon_champagne.jpg',
+  'electric:voile:ivory:wave': '/images/chiffon_champagne.jpg',
+  'electric:voile:ivory:american': '/images/voile_iv_am.jpg',
+  'electric:voile:ivory:wave:lining80': '/images/voile_iv_w_lined.jpg',
+  'electric:voile:ivory:wave:lining100': '/images/voile_iv_w_lined.jpg',
+  'electric:voile:ivory:american:lining80': '/images/voile_iv_am_lined.jpg',
+  'electric:voile:ivory:american:lining100': '/images/voile_iv_am_lined.jpg',
+  'electric:voile:sand': '/images/chiffon_champagne.jpg',
+  'electric:voile:sand:wave': '/images/chiffon_champagne.jpg',
+  'electric:voile:sand:american': '/images/voile_iv_am.jpg',
+  'electric:voile:cocoa': '/images/chiffon_cocoa.jpg',
+  'electric:voile:cocoa:wave': '/images/chiffon_cocoa.jpg',
+  'electric:voile:cocoa:american': '/images/chiffon_cocoa.jpg',
+  'electric:voile:charcoal': '/images/chiffon_charcoal.jpg',
+  'electric:voile:charcoal:wave': '/images/chiffon_charcoal.jpg',
+  'electric:voile:charcoal:american': '/images/chiffon_charcoal.jpg',
+  'electric:voile:white': '/images/chiffon_white.jpg',
+  'electric:voile:white:wave': '/images/chiffon_white.jpg',
+  'electric:voile:white:american': '/images/chiffon_white.jpg',
+
+  'electric:crochet:ivory': '/images/crochet_iv_w.jpg',
+  'electric:crochet:ivory:wave': '/images/crochet_iv_w.jpg',
+  'electric:crochet:ivory:american': '/images/crochet_iv_am.jpg',
+  'electric:crochet:sand': '/images/linen_sheer_sand.jpg',
+  'electric:crochet:sand:wave': '/images/linen_sheer_sand.jpg',
+  'electric:crochet:sand:american': '/images/linen_sheer_sand.jpg',
+  'electric:crochet:cocoa': '/images/lustre_cocoa.jpg',
+  'electric:crochet:cocoa:wave': '/images/lustre_cocoa.jpg',
+  'electric:crochet:cocoa:american': '/images/lustre_cocoa.jpg',
+  'electric:crochet:charcoal': '/images/curtain_linen_charcoal.jpg',
+  'electric:crochet:charcoal:wave': '/images/curtain_linen_charcoal.jpg',
+  'electric:crochet:charcoal:american': '/images/curtain_linen_charcoal.jpg',
+  'electric:crochet:white': '/images/linen_sheer_white.jpg',
+  'electric:crochet:white:wave': '/images/linen_sheer_white.jpg',
+  'electric:crochet:white:american': '/images/linen_sheer_white.jpg',
+
+  'electric:tn:ivory': '/images/tn_iv_w.jpg',
+  'electric:tn:ivory:wave': '/images/tn_iv_w.jpg',
+  'electric:tn:ivory:american': '/images/tn_iv_am.jpg',
+  'electric:tn:sand': '/images/nordic_sand.jpg',
+  'electric:tn:sand:wave': '/images/nordic_sand.jpg',
+  'electric:tn:sand:american': '/images/elec_flax_sand_am.jpg',
+  'electric:tn:cocoa': '/images/lustre_cocoa.jpg',
+  'electric:tn:cocoa:wave': '/images/lustre_cocoa.jpg',
+  'electric:tn:cocoa:american': '/images/elec_flax_cocoa_am.jpg',
+  'electric:tn:charcoal': '/images/curtain_linen_charcoal.jpg',
+  'electric:tn:charcoal:wave': '/images/curtain_linen_charcoal.jpg',
+  'electric:tn:charcoal:american': '/images/elec_flax_charcoal_am.jpg',
+  'electric:tn:white': '/images/raw_linen_white.jpg',
+  'electric:tn:white:wave': '/images/raw_linen_white.jpg',
+  'electric:tn:white:american': '/images/elec_flax_white_am.jpg',
+
+  'electric:velvet:ivory': '/images/velvet_champagne.jpg',
+  'electric:velvet:ivory:wave': '/images/velvet_champagne.jpg',
+  'electric:velvet:ivory:american': '/images/elec_velvet_iv_am.jpg',
+  'electric:velvet:sand': '/images/velvet_sand_w.jpg',
+  'electric:velvet:sand:wave': '/images/velvet_sand_w.jpg',
+  'electric:velvet:sand:american': '/images/velvet_sand_am.jpg',
+  'electric:velvet:cocoa': '/images/curtain_velvet_cocoa.jpg',
+  'electric:velvet:cocoa:wave': '/images/curtain_velvet_cocoa.jpg',
+  'electric:velvet:cocoa:american': '/images/elec_velvet_cocoa_am.jpg',
+  'electric:velvet:charcoal': '/images/velvet_charcoal.jpg',
+  'electric:velvet:charcoal:wave': '/images/velvet_charcoal.jpg',
+  'electric:velvet:charcoal:american': '/images/elec_velvet_charcoal_am.jpg',
+  'electric:velvet:white': '/images/velvet_white_w.jpg',
+  'electric:velvet:white:wave': '/images/velvet_white_w.jpg',
+  'electric:velvet:white:american': '/images/velvet_white_am.jpg',
+
+  // Electric legacy aliases
   'electric:linen:ivory': '/images/curtain_electric.jpg',
   'electric:linen:sand': '/images/linen_sheer_sand.jpg',
   'electric:linen:cocoa': '/images/lustre_cocoa.jpg',
   'electric:linen:charcoal': '/images/curtain_linen_charcoal.jpg',
   'electric:linen:white': '/images/linen_sheer_white.jpg',
-
-  // Electric Linen: Specific Style & Lining Combinations
-  'electric:linen:ivory:wave:lining50': '/images/elec_linen_iv_w_50.jpg',
-  'electric:linen:ivory:wave:lining80': '/images/elec_linen_iv_w_80.jpg',
-  'electric:linen:ivory:wave:lining100': '/images/elec_linen_iv_w_100.jpg',
-  'electric:linen:ivory:american:lining50': '/images/elec_linen_iv_am_50.jpg',
-  'electric:linen:ivory:american:lining80': '/images/elec_linen_iv_am_80.jpg',
-  'electric:linen:ivory:american:lining100': '/images/elec_linen_iv_am_100.jpg',
-  'electric:linen:ivory:wave': '/images/elec_linen_iv_w_50.jpg',
-  'electric:linen:ivory:american': '/images/elec_linen_iv_am_50.jpg',
-
-  // Electric "لينين" (flax_linen): Dedicated linen texture across styles & linings
-  'electric:flax_linen:ivory:wave:lining50': '/images/elec_flax_ivory_w.jpg',
-  'electric:flax_linen:ivory:wave:lining80': '/images/elec_flax_iv_w_80.jpg',
-  'electric:flax_linen:ivory:wave:lining100': '/images/elec_flax_iv_w_100.jpg',
-  'electric:flax_linen:ivory:american:lining50': '/images/elec_flax_ivory_am.jpg',
-  'electric:flax_linen:ivory:american:lining80': '/images/elec_flax_iv_w_80.jpg',
-  'electric:flax_linen:ivory:american:lining100': '/images/elec_flax_iv_w_100.jpg',
-  'electric:flax_linen:ivory:wave': '/images/elec_flax_ivory_w.jpg',
-  'electric:flax_linen:ivory:american': '/images/elec_flax_ivory_am.jpg',
-  'electric:flax_linen:ivory': '/images/elec_flax_ivory_w.jpg',
-
-  'electric:flax_linen:sand:wave': '/images/elec_flax_sand_w.jpg',
-  'electric:flax_linen:sand:american': '/images/elec_flax_sand_am.jpg',
-  'electric:flax_linen:sand:wave:lining80': '/images/elec_flax_sand_w_80.jpg',
-  'electric:flax_linen:sand': '/images/elec_flax_sand_w.jpg',
-
-  'electric:flax_linen:cocoa:wave': '/images/elec_flax_cocoa_w.jpg',
-  'electric:flax_linen:cocoa:american': '/images/elec_flax_cocoa_am.jpg',
-  'electric:flax_linen:cocoa': '/images/elec_flax_cocoa_w.jpg',
-
-  'electric:flax_linen:charcoal:wave': '/images/elec_flax_charcoal_w.jpg',
-  'electric:flax_linen:charcoal:american': '/images/elec_flax_charcoal_am.jpg',
-  'electric:flax_linen:charcoal': '/images/elec_flax_charcoal_w.jpg',
-
-  'electric:flax_linen:white:wave': '/images/elec_flax_white_w.jpg',
-  'electric:flax_linen:white:american': '/images/elec_flax_white_am.jpg',
-  'electric:flax_linen:white': '/images/elec_flax_white_w.jpg',
-
-  'electric:velvet:ivory': '/images/velvet_champagne.jpg',
-  'electric:velvet:sand': '/images/craft_textures.jpg',
-  'electric:velvet:cocoa': '/images/curtain_velvet_cocoa.jpg',
-  'electric:velvet:charcoal': '/images/velvet_charcoal.jpg',
-  'electric:velvet:white': '/images/raw_linen_white.jpg',
-  'electric:velvet:ivory:wave': '/images/velvet_champagne.jpg',
-  'electric:velvet:ivory:american': '/images/elec_velvet_iv_am.jpg',
-  'electric:velvet:cocoa:wave': '/images/curtain_velvet_cocoa.jpg',
-  'electric:velvet:cocoa:american': '/images/elec_velvet_cocoa_am.jpg',
-  'electric:velvet:charcoal:wave': '/images/velvet_charcoal.jpg',
-  'electric:velvet:charcoal:american': '/images/elec_velvet_charcoal_am.jpg',
-
   'electric:chiffon:ivory': '/images/prod_andalusian.jpg',
   'electric:chiffon:sand': '/images/chiffon_champagne.jpg',
   'electric:chiffon:cocoa': '/images/chiffon_cocoa.jpg',
   'electric:chiffon:charcoal': '/images/chiffon_charcoal.jpg',
   'electric:chiffon:white': '/images/chiffon_white.jpg',
-
-  'electric:blackout:ivory': '/images/curtain_blackout_ivory.jpg',
-  'electric:blackout:sand': '/images/curtain_blackout_sand.jpg',
-  'electric:blackout:cocoa': '/images/cat_blackout.jpg',
-  'electric:blackout:charcoal': '/images/curtain_blackout_charcoal.jpg',
-  'electric:blackout:white': '/images/curtain_blackout_white.jpg',
-  'electric:blackout:ivory:wave': '/images/curtain_blackout_ivory.jpg',
-  'electric:blackout:ivory:american': '/images/elec_blackout_iv_am.jpg',
-  'electric:blackout:sand:wave': '/images/curtain_blackout_sand.jpg',
-  'electric:blackout:sand:american': '/images/elec_blackout_sand_am.jpg',
-  'electric:blackout:charcoal:wave': '/images/curtain_blackout_charcoal.jpg',
-  'electric:blackout:charcoal:american': '/images/elec_blackout_charcoal_am.jpg',
-
   'electric:screen:ivory': '/images/solar_offwhite.jpg',
   'electric:screen:sand': '/images/prod_solar.jpg',
   'electric:screen:cocoa': '/images/roller_screen.jpg',
   'electric:screen:charcoal': '/images/roller_screen_charcoal.jpg',
   'electric:screen:white': '/images/roller_screen_white.jpg',
-
   'electric:zebra:ivory': '/images/roller_zebra.jpg',
   'electric:zebra:sand': '/images/roller_zebra_cream.jpg',
   'electric:zebra:cocoa': '/images/curtain_mocha_roller.jpg',
@@ -468,36 +556,176 @@ export const IMAGE_MAP: Record<string, string> = {
   'electric:zebra:white': '/images/roller_zebra_white.jpg',
 
   // --- MANUAL CURTAINS ---
+  'manual:flax_linen:ivory': '/images/elec_flax_ivory_w.jpg',
+  'manual:flax_linen:ivory:wave': '/images/elec_flax_ivory_w.jpg',
+  'manual:flax_linen:ivory:american': '/images/elec_flax_ivory_am.jpg',
+  'manual:flax_linen:ivory:wave:lining50': '/images/elec_flax_ivory_w.jpg',
+  'manual:flax_linen:ivory:wave:lining80': '/images/elec_flax_iv_w_80.jpg',
+  'manual:flax_linen:ivory:wave:lining100': '/images/elec_flax_iv_w_100.jpg',
+  'manual:flax_linen:ivory:american:lining50': '/images/elec_flax_ivory_am.jpg',
+  'manual:flax_linen:ivory:american:lining80': '/images/elec_flax_iv_am_80.jpg',
+  'manual:flax_linen:ivory:american:lining100': '/images/elec_flax_iv_am_100.jpg',
+
+  'manual:flax_linen:sand': '/images/elec_flax_sand_w.jpg',
+  'manual:flax_linen:sand:wave': '/images/elec_flax_sand_w.jpg',
+  'manual:flax_linen:sand:american': '/images/elec_flax_sand_am.jpg',
+  'manual:flax_linen:sand:wave:lining80': '/images/elec_flax_sand_w_80.jpg',
+  'manual:flax_linen:sand:wave:lining100': '/images/elec_flax_sand_w_80.jpg',
+  'manual:flax_linen:sand:american:lining80': '/images/elec_flax_sand_am.jpg',
+  'manual:flax_linen:sand:american:lining100': '/images/elec_flax_sand_am.jpg',
+
+  'manual:flax_linen:cocoa': '/images/elec_flax_cocoa_w.jpg',
+  'manual:flax_linen:cocoa:wave': '/images/elec_flax_cocoa_w.jpg',
+  'manual:flax_linen:cocoa:american': '/images/elec_flax_cocoa_am.jpg',
+
+  'manual:flax_linen:charcoal': '/images/elec_flax_charcoal_w.jpg',
+  'manual:flax_linen:charcoal:wave': '/images/elec_flax_charcoal_w.jpg',
+  'manual:flax_linen:charcoal:american': '/images/elec_flax_charcoal_am.jpg',
+
+  'manual:flax_linen:white': '/images/elec_flax_white_w.jpg',
+  'manual:flax_linen:white:wave': '/images/elec_flax_white_w.jpg',
+  'manual:flax_linen:white:american': '/images/elec_flax_white_am.jpg',
+
+  'manual:jacquard:ivory': '/images/jacquard_iv_w.jpg',
+  'manual:jacquard:ivory:wave': '/images/jacquard_iv_w.jpg',
+  'manual:jacquard:ivory:american': '/images/jacquard_iv_am.jpg',
+  'manual:jacquard:sand': '/images/nordic_sand.jpg',
+  'manual:jacquard:sand:wave': '/images/nordic_sand.jpg',
+  'manual:jacquard:sand:american': '/images/nordic_sand.jpg',
+  'manual:jacquard:cocoa': '/images/lustre_cocoa.jpg',
+  'manual:jacquard:cocoa:wave': '/images/lustre_cocoa.jpg',
+  'manual:jacquard:cocoa:american': '/images/lustre_cocoa.jpg',
+  'manual:jacquard:charcoal': '/images/lustre_warmgrey.jpg',
+  'manual:jacquard:charcoal:wave': '/images/lustre_warmgrey.jpg',
+  'manual:jacquard:charcoal:american': '/images/lustre_warmgrey.jpg',
+  'manual:jacquard:white': '/images/prod_raw_linen.jpg',
+  'manual:jacquard:white:wave': '/images/prod_raw_linen.jpg',
+  'manual:jacquard:white:american': '/images/prod_raw_linen.jpg',
+
+  'manual:dimout:ivory': '/images/elec_linen_iv_w_80.jpg',
+  'manual:dimout:ivory:wave': '/images/elec_linen_iv_w_80.jpg',
+  'manual:dimout:ivory:american': '/images/elec_linen_iv_am_80.jpg',
+  'manual:dimout:ivory:wave:lining50': '/images/elec_linen_iv_w_50.jpg',
+  'manual:dimout:ivory:wave:lining80': '/images/elec_linen_iv_w_80.jpg',
+  'manual:dimout:ivory:wave:lining100': '/images/elec_linen_iv_w_100.jpg',
+  'manual:dimout:ivory:american:lining50': '/images/elec_linen_iv_am_50.jpg',
+  'manual:dimout:ivory:american:lining80': '/images/elec_linen_iv_am_80.jpg',
+  'manual:dimout:ivory:american:lining100': '/images/elec_linen_iv_am_100.jpg',
+  'manual:dimout:sand': '/images/elec_flax_sand_w_80.jpg',
+  'manual:dimout:sand:wave': '/images/elec_flax_sand_w_80.jpg',
+  'manual:dimout:sand:american': '/images/elec_flax_sand_am.jpg',
+  'manual:dimout:cocoa': '/images/curtain_velvet_cocoa.jpg',
+  'manual:dimout:cocoa:wave': '/images/curtain_velvet_cocoa.jpg',
+  'manual:dimout:cocoa:american': '/images/elec_velvet_cocoa_am.jpg',
+  'manual:dimout:charcoal': '/images/curtain_linen_charcoal.jpg',
+  'manual:dimout:charcoal:wave': '/images/curtain_linen_charcoal.jpg',
+  'manual:dimout:charcoal:american': '/images/elec_flax_charcoal_am.jpg',
+  'manual:dimout:white': '/images/raw_linen_white.jpg',
+  'manual:dimout:white:wave': '/images/raw_linen_white.jpg',
+  'manual:dimout:white:american': '/images/elec_flax_white_am.jpg',
+
+  'manual:blackout:ivory': '/images/curtain_blackout_ivory.jpg',
+  'manual:blackout:ivory:wave': '/images/curtain_blackout_ivory.jpg',
+  'manual:blackout:ivory:american': '/images/elec_blackout_iv_am.jpg',
+  'manual:blackout:sand': '/images/curtain_blackout_sand.jpg',
+  'manual:blackout:sand:wave': '/images/curtain_blackout_sand.jpg',
+  'manual:blackout:sand:american': '/images/elec_blackout_sand_am.jpg',
+  'manual:blackout:cocoa': '/images/blackout_cocoa_w.jpg',
+  'manual:blackout:cocoa:wave': '/images/blackout_cocoa_w.jpg',
+  'manual:blackout:cocoa:american': '/images/blackout_cocoa_am.jpg',
+  'manual:blackout:charcoal': '/images/curtain_blackout_charcoal.jpg',
+  'manual:blackout:charcoal:wave': '/images/curtain_blackout_charcoal.jpg',
+  'manual:blackout:charcoal:american': '/images/elec_blackout_charcoal_am.jpg',
+  'manual:blackout:white': '/images/curtain_blackout_white.jpg',
+  'manual:blackout:white:wave': '/images/curtain_blackout_white.jpg',
+  'manual:blackout:white:american': '/images/blackout_white_am.jpg',
+
+  'manual:voile:ivory': '/images/prod_andalusian.jpg',
+  'manual:voile:ivory:wave': '/images/prod_andalusian.jpg',
+  'manual:voile:ivory:american': '/images/voile_iv_am.jpg',
+  'manual:voile:ivory:wave:lining50': '/images/prod_andalusian.jpg',
+  'manual:voile:ivory:wave:lining80': '/images/voile_iv_w_lined.jpg',
+  'manual:voile:ivory:wave:lining100': '/images/voile_iv_w_lined.jpg',
+  'manual:voile:ivory:american:lining50': '/images/voile_iv_am.jpg',
+  'manual:voile:ivory:american:lining80': '/images/voile_iv_am_lined.jpg',
+  'manual:voile:ivory:american:lining100': '/images/voile_iv_am_lined.jpg',
+  'manual:voile:sand': '/images/chiffon_champagne.jpg',
+  'manual:voile:sand:wave': '/images/chiffon_champagne.jpg',
+  'manual:voile:sand:american': '/images/chiffon_champagne.jpg',
+  'manual:voile:cocoa': '/images/chiffon_cocoa.jpg',
+  'manual:voile:cocoa:wave': '/images/chiffon_cocoa.jpg',
+  'manual:voile:cocoa:american': '/images/chiffon_cocoa.jpg',
+  'manual:voile:charcoal': '/images/chiffon_charcoal.jpg',
+  'manual:voile:charcoal:wave': '/images/chiffon_charcoal.jpg',
+  'manual:voile:charcoal:american': '/images/chiffon_charcoal.jpg',
+  'manual:voile:white': '/images/chiffon_white.jpg',
+  'manual:voile:white:wave': '/images/chiffon_white.jpg',
+  'manual:voile:white:american': '/images/chiffon_white.jpg',
+
+  'manual:crochet:ivory': '/images/crochet_iv_w.jpg',
+  'manual:crochet:ivory:wave': '/images/crochet_iv_w.jpg',
+  'manual:crochet:ivory:american': '/images/crochet_iv_am.jpg',
+  'manual:crochet:sand': '/images/linen_sheer_sand.jpg',
+  'manual:crochet:sand:wave': '/images/linen_sheer_sand.jpg',
+  'manual:crochet:sand:american': '/images/linen_sheer_sand.jpg',
+  'manual:crochet:cocoa': '/images/lustre_cocoa.jpg',
+  'manual:crochet:cocoa:wave': '/images/lustre_cocoa.jpg',
+  'manual:crochet:cocoa:american': '/images/lustre_cocoa.jpg',
+  'manual:crochet:charcoal': '/images/curtain_linen_charcoal.jpg',
+  'manual:crochet:charcoal:wave': '/images/curtain_linen_charcoal.jpg',
+  'manual:crochet:charcoal:american': '/images/curtain_linen_charcoal.jpg',
+  'manual:crochet:white': '/images/linen_sheer_white.jpg',
+  'manual:crochet:white:wave': '/images/linen_sheer_white.jpg',
+  'manual:crochet:white:american': '/images/linen_sheer_white.jpg',
+
+  'manual:tn:ivory': '/images/tn_iv_w.jpg',
+  'manual:tn:ivory:wave': '/images/tn_iv_w.jpg',
+  'manual:tn:ivory:american': '/images/tn_iv_am.jpg',
+  'manual:tn:sand': '/images/nordic_sand.jpg',
+  'manual:tn:sand:wave': '/images/nordic_sand.jpg',
+  'manual:tn:sand:american': '/images/elec_flax_sand_am.jpg',
+  'manual:tn:cocoa': '/images/lustre_cocoa.jpg',
+  'manual:tn:cocoa:wave': '/images/lustre_cocoa.jpg',
+  'manual:tn:cocoa:american': '/images/elec_flax_cocoa_am.jpg',
+  'manual:tn:charcoal': '/images/curtain_linen_charcoal.jpg',
+  'manual:tn:charcoal:wave': '/images/curtain_linen_charcoal.jpg',
+  'manual:tn:charcoal:american': '/images/elec_flax_charcoal_am.jpg',
+  'manual:tn:white': '/images/raw_linen_white.jpg',
+  'manual:tn:white:wave': '/images/raw_linen_white.jpg',
+  'manual:tn:white:american': '/images/elec_flax_white_am.jpg',
+
+  'manual:velvet:ivory': '/images/velvet_champagne.jpg',
+  'manual:velvet:ivory:wave': '/images/velvet_champagne.jpg',
+  'manual:velvet:ivory:american': '/images/elec_velvet_iv_am.jpg',
+  'manual:velvet:sand': '/images/velvet_sand_w.jpg',
+  'manual:velvet:sand:wave': '/images/velvet_sand_w.jpg',
+  'manual:velvet:sand:american': '/images/velvet_sand_am.jpg',
+  'manual:velvet:cocoa': '/images/curtain_velvet_cocoa.jpg',
+  'manual:velvet:cocoa:wave': '/images/curtain_velvet_cocoa.jpg',
+  'manual:velvet:cocoa:american': '/images/elec_velvet_cocoa_am.jpg',
+  'manual:velvet:charcoal': '/images/velvet_charcoal.jpg',
+  'manual:velvet:charcoal:wave': '/images/velvet_charcoal.jpg',
+  'manual:velvet:charcoal:american': '/images/elec_velvet_charcoal_am.jpg',
+  'manual:velvet:white': '/images/velvet_white_w.jpg',
+  'manual:velvet:white:wave': '/images/velvet_white_w.jpg',
+  'manual:velvet:white:american': '/images/velvet_white_am.jpg',
+
+  // Legacy manual aliases
   'manual:linen:ivory': '/images/curtain_manual.jpg',
   'manual:linen:sand': '/images/linen_sheer_sand.jpg',
   'manual:linen:cocoa': '/images/lustre_cocoa.jpg',
   'manual:linen:charcoal': '/images/curtain_linen_charcoal.jpg',
   'manual:linen:white': '/images/linen_sheer_white.jpg',
-
-  'manual:velvet:ivory': '/images/velvet_champagne.jpg',
-  'manual:velvet:sand': '/images/craft_textures.jpg',
-  'manual:velvet:cocoa': '/images/curtain_velvet_cocoa.jpg',
-  'manual:velvet:charcoal': '/images/velvet_charcoal.jpg',
-  'manual:velvet:white': '/images/raw_linen_white.jpg',
-
   'manual:chiffon:ivory': '/images/prod_andalusian.jpg',
   'manual:chiffon:sand': '/images/chiffon_champagne.jpg',
   'manual:chiffon:cocoa': '/images/chiffon_cocoa.jpg',
   'manual:chiffon:charcoal': '/images/chiffon_charcoal.jpg',
   'manual:chiffon:white': '/images/chiffon_white.jpg',
-
-  'manual:blackout:ivory': '/images/curtain_blackout_ivory.jpg',
-  'manual:blackout:sand': '/images/curtain_blackout_sand.jpg',
-  'manual:blackout:cocoa': '/images/cat_blackout.jpg',
-  'manual:blackout:charcoal': '/images/curtain_blackout_charcoal.jpg',
-  'manual:blackout:white': '/images/curtain_blackout_white.jpg',
-
   'manual:screen:ivory': '/images/solar_offwhite.jpg',
   'manual:screen:sand': '/images/prod_solar.jpg',
   'manual:screen:cocoa': '/images/roller_screen.jpg',
   'manual:screen:charcoal': '/images/roller_screen_charcoal.jpg',
   'manual:screen:white': '/images/roller_screen_white.jpg',
-
   'manual:zebra:ivory': '/images/roller_zebra.jpg',
   'manual:zebra:sand': '/images/roller_zebra_cream.jpg',
   'manual:zebra:cocoa': '/images/curtain_mocha_roller.jpg',
@@ -545,6 +773,27 @@ export function resolveCurtainImage(
     return IMAGE_MAP[key];
   }
 
+  // 4. Try counterpart fallback between electric and manual
+  if (normType === 'manual') {
+    const elecFullKey = `electric:${normFabric}:${normColor}:${normStyle}:${normLining}`;
+    if (IMAGE_MAP[elecFullKey]) return IMAGE_MAP[elecFullKey];
+
+    const elecStyleKey = `electric:${normFabric}:${normColor}:${normStyle}`;
+    if (IMAGE_MAP[elecStyleKey]) return IMAGE_MAP[elecStyleKey];
+
+    const elecKey = `electric:${normFabric}:${normColor}`;
+    if (IMAGE_MAP[elecKey]) return IMAGE_MAP[elecKey];
+  } else if (normType === 'electric') {
+    const manFullKey = `manual:${normFabric}:${normColor}:${normStyle}:${normLining}`;
+    if (IMAGE_MAP[manFullKey]) return IMAGE_MAP[manFullKey];
+
+    const manStyleKey = `manual:${normFabric}:${normColor}:${normStyle}`;
+    if (IMAGE_MAP[manStyleKey]) return IMAGE_MAP[manStyleKey];
+
+    const manKey = `manual:${normFabric}:${normColor}`;
+    if (IMAGE_MAP[manKey]) return IMAGE_MAP[manKey];
+  }
+
   // Fallbacks by fabric and color
   const fabricColorKey = `roller:${normFabric}:${normColor}`;
   if (IMAGE_MAP[fabricColorKey]) {
@@ -568,15 +817,15 @@ export const FABRIC_CURTAINS_METADATA: Record<'electric' | 'manual', FabricCurta
     standardWidthCm: 250,
     standardHeightCm: 300,
     maxIncludedHeightCm: 360,
-    basePrice: 120, // 120 JOD per standard 250 cm curtain
-    pricePerCm: 0.48, // 120 / 250 = 0.48 JOD per cm
+    basePrice: 120, // 120 JOD for 250 cm horizontal span
+    pricePerCm: 0.48, // 120 / 250 = 0.48 JOD per cm (48 JOD per running metre)
   },
   manual: {
     standardWidthCm: 250,
     standardHeightCm: 300,
     maxIncludedHeightCm: 360,
-    basePrice: 70, // 70 JOD per standard 250 cm curtain
-    pricePerCm: 0.28, // 70 / 250 = 0.28 JOD per cm
+    basePrice: 120, // 120 JOD for 250 cm horizontal span
+    pricePerCm: 0.48, // 120 / 250 = 0.48 JOD per cm (48 JOD per running metre)
   },
 };
 
@@ -587,15 +836,15 @@ export const CATEGORIES: CategoryInfo[] = [
   {
     id: 'electric',
     name: 'ستائر كهربائية',
-    subtitle: 'مسار آلي بمحرك — 120 د.أ',
-    description: 'ستائر فاخرة تعمل بمحرك كهربائي ومسار سقفي انسيابي، مقاس معياري 250 × 300 سم بكافة خيارات الأقمشة.',
+    subtitle: 'تشغيل ذكي ثلاثي — 48 د.أ / م',
+    description: 'ستائر كهربائية تعمل باللمس، وبالريموت كنترول، وعبر تطبيق على الهاتف، تفصيل حسب المقاس والارتفاع مشمول حتى 360 سم.',
     image: '/images/curtain_electric.jpg',
   },
   {
     id: 'manual',
     name: 'ستائر عادية',
-    subtitle: 'تشغيل يدوي كلاسيكي — 70 د.أ',
-    description: 'ستائر قماشية يدوية بدون محرك بطيات ويفي أو أمريكي أنيقة، مقاس معياري 250 × 300 سم بكافة خيارات الأقمشة.',
+    subtitle: 'تشغيل يدوي — 48 د.أ / م',
+    description: 'ستائر قماشية يدوية بدون محرك بطيات ويفي أو أمريكي أنيقة، تفصيل حسب المقاس والارتفاع مشمول حتى 360 سم.',
     image: '/images/curtain_manual.jpg',
   },
   {
@@ -604,6 +853,13 @@ export const CATEGORIES: CategoryInfo[] = [
     subtitle: 'بلاك أوت، سكرين، وزيبرا',
     description: 'حلول عملية مستقيمة للنوافذ بارتفاع معياري 300 سم تعمل بسحب بحبل سلس، والسعر عند الاستفسار.',
     image: '/images/roller_blackout.jpg',
+  },
+  {
+    id: 'tracks',
+    name: 'سكك وملحقات',
+    subtitle: 'ألمنيوم سايلنت — 5 د.أ / م',
+    description: 'سكك ألمنيوم مدهونة حراريًا وملبّسة بالبلاستيك لحركة انسيابية وهادئة، تفصيل حسب الطول المطلوب.',
+    image: '/images/aluminum_curtain_track.jpg',
   },
 ];
 
@@ -619,73 +875,62 @@ export const PRODUCTS: Product[] = [
     curtainType: 'electric',
     category: 'electric',
     categoryName: 'ستائر كهربائية',
-    shortDesc: 'ستارة تعمل بمحرك كهربائي ومسار سقفي انسيابي، مقاس معياري 250 × 300 سم بسعر 120 د.أ.',
-    description: 'ستارة فاخرة بمحرك كهربائي هادئ وعالي الجودة لفتح وإغلاق الستارة بسلاسة. تشمل خيارات تفصيل ويفي أو أمريكي مع خيارات بطانة متعددة، وسعر موحد لكافة خيارات الأقمشة.',
-    fabric: 'تشمل جميع خيارات الأقمشة (كتان، مخمل، لينين، بلاك أوت، سكرين، زيبرا)',
-    lightBlocking: 'حسب نوع القماش والبطانة المختارة',
+    shortDesc: 'ستائر كهربائية تعمل باللمس، وبالريموت كنترول، وعبر تطبيق على الهاتف.',
+    description: 'ستائر كهربائية تعمل باللمس، وبالريموت كنترول، وعبر تطبيق على الهاتف.',
+    fabric: 'تشمل خيارات أقمشة فاخرة: لينين، جاكار، ديم أوت، بلاك أوت، أفوال، كروشيه، تي ان، مخمل',
+    lightBlocking: 'خيارات عزل وتعتيم مستقلة: 50%، 80%، 100% لكافة الأقمشة',
     mainImage: '/images/curtain_electric.jpg',
-    images: ['/images/curtain_electric.jpg', '/images/linen_sheer_sand.jpg', '/images/velvet_champagne.jpg'],
-    defaultFabricId: 'linen',
+    images: ['/images/curtain_electric.jpg', '/images/elec_flax_ivory_w.jpg', '/images/velvet_champagne.jpg'],
+    defaultFabricId: 'flax_linen',
     curtainStyles: ['ويفي', 'أمريكي'],
-    liningOptions: ['بطانة 50%', 'بطانة 80%', 'تعتيم 100% — Blackout'],
+    liningOptions: ['50%', '80%', '100%'],
     pricingMeta: FABRIC_CURTAINS_METADATA.electric,
-    fabricOptions: ELECTRIC_FABRICS,
+    fabricOptions: MANUAL_FABRICS,
     colors: CENTRAL_COLORS,
-    sizes: [
-      {
-        id: 'std-electric',
-        label: '250 × 300 سم (مقاس معياري)',
-        widthCm: 250,
-        heightCm: 300,
-        price: 120,
-      },
-    ],
-    care: ['تنظيف جاف موصى به للمحافظة على انسيابية الطيات', 'مسح المسار بقطعة قماش ناعمة جافة'],
+    sizes: [],
+    priceDisplay: '48 د.أ للمتر الطولي',
+    care: ['تنظيف جاف موصى به للمحافظة على انسيابية الطيات', 'مسح المسار الكهربائي بقطعة قماش ناعمة جافة'],
     features: [
-      'محرك كهربائي هادئ ومتين مع مسار سقفي',
-      'مقاس معياري: 250 سم عرض × 300 سم ارتفاع',
+      'ستائر كهربائية تعمل باللمس، وبالريموت كنترول، وعبر تطبيق على الهاتف',
+      'تفصيل دقيق حسب المقاس: 48 د.أ للمتر الطولي (120 د.أ لكل 250 سم عرض)',
+      'الارتفاع من 100 إلى 360 سم مشمول بالسعر دون تكلفة إضافية',
       'خيارات تفصيل: طيات ويفي أو أمريكي',
-      'خيارات أقمشة كاملة: كتان، مخمل، لينين، بلاك أوت، سكرين، وزيبرا',
-      'سعر موحد ثابت 120 د.أ لجميع أنواع الأقمشة والألوان',
+      'خيارات عزل وتعتيم مستقلة: 50%، 80%، 100% لكافة الأقمشة',
+      'أقمشة فاخرة: لينين، جاكار، ديم أوت، بلاك أوت، أفوال، كروشيه، تي ان، مخمل',
     ],
     isFeatured: true,
   },
 
-  // 2. ستارة عادية
+  // 2. ستائر عادية
   {
     id: 'curtain-manual',
     slug: 'manual-curtain',
-    name: 'ستارة عادية',
+    name: 'ستائر عادية',
     curtainType: 'manual',
     category: 'manual',
     categoryName: 'ستائر عادية',
-    shortDesc: 'ستارة قماشية يدوية انسيابية بدون محرك، مقاس معياري 250 × 300 سم بسعر 70 د.أ.',
-    description: 'ستارة قماشية كلاسيكية بتشغيل يدوي تقليدي سلس بدون محرك كهربائي. تتوفر بموديل طيات ويفي أو أمريكي ونفس تشكيلة الأقمشة الكاملة بسعر موحد 70 د.أ.',
-    fabric: 'تشمل جميع خيارات الأقمشة (كتان، مخمل، شيفون، بلاك أوت، سكرين، زيبرا)',
-    lightBlocking: 'حسب نوع القماش والبطانة المختارة',
+    shortDesc: 'ستارة قماشية يدوية انسيابية بدون محرك، تفصيل حسب المقاس بدقة (120 د.أ لكل 250 سم عرض) مع شمول الارتفاع حتى 360 سم.',
+    description: 'ستارة قماشية كلاسيكية بتشغيل يدوي سلس بدون محرك. تفصيل حسب المقاس (48 د.أ للمتر الطولي) مع شمول الارتفاع من 100 إلى 360 سم بالسعر دون تكلفة إضافية، وخيارات تفصيل ويفي أو أمريكي وخيارات عزل 50%، 80%، 100% لكافة الأقمشة.',
+    fabric: 'تشمل خيارات أقمشة فاخرة: لينين، جاكار، ديم أوت، بلاك أوت، أفوال، كروشيه، تي ان، مخمل',
+    lightBlocking: 'خيارات عزل وتعتيم مستقلة: 50%، 80%، 100% لكافة الأقمشة',
     mainImage: '/images/curtain_manual.jpg',
-    images: ['/images/curtain_manual.jpg', '/images/linen_sheer_white.jpg', '/images/velvet_charcoal.jpg'],
-    defaultFabricId: 'linen',
+    images: ['/images/curtain_manual.jpg', '/images/elec_flax_ivory_w.jpg', '/images/velvet_champagne.jpg'],
+    defaultFabricId: 'flax_linen',
     curtainStyles: ['ويفي', 'أمريكي'],
-    liningOptions: ['بطانة 50%', 'بطانة 80%', 'تعتيم 100% — Blackout'],
+    liningOptions: ['50%', '80%', '100%'],
     pricingMeta: FABRIC_CURTAINS_METADATA.manual,
+    fabricOptions: MANUAL_FABRICS,
     colors: CENTRAL_COLORS,
-    sizes: [
-      {
-        id: 'std-manual',
-        label: '250 × 300 سم (مقاس معياري)',
-        widthCm: 250,
-        heightCm: 300,
-        price: 70,
-      },
-    ],
-    care: ['تنظيف جاف أو غسيل لطيف حسب نوع القماش', 'كي خفيف بالبخار لترتيب الطيات'],
+    sizes: [],
+    priceDisplay: '48 د.أ للمتر الطولي',
+    care: ['تنظيف جاف موصى به للمحافظة على انسيابية الطيات', 'كي خفيف بالبخار لترتيب القماش'],
     features: [
-      'تشغيل يدوي كلاسيكي سلس بدون محرك',
-      'مقاس معياري: 250 سم عرض × 300 سم ارتفاع',
+      'تشغيل يدوي كلاسيكي انسيابي بدون محرك',
+      'تفصيل دقيق حسب المقاس: 48 د.أ للمتر الطولي (120 د.أ لكل 250 سم عرض)',
+      'الارتفاع من 100 إلى 360 سم مشمول بالسعر دون تكلفة إضافية',
       'خيارات تفصيل: طيات ويفي أو أمريكي',
-      'خيارات أقمشة كاملة: كتان، مخمل، شيفون، بلاك أوت، سكرين، وزيبرا',
-      'سعر موحد ثابت 70 د.أ لجميع أنواع الأقمشة والألوان',
+      'خيارات عزل وتعتيم مستقلة: 50%، 80%، 100% لكافة الأقمشة',
+      'أقمشة فاخرة: لينين، جاكار، ديم أوت، بلاك أوت، أفوال، كروشيه، تي ان، مخمل',
     ],
     isFeatured: true,
   },
@@ -760,26 +1005,68 @@ export const PRODUCTS: Product[] = [
     curtainType: 'roller',
     category: 'roller',
     categoryName: 'ستائر رول',
-    shortDesc: 'ستارة رول زيبرا ذات شرائح أفقية مزدوجة تفصيل حسب المقاس، بسعر 20 د.أ لكل متر مربع.',
+    shortDesc: 'ستارة رول زيبرا ذات شرائح متناوبة تفصيل حسب المقاس بدقة، بسعر 20 د.أ لكل متر مربع.',
     description: 'ستارة رول زيبرا بأسلوب الشرائح المزدوجة المتناوبة للتحكم بالضوء والخصوصية بدقة تامة. مصنعة حسب المقاس، بسعر 20 د.أ لكل متر مربع.',
     fabric: 'بوليستر تقني معالج بنظام الشرائح المزدوجة',
     lightBlocking: 'تحكم تدريجي بين الشفافية والتعتيم',
-    mainImage: '/images/zebra_white.jpg',
-    images: ['/images/zebra_white.jpg', '/images/zebra_offwhite.jpg', '/images/zebra_sand.jpg'],
+    mainImage: '/images/zebra_inst_white.jpg',
+    images: ['/images/zebra_inst_white.jpg', '/images/zebra_inst_sand.jpg', '/images/zebra_inst_charcoal.jpg', '/images/zebra_inst_linen.jpg'],
     defaultFabricId: 'zebra',
     isUnpriced: false,
     priceDisplay: '20 د.أ / م²',
     isMadeToMeasureZebra: true,
-    zebraModels: ZEBRA_MODELS,
     zebraColors: ZEBRA_COLORS,
-    colors: CENTRAL_COLORS,
+    colors: ZEBRA_COLORS.map((z) => ({
+      id: z.id,
+      name: z.name,
+      hex: z.hex,
+      image: z.installedImage,
+      gallery: [z.installedImage],
+    })),
     sizes: [],
     care: ['مسح خفيف بإسفنجة ناعمة', 'تجنب الفرك القوي للحفاظ على استقامة الشرائح'],
     features: [
       'تفصيل دقيق حسب المقاس (العرض × الطول)',
       'سعر مباشر حسب المساحة: 20 د.أ لكل متر مربع',
       'شرائح أفقية مزدوجة متناوبة للتحكم الفوري بالإضاءة',
-      'موديلات متنوعة وخيارات ألوان عصرية',
+      'تشكيلات ألوان وتصاميم متنوعة تناسب مختلف المساحات',
+    ],
+    isFeatured: true,
+  },
+
+  // 6. جسر سكة ألمنيوم
+  {
+    id: 'curtain-track-aluminum',
+    slug: 'aluminum-curtain-track',
+    name: 'جسر سكة ألمنيوم',
+    curtainType: 'track',
+    category: 'tracks',
+    categoryName: 'سكك وملحقات',
+    shortDesc: 'ألمنيوم مدهون حراريًا وملبّس بالبلاستيك لحركة هادئة — سايلنت.',
+    description: 'ألمنيوم مدهون حراريًا وملبّس بالبلاستيك لحركة هادئة — سايلنت.',
+    fabric: 'ألمنيوم مدهون حرارياً وملبس بالبلاستيك',
+    lightBlocking: 'ملحق مسار وسكك للستائر',
+    mainImage: '/images/aluminum_curtain_track.jpg',
+    images: ['/images/aluminum_curtain_track.jpg'],
+    defaultFabricId: 'track_aluminum',
+    isTrackAccessory: true,
+    priceDisplay: '5 د.أ للمتر الطولي',
+    colors: [
+      {
+        id: 'white_thermal',
+        name: 'أبيض مدهون حرارياً',
+        hex: '#FFFFFF',
+        image: '/images/aluminum_curtain_track.jpg',
+        gallery: ['/images/aluminum_curtain_track.jpg'],
+      },
+    ],
+    sizes: [],
+    care: ['مسح المسار بقطعة قماش ناعمة وجافة للحفاظ على انسيابية الحركة', 'عجلات سايلنت هادئة تدوم طويلاً'],
+    features: [
+      'سكة ألمنيوم مدهونة حرارياً ومقاومة للصدأ والتآكل',
+      'ملبّسة بالبلاستيك لتقليل الاحتكاك وحركة سايلنت فائقة الهدوء',
+      'تفصيل حسب الطول المطلوب بالسنتيمتر بدقة: 5 د.أ للمتر الطولي',
+      'تتضمن المسار الداخلي وعجلات السحب الانسيابية',
     ],
     isFeatured: true,
   },

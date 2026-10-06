@@ -44,22 +44,24 @@ export default function ProductCard({ product }: ProductCardProps) {
 
         {/* Card Body */}
         <div className="p-4 sm:p-5">
-          {/* Simplified Color Dots & Count */}
-          <div className="flex items-center gap-1.5 mb-2.5">
-            <div className="flex items-center gap-1">
-              {product.colors.map((c) => (
-                <span
-                  key={c.id}
-                  title={c.name}
-                  className="w-3 h-3 rounded-full border border-black/20"
-                  style={{ backgroundColor: c.hex }}
-                />
-              ))}
+          {/* Simplified Color Dots & Count (Hidden for accessories / tracks) */}
+          {product.category !== 'tracks' && !product.isTrackAccessory && (
+            <div className="flex items-center gap-1.5 mb-2.5">
+              <div className="flex items-center gap-1">
+                {product.colors.map((c) => (
+                  <span
+                    key={c.id}
+                    title={c.name}
+                    className="w-3 h-3 rounded-full border border-black/20"
+                    style={{ backgroundColor: c.hex }}
+                  />
+                ))}
+              </div>
+              <span className="text-[11px] text-[#63574D]">
+                {product.colors.length} ألوان
+              </span>
             </div>
-            <span className="text-[11px] text-[#63574D]">
-              {product.colors.length} ألوان
-            </span>
-          </div>
+          )}
 
           {/* 1. Clearest Element: Product Name */}
           <h3 className="text-base sm:text-lg font-bold text-[#171513] group-hover:text-[#8C6D3F] transition-colors leading-snug">
@@ -78,6 +80,12 @@ export default function ProductCard({ product }: ProductCardProps) {
               <span className="text-xs sm:text-sm font-bold text-[#7C5E2D]">
                 السعر عند الاستفسار
               </span>
+            ) : product.priceDisplay ? (
+              <div className="flex items-baseline gap-1 text-[#171513]">
+                <span className="text-base sm:text-lg font-extrabold tabular-nums text-[#171513]">
+                  {product.priceDisplay}
+                </span>
+              </div>
             ) : (
               <div className="flex items-baseline gap-1 text-[#171513]">
                 <span className="text-lg sm:text-xl font-extrabold tabular-nums text-[#171513]">

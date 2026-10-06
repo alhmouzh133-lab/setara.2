@@ -114,21 +114,41 @@ export default function CartDrawer() {
 
                       {/* Attributes */}
                       <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-[#D8C6AE]">
-                        <span className="flex items-center gap-1">
-                          <span
-                            className="w-2.5 h-2.5 rounded-full border border-black/30"
-                            style={{ backgroundColor: item.color.hex }}
-                          />
-                          <span>{item.color.name}</span>
-                        </span>
-                        <span>·</span>
-                        <span>{item.size.label}</span>
+                        {item.curtainType === 'track' || item.productId === 'curtain-track-aluminum' ? (
+                          <span className="font-medium text-[#C8AA78]">
+                            طول السكة: {item.size.widthCm || item.size.label} سم
+                          </span>
+                        ) : (
+                          <>
+                            <span className="flex items-center gap-1">
+                              <span
+                                className="w-2.5 h-2.5 rounded-full border border-black/30"
+                                style={{ backgroundColor: item.color.hex }}
+                              />
+                              <span>{item.color.name}</span>
+                            </span>
+                            <span>·</span>
+                            <span>{item.size.label}</span>
+                          </>
+                        )}
                       </div>
 
                       {/* Selected Curtain Options */}
-                      {(item.curtainStyle || item.fabricChoice || item.liningOption) && (
+                      {item.curtainType !== 'track' &&
+                        item.productId !== 'curtain-track-aluminum' &&
+                        (item.curtainStyle || item.fabricChoice || item.liningOption) && (
                         <div className="mt-1 text-[11px] text-[#C8AA78]">
-                          {[item.curtainStyle, item.fabricChoice, item.liningOption].filter(Boolean).join(' · ')}
+                          {[
+                            item.fabricChoice,
+                            item.curtainStyle,
+                            item.liningOption
+                              ? item.liningOption.includes('عزل') || item.liningOption.includes('بطانة')
+                                ? item.liningOption
+                                : `عزل ${item.liningOption}`
+                              : '',
+                          ]
+                            .filter(Boolean)
+                            .join(' · ')}
                         </div>
                       )}
                     </div>
