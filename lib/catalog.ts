@@ -869,7 +869,7 @@ export const CATEGORIES: CategoryInfo[] = [
     name: 'خدمات التركيب',
     subtitle: 'فني معتمد — 10 د.أ / 25 د.أ',
     description: 'خدمة فني تركيب معتمد لكافة أنواع الستائر والسكك، داخل عمّان وخارجها.',
-    image: '/images/curtain_installation_service.jpg',
+    image: '/images/curtain_installation_service.png',
   },
 ];
 
@@ -1093,8 +1093,8 @@ export const PRODUCTS: Product[] = [
     description: 'تُحسب تكلفة التركيب لكل ستارة حسب المنطقة المختارة.',
     fabric: 'خدمة فني معتمد للتركيب والتثبيت الاحترافي',
     lightBlocking: 'خدمة فنية معتمدة',
-    mainImage: '/images/curtain_installation_service.jpg',
-    images: ['/images/curtain_installation_service.jpg'],
+    mainImage: '/images/curtain_installation_service.png',
+    images: ['/images/curtain_installation_service.png'],
     defaultFabricId: 'service_standard',
     isInstallationService: true,
     priceDisplay: '10 د.أ داخل عمان · 25 د.أ خارج عمان',

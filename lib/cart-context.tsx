@@ -239,7 +239,7 @@ const cartStore = {
             (isDryCleaning
               ? '/images/curtain_dry_cleaning.jpg'
               : isInstallationService
-              ? '/images/curtain_installation_service.jpg'
+              ? '/images/curtain_installation_service.png'
               : '/images/aluminum_curtain_track.jpg'),
           color: isDryCleaning
             ? {
@@ -254,7 +254,7 @@ const cartStore = {
                 id: 'service_location',
                 name: serviceLoc,
                 hex: '#C8AA78',
-                image: product.mainImage || '/images/curtain_installation_service.jpg',
+                image: product.mainImage || '/images/curtain_installation_service.png',
                 gallery: [],
               }
             : isTrackCustom

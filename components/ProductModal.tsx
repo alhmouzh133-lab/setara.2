@@ -1575,7 +1575,7 @@ function InstallationServiceModalContent({
   const lineTotal = isValidCount && selectedLocation ? unitPrice * curtainCount : 0;
   const locationLabel = selectedLocation === 'amman' ? 'داخل عمان' : selectedLocation === 'outside' ? 'خارج عمان' : '';
 
-  const serviceImage = product.mainImage || '/images/curtain_installation_service.jpg';
+  const serviceImage = product.mainImage || '/images/curtain_installation_service.png';
 
   const defaultColor: ColorOption = {
     id: 'service_location',
