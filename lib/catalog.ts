@@ -148,6 +148,9 @@ export interface Product {
   isMadeToMeasureZebra?: boolean;
   zebraColors?: ZebraColorOption[];
   isTrackAccessory?: boolean;
+  isInstallationService?: boolean;
+  isDryCleaningService?: boolean;
+  availabilityBadge?: string;
 }
 
 export interface CategoryInfo {
@@ -861,6 +864,13 @@ export const CATEGORIES: CategoryInfo[] = [
     description: 'سكك ألمنيوم مدهونة حراريًا وملبّسة بالبلاستيك لحركة انسيابية وهادئة، تفصيل حسب الطول المطلوب.',
     image: '/images/aluminum_curtain_track.jpg',
   },
+  {
+    id: 'services',
+    name: 'خدمات التركيب',
+    subtitle: 'فني معتمد — 10 د.أ / 25 د.أ',
+    description: 'خدمة فني تركيب معتمد لكافة أنواع الستائر والسكك، داخل عمّان وخارجها.',
+    image: '/images/curtain_installation_service.jpg',
+  },
 ];
 
 // ----------------------------------------------------------------------------
@@ -1067,6 +1077,65 @@ export const PRODUCTS: Product[] = [
       'ملبّسة بالبلاستيك لتقليل الاحتكاك وحركة سايلنت فائقة الهدوء',
       'تفصيل حسب الطول المطلوب بالسنتيمتر بدقة: 5 د.أ للمتر الطولي',
       'تتضمن المسار الداخلي وعجلات السحب الانسيابية',
+    ],
+    isFeatured: true,
+  },
+
+  // 7. طلب فني تركيب
+  {
+    id: 'service-installation',
+    slug: 'curtain-installation-technician',
+    name: 'طلب فني تركيب',
+    curtainType: 'service',
+    category: 'services',
+    categoryName: 'خدمات التركيب',
+    shortDesc: 'تُحسب تكلفة التركيب لكل ستارة حسب المنطقة المختارة.',
+    description: 'تُحسب تكلفة التركيب لكل ستارة حسب المنطقة المختارة.',
+    fabric: 'خدمة فني معتمد للتركيب والتثبيت الاحترافي',
+    lightBlocking: 'خدمة فنية معتمدة',
+    mainImage: '/images/curtain_installation_service.jpg',
+    images: ['/images/curtain_installation_service.jpg'],
+    defaultFabricId: 'service_standard',
+    isInstallationService: true,
+    priceDisplay: '10 د.أ داخل عمان · 25 د.أ خارج عمان',
+    colors: [],
+    sizes: [],
+    care: ['يتم التنسيق لتحديد موعد الزيارة المناسب بعد تأكيد الطلب'],
+    features: [
+      'فني تركيب محترف مع كافة معدات وأدوات التثبيت المتطورة',
+      'داخل عمان: 10 د.أ لكل ستارة',
+      'خارج عمان: 25 د.أ لكل ستارة',
+      'ضمان التثبيت السليم والمتوازن للسكك والستائر',
+    ],
+    isFeatured: true,
+  },
+
+  // 8. دراي كلين للستائر
+  {
+    id: 'service-dry-cleaning',
+    slug: 'curtain-dry-cleaning',
+    name: 'دراي كلين للستائر',
+    curtainType: 'service',
+    category: 'services',
+    categoryName: 'خدمات العناية والتركيب',
+    shortDesc: 'خدمة متكاملة تشمل فك الستارة وغسيلها وكويها وإعادة تركيبها.',
+    description: 'خدمة متكاملة تشمل فك الستارة وغسيلها وكويها وإعادة تركيبها.',
+    fabric: 'غسيل وكوي وتعقيم متخصص للأقمشة',
+    lightBlocking: 'متوفر داخل عمان فقط',
+    mainImage: '/images/curtain_dry_cleaning.jpg',
+    images: ['/images/curtain_dry_cleaning.jpg'],
+    defaultFabricId: 'dry_cleaning',
+    isDryCleaningService: true,
+    availabilityBadge: 'متوفر داخل عمان فقط',
+    priceDisplay: '25 د.أ لكل ستارة',
+    colors: [],
+    sizes: [],
+    care: ['يشمل فك الستائر بحرص ونقلها وإعادتها وتركيبها بأعلى جودة'],
+    features: [
+      'خدمة متكاملة: فك، غسيل، كوي، وإعادة تركيب',
+      'متوفر داخل عمان فقط',
+      '25 د.أ لكل ستارة شاملة كافة مراحل الخدمة',
+      'عناية فائقة بكافة أنواع الأقمشة الحساسة والمبطنة',
     ],
     isFeatured: true,
   },

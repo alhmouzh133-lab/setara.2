@@ -81,7 +81,13 @@ export default function CartDrawer() {
                   <div className="relative w-20 h-20 rounded-md overflow-hidden bg-[#2A231E] border border-white/10 shrink-0">
                     <Image
                       src={item.image}
-                      alt={item.productName}
+                      alt={
+                        item.isDryCleaning || item.productId === 'service-dry-cleaning'
+                          ? 'خدمة دراي كلين للستائر — فك وغسيل وكي وتعقيم أقمشة الستائر بالبخار'
+                          : item.productId === 'service-installation' || item.curtainType === 'service' || item.isService
+                          ? 'خدمة فني تركيب ستائر — تثبيت سكة ومسار الستائر باحترافية أعلى النافذة'
+                          : item.productName
+                      }
                       fill
                       sizes="80px"
                       className="object-cover"
@@ -114,7 +120,29 @@ export default function CartDrawer() {
 
                       {/* Attributes */}
                       <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-[#D8C6AE]">
-                        {item.curtainType === 'track' || item.productId === 'curtain-track-aluminum' ? (
+                        {item.isDryCleaning ||
+                        item.productId === 'service-dry-cleaning' ? (
+                          <div className="flex flex-col gap-0.5 text-xs">
+                            <span className="font-semibold text-[#C8AA78]">
+                              متوفر داخل عمان فقط
+                            </span>
+                            <span className="text-[11px] text-[#D8C6AE]/75">
+                              فك وغسيل وكوي وإعادة تركيب · 25 د.أ لكل ستارة
+                            </span>
+                          </div>
+                        ) : item.curtainType === 'service' ||
+                          item.isService ||
+                          item.productId === 'service-installation' ? (
+                          <div className="flex flex-col gap-0.5 text-xs">
+                            <span className="font-semibold text-[#C8AA78]">
+                              المنطقة: {item.serviceLocation || 'داخل عمان'}
+                            </span>
+                            <span className="text-[11px] text-[#D8C6AE]/75">
+                              {item.unitPrice} د.أ لكل ستارة
+                            </span>
+                          </div>
+                        ) : item.curtainType === 'track' ||
+                          item.productId === 'curtain-track-aluminum' ? (
                           <span className="font-medium text-[#C8AA78]">
                             طول السكة: {item.size.widthCm || item.size.label} سم
                           </span>
@@ -136,6 +164,11 @@ export default function CartDrawer() {
                       {/* Selected Curtain Options */}
                       {item.curtainType !== 'track' &&
                         item.productId !== 'curtain-track-aluminum' &&
+                        item.curtainType !== 'service' &&
+                        item.productId !== 'service-installation' &&
+                        item.productId !== 'service-dry-cleaning' &&
+                        !item.isService &&
+                        !item.isDryCleaning &&
                         (item.curtainStyle || item.fabricChoice || item.liningOption) && (
                         <div className="mt-1 text-[11px] text-[#C8AA78]">
                           {[

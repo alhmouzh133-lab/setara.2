@@ -25,6 +25,8 @@ export default function ProductSection({
   const electricCount = currentProducts.filter((p) => p.category === 'electric').length;
   const manualCount = currentProducts.filter((p) => p.category === 'manual').length;
   const rollerCount = currentProducts.filter((p) => p.category === 'roller').length;
+  const tracksCount = currentProducts.filter((p) => p.category === 'tracks').length;
+  const servicesCount = currentProducts.filter((p) => p.category === 'services').length;
 
   return (
     <section
@@ -88,6 +90,30 @@ export default function ProductSection({
             >
               ستائر رول ({rollerCount})
             </button>
+            {tracksCount > 0 && (
+              <button
+                onClick={() => onSelectCategory('tracks')}
+                className={`px-3.5 py-1.5 text-xs sm:text-sm font-medium rounded-md transition-all cursor-pointer ${
+                  selectedCategory === 'tracks'
+                    ? 'bg-[#171513] text-[#F5EFE6] font-bold shadow-xs border border-[#C8AA78]'
+                    : 'text-[#241E1A] hover:text-[#000000] hover:bg-[#DDD0C0]'
+                }`}
+              >
+                سكك وملحقات ({tracksCount})
+              </button>
+            )}
+            {servicesCount > 0 && (
+              <button
+                onClick={() => onSelectCategory('services')}
+                className={`px-3.5 py-1.5 text-xs sm:text-sm font-medium rounded-md transition-all cursor-pointer ${
+                  selectedCategory === 'services'
+                    ? 'bg-[#171513] text-[#F5EFE6] font-bold shadow-xs border border-[#C8AA78]'
+                    : 'text-[#241E1A] hover:text-[#000000] hover:bg-[#DDD0C0]'
+                }`}
+              >
+                خدمات التركيب ({servicesCount})
+              </button>
+            )}
           </div>
 
           <div className="text-xs font-medium text-[#3D352E] flex items-center gap-1.5">

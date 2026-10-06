@@ -22,6 +22,7 @@ export default function CheckoutModal() {
     isCheckoutOpen,
     setIsCheckoutOpen,
     clearCart,
+    removeItem,
   } = useCart();
 
   const [formData, setFormData] = useState({
@@ -35,6 +36,17 @@ export default function CheckoutModal() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [copied, setCopied] = useState(false);
   const [hasClickedWhatsApp, setHasClickedWhatsApp] = useState(false);
+
+  // Dry cleaning service detection & city availability check
+  const dryCleaningItem = items.find(
+    (item) => item.isDryCleaning || item.productId === 'service-dry-cleaning'
+  );
+  const hasDryCleaning = Boolean(dryCleaningItem);
+  const isAmman =
+    formData.city.trim() === 'عمّان' ||
+    formData.city.trim().includes('عمان') ||
+    formData.city.trim().includes('عمّان');
+  const isDryCleaningUnavailable = hasDryCleaning && (!formData.city.trim() || !isAmman);
 
   // Check if business WhatsApp number is configured
   const isWhatsAppConfigured = Boolean(BUSINESS_WHATSAPP_NUMBER && BUSINESS_WHATSAPP_NUMBER.length >= 7);
@@ -77,7 +89,16 @@ export default function CheckoutModal() {
       const opts = [item.curtainStyle, item.fabricChoice, item.liningOption].filter(Boolean).join('، ');
       const nameWithOpts = opts ? `${item.productName} (${opts})` : item.productName;
 
-      if (item.productId === 'curtain-track-aluminum' || item.curtainType === 'track') {
+      if (item.isDryCleaning || item.productId === 'service-dry-cleaning') {
+        productLines.push(
+          `• دراي كلين — فك وغسيل وكوي وإعادة تركيب — عدد ${item.quantity} ستائر — ${lineTotal} د.أ`
+        );
+      } else if (item.productId === 'service-installation' || item.curtainType === 'service' || item.isService) {
+        const loc = item.serviceLocation || 'داخل عمان';
+        productLines.push(
+          `• تركيب — ${loc} — عدد ${item.quantity} ستائر — ${lineTotal} د.أ`
+        );
+      } else if (item.productId === 'curtain-track-aluminum' || item.curtainType === 'track') {
         productLines.push(
           `• ${item.productName} — طول ${item.size.widthCm} سم — عدد ${item.quantity} — ${lineTotal} د.أ`
         );
@@ -143,12 +164,21 @@ export default function CheckoutModal() {
     } else if (formData.phone.trim().length < 8) {
       newErrors.phone = 'يرجى إدخال رقم هاتف صحيح (مثال: 0791234567).';
     }
+
+    if (hasDryCleaning) {
+      if (!formData.city.trim()) {
+        newErrors.city = 'يرجى تحديد المحافظة؛ خدمة دراي كلين متوفرة داخل عمّان فقط.';
+      } else if (!isAmman) {
+        newErrors.city = `خدمة "دراي كلين للستائر" متوفرة داخل محافظة عمّان فقط، وغير متاحة في (${formData.city}). يمكنك تغيير المحافظة إلى عمّان أو إزالة خدمة الدراي كلين لمتابعة الطلب.`;
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSendViaWhatsApp = (e: React.MouseEvent) => {
-    if (!validate()) {
+    if (!validate() || isDryCleaningUnavailable) {
       e.preventDefault();
       return;
     }
@@ -165,7 +195,7 @@ export default function CheckoutModal() {
   };
 
   const handleCopy = () => {
-    if (!validate()) return;
+    if (!validate() || isDryCleaningUnavailable) return;
     navigator.clipboard?.writeText(generatedMessage);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
@@ -361,16 +391,78 @@ export default function CheckoutModal() {
               )}
             </div>
 
+            {/* Dry cleaning availability warning banner */}
+            {isDryCleaningUnavailable && dryCleaningItem && (
+              <div className="bg-amber-950/70 border border-amber-500/60 rounded-xl p-3.5 space-y-2.5 text-right">
+                <div className="flex items-start gap-2.5">
+                  <AlertCircle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <h5 className="text-xs sm:text-sm font-bold text-amber-300">
+                      خدمة دراي كلين للستائر متوفرة داخل عمّان فقط
+                    </h5>
+                    <p className="text-xs text-amber-200/90 leading-relaxed">
+                      تم اختيار محافظة ({formData.city})، بينما خدمة &quot;دراي كلين للستائر&quot; (فك وغسيل وكوي وإعادة تركيب) متاحة حصرياً داخل حدود محافظة عمّان.
+                      يمكنك تغيير المحافظة إلى عمّان، أو إزالة خدمة الدراي كلين مع الإبقاء على باقي أصناف السلة.
+                    </p>
+                  </div>
+                </div>
+                <div className="pt-2 border-t border-amber-500/20 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      removeItem(dryCleaningItem.id);
+                      setErrors((prev) => {
+                        const next = { ...prev };
+                        delete next.city;
+                        return next;
+                      });
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-red-900/80 hover:bg-red-800 text-red-200 text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer border border-red-700/60 shadow-xs"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>إزالة خدمة الدراي كلين فقط ومتابعة الطلب لباقي المنتجات</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* City & Address */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="text-xs font-medium text-[#D8C6AE] block mb-1">
-                  المحافظة
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-medium text-[#D8C6AE] block">
+                    المحافظة <span className="text-red-400">*</span>
+                  </label>
+                  {hasDryCleaning && (
+                    <span className="text-[10px] text-amber-400 font-semibold">
+                      (عمّان فقط)
+                    </span>
+                  )}
+                </div>
                 <select
                   value={formData.city}
-                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                  className="w-full px-3 py-2.5 rounded-lg bg-[#171513] border border-white/15 focus:border-[#C8AA78] text-[#F5EFE6] text-xs focus:outline-none transition-colors cursor-pointer"
+                  onChange={(e) => {
+                    const newCity = e.target.value;
+                    setFormData({ ...formData, city: newCity });
+                    if (hasDryCleaning) {
+                      const isNowAmman =
+                        newCity.trim() === 'عمّان' ||
+                        newCity.trim().includes('عمان') ||
+                        newCity.trim().includes('عمّان');
+                      if (isNowAmman) {
+                        setErrors((prev) => {
+                          const next = { ...prev };
+                          delete next.city;
+                          return next;
+                        });
+                      }
+                    }
+                  }}
+                  className={`w-full px-3 py-2.5 rounded-lg bg-[#171513] border text-[#F5EFE6] text-xs focus:outline-none transition-colors cursor-pointer ${
+                    errors.city || isDryCleaningUnavailable
+                      ? 'border-red-500/80 focus:border-red-500 ring-1 ring-red-500/30'
+                      : 'border-white/15 focus:border-[#C8AA78]'
+                  }`}
                 >
                   <option value="عمّان">عمّان</option>
                   <option value="إربد">إربد</option>
@@ -385,6 +477,9 @@ export default function CheckoutModal() {
                   <option value="الطفيلة">الطفيلة</option>
                   <option value="المفرق">المفرق</option>
                 </select>
+                {errors.city && (
+                  <p className="text-red-400 text-[11px] mt-1 leading-snug">{errors.city}</p>
+                )}
               </div>
 
               <div className="sm:col-span-2">
@@ -422,11 +517,15 @@ export default function CheckoutModal() {
             <button
               type="button"
               onClick={handleSendViaWhatsApp}
-              disabled={!isWhatsAppConfigured}
+              disabled={!isWhatsAppConfigured || isDryCleaningUnavailable}
               className="w-full py-3.5 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-neutral-800 disabled:text-neutral-500 disabled:cursor-not-allowed text-white font-bold text-sm sm:text-base flex items-center justify-center gap-2.5 transition-all shadow-md active:scale-[0.99] cursor-pointer"
             >
               <MessageCircle className="w-5 h-5 shrink-0" />
-              <span>تأكيد الطلب وإرساله عبر واتساب</span>
+              <span>
+                {isDryCleaningUnavailable
+                  ? 'خدمة الدراي كلين متوفرة في عمّان فقط (يرجى اختيار عمّان أو حذف الخدمة)'
+                  : 'تأكيد الطلب وإرساله عبر واتساب'}
+              </span>
               <ExternalLink className="w-4 h-4 shrink-0" />
             </button>
 

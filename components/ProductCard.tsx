@@ -17,6 +17,13 @@ export default function ProductCard({ product }: ProductCardProps) {
   const isUnpriced = Boolean(product.isUnpriced);
   const fixedPrice = product.sizes && product.sizes.length > 0 ? product.sizes[0].price : null;
 
+  const imageAlt =
+    product.id === 'service-dry-cleaning' || product.isDryCleaningService
+      ? 'خدمة دراي كلين للستائر — فك وغسيل وكي وتعقيم أقمشة الستائر بالبخار'
+      : product.id === 'service-installation' || product.isInstallationService
+      ? 'خدمة فني تركيب ستائر — تثبيت سكة ومسار الستائر باحترافية أعلى النافذة'
+      : product.name;
+
   return (
     <article
       onClick={() => setOpenProductModal(product)}
@@ -27,25 +34,36 @@ export default function ProductCard({ product }: ProductCardProps) {
         <div className="relative aspect-[4/3] w-full overflow-hidden bg-[#EFE9DF]">
           <Image
             src={product.mainImage || product.images[0] || '/images/hero.jpg'}
-            alt={product.name}
+            alt={imageAlt}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
             className="object-cover object-center group-hover:scale-103 transition-transform duration-500"
             referrerPolicy="no-referrer"
           />
 
-          {/* Category Tag */}
-          <div className="absolute bottom-2.5 right-2.5">
+          {/* Category Tag & Availability Badge */}
+          <div className="absolute bottom-2.5 right-2.5 flex items-center gap-1.5 flex-wrap">
             <span className="px-2 py-0.5 text-[11px] font-semibold text-[#171513] bg-[#FAF6F0]/95 rounded-xs shadow-2xs">
               {product.categoryName}
             </span>
+            {product.availabilityBadge && (
+              <span className="px-2 py-0.5 text-[10px] font-bold text-amber-900 bg-amber-100/95 border border-amber-300/60 rounded-xs shadow-2xs">
+                {product.availabilityBadge}
+              </span>
+            )}
           </div>
         </div>
 
         {/* Card Body */}
         <div className="p-4 sm:p-5">
-          {/* Simplified Color Dots & Count (Hidden for accessories / tracks) */}
-          {product.category !== 'tracks' && !product.isTrackAccessory && (
+          {/* Simplified Color Dots & Count (Hidden for accessories, tracks, and services) */}
+          {product.category !== 'tracks' &&
+            !product.isTrackAccessory &&
+            product.category !== 'services' &&
+            !product.isInstallationService &&
+            !product.isDryCleaningService &&
+            product.colors &&
+            product.colors.length > 0 && (
             <div className="flex items-center gap-1.5 mb-2.5">
               <div className="flex items-center gap-1">
                 {product.colors.map((c) => (

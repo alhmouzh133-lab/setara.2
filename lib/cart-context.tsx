@@ -22,6 +22,9 @@ export interface CartItem {
   curtainStyle?: string; // 'ويفي' or 'أمريكي'
   fabricChoice?: string; // 'كتان طبيعي', 'مخمل ناعم', 'شيفون انسيابي', etc.
   liningOption?: string; // 'بطانة 50%', 'بطانة 80%', 'تعتيم 100% — Blackout'
+  serviceLocation?: string; // 'داخل عمان' | 'خارج عمان'
+  isService?: boolean;
+  isDryCleaning?: boolean;
   customDetails?: {
     curtainType: string;
     fabric: string;
@@ -49,6 +52,9 @@ interface CartContextType {
       curtainStyle?: string;
       liningOption?: string;
       resolvedImage?: string;
+      serviceLocation?: string;
+      isService?: boolean;
+      isDryCleaning?: boolean;
     }
   ) => void;
   addCustomItem: (customItem: CustomCurtainItem) => void;
@@ -127,11 +133,20 @@ const cartStore = {
       curtainStyle?: string;
       liningOption?: string;
       resolvedImage?: string;
+      serviceLocation?: string;
+      isService?: boolean;
+      isDryCleaning?: boolean;
     }
   ) {
     initCartFromStorage();
-    const curtainType = options?.curtainType || product.curtainType || 'electric';
-    const curtainTypeName = options?.curtainTypeName || product.name;
+    const isDryCleaning =
+      product.id === 'service-dry-cleaning' ||
+      Boolean(product.isDryCleaningService) ||
+      Boolean(options?.isDryCleaning);
+    const curtainType = isDryCleaning ? 'service' : (options?.curtainType || product.curtainType || 'electric');
+    const curtainTypeName = isDryCleaning
+      ? 'دراي كلين للستائر'
+      : (options?.curtainTypeName || product.name);
     const fabricId = options?.fabricId || product.defaultFabricId || 'linen';
     const fabricName = options?.fabricName || 'كتان طبيعي';
     const curtainStyle = options?.curtainStyle || (curtainType !== 'roller' ? 'ويفي' : undefined);
@@ -142,15 +157,39 @@ const cartStore = {
     const isZebraCustom = product.id === 'roller-zebra';
     const isManualCustom = product.id === 'curtain-manual';
     const isElectricCustom = product.id === 'curtain-electric';
-    const isTrackCustom = product.id === 'curtain-track-aluminum' || product.category === 'tracks';
+    const isTrackCustom =
+      product.id === 'curtain-track-aluminum' ||
+      product.category === 'tracks' ||
+      Boolean(product.isTrackAccessory) ||
+      options?.curtainType === 'track';
+    const isInstallationService =
+      (product.id === 'service-installation' ||
+      product.category === 'services' ||
+      Boolean(product.isInstallationService) ||
+      options?.curtainType === 'service' ||
+      Boolean(options?.isService)) && !isDryCleaning;
     const isPricedCustom =
-      isScreenScreen || isBlackoutCustom || isZebraCustom || isManualCustom || isElectricCustom || isTrackCustom;
+      isScreenScreen ||
+      isBlackoutCustom ||
+      isZebraCustom ||
+      isManualCustom ||
+      isElectricCustom ||
+      isTrackCustom ||
+      isInstallationService ||
+      isDryCleaning;
     const isUnpriced = isPricedCustom ? false : (curtainType === 'roller' || Boolean(product.isUnpriced));
-    const unitPrice = isUnpriced ? 0 : size.price;
+    const unitPrice = isDryCleaning ? 25 : (isUnpriced ? 0 : size.price);
 
-    const styleKey = curtainStyle || '';
-    const liningKey = liningOption || '';
-    const compositeId = isTrackCustom
+    const styleKey = isTrackCustom || isInstallationService || isDryCleaning ? '' : (curtainStyle || '');
+    const liningKey = isTrackCustom || isInstallationService || isDryCleaning ? '' : (liningOption || '');
+    const serviceLoc = isDryCleaning
+      ? 'داخل عمان فقط'
+      : (options?.serviceLocation || (size.price === 25 ? 'خارج عمان' : 'داخل عمان'));
+    const compositeId = isDryCleaning
+      ? 'service_dry_cleaning'
+      : isInstallationService
+      ? `service_installation_${serviceLoc === 'خارج عمان' || size.price === 25 ? 'outside' : 'amman'}`
+      : isTrackCustom
       ? `track_${size.widthCm || 0}`
       : isScreenScreen
       ? `roller_screen_${color.id}_${size.widthCm || 0}_${size.heightCm || 0}`
@@ -175,22 +214,69 @@ const cartStore = {
         {
           id: compositeId,
           productId: product.id,
-          productName: curtainTypeName,
-          curtainType,
-          curtainTypeName,
-          fabricId,
-          fabricName,
-          categoryName: product.categoryName,
-          image: options?.resolvedImage || color.image || product.images[0] || '/images/hero.jpg',
-          color,
+          productName: isDryCleaning
+            ? 'دراي كلين للستائر'
+            : isInstallationService
+            ? 'طلب فني تركيب'
+            : isTrackCustom
+            ? 'جسر سكة ألمنيوم'
+            : curtainTypeName,
+          curtainType: isDryCleaning || isInstallationService ? 'service' : isTrackCustom ? 'track' : curtainType,
+          curtainTypeName: isDryCleaning
+            ? 'دراي كلين للستائر'
+            : isInstallationService
+            ? 'طلب فني تركيب'
+            : isTrackCustom
+            ? 'جسر سكة ألمنيوم'
+            : curtainTypeName,
+          fabricId: isDryCleaning || isInstallationService || isTrackCustom ? '' : fabricId,
+          fabricName: isDryCleaning || isInstallationService || isTrackCustom ? '' : fabricName,
+          categoryName: product.categoryName || (isDryCleaning ? 'خدمات العناية والتركيب' : isInstallationService ? 'خدمات التركيب' : 'سكك وملحقات'),
+          image:
+            options?.resolvedImage ||
+            product.mainImage ||
+            color.image ||
+            (isDryCleaning
+              ? '/images/curtain_dry_cleaning.jpg'
+              : isInstallationService
+              ? '/images/curtain_installation_service.jpg'
+              : '/images/aluminum_curtain_track.jpg'),
+          color: isDryCleaning
+            ? {
+                id: 'dry_cleaning_location',
+                name: 'داخل عمان فقط',
+                hex: '#C8AA78',
+                image: product.mainImage || '/images/curtain_dry_cleaning.jpg',
+                gallery: [],
+              }
+            : isInstallationService
+            ? {
+                id: 'service_location',
+                name: serviceLoc,
+                hex: '#C8AA78',
+                image: product.mainImage || '/images/curtain_installation_service.jpg',
+                gallery: [],
+              }
+            : isTrackCustom
+            ? {
+                id: 'track_aluminum',
+                name: 'ألمنيوم مدهون حرارياً',
+                hex: '#FFFFFF',
+                image: product.mainImage || '/images/aluminum_curtain_track.jpg',
+                gallery: [],
+              }
+            : color,
           size,
           unitPrice,
           quantity,
           isCustom: false,
-          isUnpriced,
-          curtainStyle,
-          fabricChoice: fabricName,
-          liningOption,
+          isUnpriced: false,
+          curtainStyle: isDryCleaning || isInstallationService || isTrackCustom ? undefined : curtainStyle,
+          fabricChoice: isDryCleaning || isInstallationService || isTrackCustom ? undefined : fabricName,
+          liningOption: isDryCleaning || isInstallationService || isTrackCustom ? undefined : liningOption,
+          serviceLocation: isDryCleaning ? 'داخل عمان فقط' : isInstallationService ? serviceLoc : undefined,
+          isService: isDryCleaning || isInstallationService,
+          isDryCleaning,
         },
       ];
     }
@@ -299,6 +385,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         curtainStyle?: string;
         liningOption?: string;
         resolvedImage?: string;
+        serviceLocation?: string;
+        isService?: boolean;
+        isDryCleaning?: boolean;
       }
     ) => {
       cartStore.add(product, color, size, quantity, options);
