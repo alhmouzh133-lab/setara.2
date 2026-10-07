@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useCart } from '@/lib/cart-context';
 import { SHOP_CONFIG, BUSINESS_WHATSAPP_NUMBER, getWhatsAppUrl } from '@/lib/shop-data';
 import {
@@ -36,6 +36,17 @@ export default function CheckoutModal() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [copied, setCopied] = useState(false);
   const [hasClickedWhatsApp, setHasClickedWhatsApp] = useState(false);
+
+  useEffect(() => {
+    if (isCheckoutOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isCheckoutOpen]);
 
   // Dry cleaning service detection & city availability check
   const dryCleaningItem = items.find(

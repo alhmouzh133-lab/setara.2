@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Image from 'next/image';
 import { useCart } from '@/lib/cart-context';
 import { SHOP_CONFIG } from '@/lib/shop-data';
@@ -18,6 +18,17 @@ export default function CartDrawer() {
     totalItems,
     setIsCheckoutOpen,
   } = useCart();
+
+  useEffect(() => {
+    if (isCartOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isCartOpen]);
 
   if (!isCartOpen) return null;
 

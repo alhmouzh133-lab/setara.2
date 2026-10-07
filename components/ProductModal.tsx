@@ -415,20 +415,20 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
 
   return (
     <div
-      className="relative w-full max-w-4xl bg-[#211B17] text-[#F5EFE6] border border-[#C8AA78]/30 rounded-xl shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col md:flex-row"
+      className="relative w-full max-w-4xl bg-[#211B17] text-[#F5EFE6] border border-[#C8AA78]/30 rounded-xl shadow-2xl overflow-y-auto md:overflow-hidden max-h-[88vh] sm:max-h-[90vh] md:max-h-[92vh] flex flex-col md:flex-row my-auto"
       onClick={(e) => e.stopPropagation()}
     >
       {/* Close Button */}
       <button
         onClick={onClose}
         aria-label="إغلاق"
-        className="absolute top-3 left-3 sm:top-4 sm:left-4 z-40 p-2 rounded-full bg-[#171513]/90 hover:bg-[#171513] text-[#F5EFE6] hover:text-[#C8AA78] border border-white/10 transition-colors cursor-pointer shadow-md"
+        className="sticky top-3 left-3 z-50 self-start float-left -mb-10 sm:-mb-12 p-2 rounded-full bg-[#171513]/90 hover:bg-[#171513] text-[#F5EFE6] hover:text-[#C8AA78] border border-white/10 transition-colors cursor-pointer shadow-md md:absolute md:top-4 md:left-4 md:mb-0"
       >
         <X className="w-5 h-5" />
       </button>
 
       {/* Visual Gallery Column */}
-      <div className="w-full md:w-[48%] lg:w-[46%] p-5 sm:p-6 md:p-7 bg-[#1B1613] flex flex-col justify-between border-b md:border-b-0 md:border-l border-white/10 shrink-0 md:overflow-y-auto">
+      <div className="w-full md:w-[48%] lg:w-[46%] p-5 sm:p-6 md:p-7 bg-[#1B1613] flex flex-col justify-between border-b md:border-b-0 md:border-l border-white/10 shrink-0 md:overflow-y-auto md:max-h-[92vh]">
         <div>
           {/* Main Product Preview Container */}
           <div className="relative aspect-[4/3] w-full rounded-lg overflow-hidden bg-[#2A231E] border border-white/10 shadow-inner">
@@ -515,7 +515,7 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
       </div>
 
       {/* Options & Configuration Column */}
-      <div className="w-full md:w-[52%] lg:w-[54%] p-5 sm:p-6 md:p-8 flex flex-col justify-between text-right overflow-y-auto max-h-[52vh] md:max-h-[92vh]">
+      <div className="w-full md:w-[52%] lg:w-[54%] p-5 sm:p-6 md:p-8 flex flex-col justify-between text-right md:overflow-y-auto md:max-h-[92vh]">
         <div>
           {/* Header & Title */}
           <span className="text-xs uppercase tracking-wider text-[#C8AA78] font-bold block mb-1">
@@ -1354,20 +1354,20 @@ function TrackProductModalContent({
 
   return (
     <div
-      className="relative w-full max-w-4xl bg-[#211B17] text-[#F5EFE6] border border-[#C8AA78]/30 rounded-xl shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col md:flex-row"
+      className="relative w-full max-w-4xl bg-[#211B17] text-[#F5EFE6] border border-[#C8AA78]/30 rounded-xl shadow-2xl overflow-y-auto md:overflow-hidden max-h-[88vh] sm:max-h-[90vh] md:max-h-[92vh] flex flex-col md:flex-row my-auto"
       onClick={(e) => e.stopPropagation()}
     >
       {/* Close Button */}
       <button
         onClick={onClose}
         aria-label="إغلاق"
-        className="absolute top-3 left-3 sm:top-4 sm:left-4 z-40 p-2 rounded-full bg-[#171513]/90 hover:bg-[#171513] text-[#F5EFE6] hover:text-[#C8AA78] border border-white/10 transition-colors cursor-pointer shadow-md"
+        className="sticky top-3 left-3 z-50 self-start float-left -mb-10 sm:-mb-12 p-2 rounded-full bg-[#171513]/90 hover:bg-[#171513] text-[#F5EFE6] hover:text-[#C8AA78] border border-white/10 transition-colors cursor-pointer shadow-md md:absolute md:top-4 md:left-4 md:mb-0"
       >
         <X className="w-5 h-5" />
       </button>
 
       {/* Visual Column */}
-      <div className="w-full md:w-[48%] lg:w-[46%] p-5 sm:p-6 md:p-7 bg-[#1B1613] flex flex-col justify-between border-b md:border-b-0 md:border-l border-white/10 shrink-0 md:overflow-y-auto">
+      <div className="w-full md:w-[48%] lg:w-[46%] p-5 sm:p-6 md:p-7 bg-[#1B1613] flex flex-col justify-between border-b md:border-b-0 md:border-l border-white/10 shrink-0 md:overflow-y-auto md:max-h-[92vh]">
         <div>
           <div className="relative aspect-[4/3] w-full rounded-lg overflow-hidden bg-[#2A231E] border border-white/10 shadow-inner">
             <Image
@@ -1416,7 +1416,7 @@ function TrackProductModalContent({
       </div>
 
       {/* Configuration Column */}
-      <div className="w-full md:w-[52%] lg:w-[54%] p-5 sm:p-6 md:p-8 flex flex-col justify-between text-right overflow-y-auto max-h-[52vh] md:max-h-[92vh]">
+      <div className="w-full md:w-[52%] lg:w-[54%] p-5 sm:p-6 md:p-8 flex flex-col justify-between text-right md:overflow-y-auto md:max-h-[92vh]">
         <div>
           <span className="text-xs uppercase tracking-wider text-[#C8AA78] font-bold block mb-1">
             سكك وملحقات الستائر
@@ -1626,20 +1626,20 @@ function InstallationServiceModalContent({
 
   return (
     <div
-      className="relative w-full max-w-4xl bg-[#211B17] text-[#F5EFE6] border border-[#C8AA78]/30 rounded-xl shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col md:flex-row"
+      className="relative w-full max-w-4xl bg-[#211B17] text-[#F5EFE6] border border-[#C8AA78]/30 rounded-xl shadow-2xl overflow-y-auto md:overflow-hidden max-h-[88vh] sm:max-h-[90vh] md:max-h-[92vh] flex flex-col md:flex-row my-auto"
       onClick={(e) => e.stopPropagation()}
     >
       {/* Close Button */}
       <button
         onClick={onClose}
         aria-label="إغلاق"
-        className="absolute top-3 left-3 sm:top-4 sm:left-4 z-40 p-2 rounded-full bg-[#171513]/90 hover:bg-[#171513] text-[#F5EFE6] hover:text-[#C8AA78] border border-white/10 transition-colors cursor-pointer shadow-md"
+        className="sticky top-3 left-3 z-50 self-start float-left -mb-10 sm:-mb-12 p-2 rounded-full bg-[#171513]/90 hover:bg-[#171513] text-[#F5EFE6] hover:text-[#C8AA78] border border-white/10 transition-colors cursor-pointer shadow-md md:absolute md:top-4 md:left-4 md:mb-0"
       >
         <X className="w-5 h-5" />
       </button>
 
       {/* Visual Column */}
-      <div className="w-full md:w-[48%] lg:w-[46%] p-5 sm:p-6 md:p-7 bg-[#1B1613] flex flex-col justify-between border-b md:border-b-0 md:border-l border-white/10 shrink-0 md:overflow-y-auto">
+      <div className="w-full md:w-[48%] lg:w-[46%] p-5 sm:p-6 md:p-7 bg-[#1B1613] flex flex-col justify-between border-b md:border-b-0 md:border-l border-white/10 shrink-0 md:overflow-y-auto md:max-h-[92vh]">
         <div>
           <div className="relative aspect-[4/3] w-full rounded-lg overflow-hidden bg-[#2A231E] border border-white/10 shadow-inner">
             <Image
@@ -1688,7 +1688,7 @@ function InstallationServiceModalContent({
       </div>
 
       {/* Configuration Column */}
-      <div className="w-full md:w-[52%] lg:w-[54%] p-5 sm:p-6 md:p-8 flex flex-col justify-between text-right overflow-y-auto max-h-[52vh] md:max-h-[92vh]">
+      <div className="w-full md:w-[52%] lg:w-[54%] p-5 sm:p-6 md:p-8 flex flex-col justify-between text-right md:overflow-y-auto md:max-h-[92vh]">
         <div>
           <span className="text-xs uppercase tracking-wider text-[#C8AA78] font-bold block mb-1">
             خدمات التركيب والتثبيت
@@ -1973,20 +1973,20 @@ function DryCleaningServiceModalContent({
 
   return (
     <div
-      className="relative w-full max-w-4xl bg-[#211B17] text-[#F5EFE6] border border-[#C8AA78]/30 rounded-xl shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col md:flex-row"
+      className="relative w-full max-w-4xl bg-[#211B17] text-[#F5EFE6] border border-[#C8AA78]/30 rounded-xl shadow-2xl overflow-y-auto md:overflow-hidden max-h-[88vh] sm:max-h-[90vh] md:max-h-[92vh] flex flex-col md:flex-row my-auto"
       onClick={(e) => e.stopPropagation()}
     >
       {/* Close Button */}
       <button
         onClick={onClose}
         aria-label="إغلاق"
-        className="absolute top-3 left-3 sm:top-4 sm:left-4 z-40 p-2 rounded-full bg-[#171513]/90 hover:bg-[#171513] text-[#F5EFE6] hover:text-[#C8AA78] border border-white/10 transition-colors cursor-pointer shadow-md"
+        className="sticky top-3 left-3 z-50 self-start float-left -mb-10 sm:-mb-12 p-2 rounded-full bg-[#171513]/90 hover:bg-[#171513] text-[#F5EFE6] hover:text-[#C8AA78] border border-white/10 transition-colors cursor-pointer shadow-md md:absolute md:top-4 md:left-4 md:mb-0"
       >
         <X className="w-5 h-5" />
       </button>
 
       {/* Visual Column */}
-      <div className="w-full md:w-[48%] lg:w-[46%] p-5 sm:p-6 md:p-7 bg-[#1B1613] flex flex-col justify-between border-b md:border-b-0 md:border-l border-white/10 shrink-0 md:overflow-y-auto">
+      <div className="w-full md:w-[48%] lg:w-[46%] p-5 sm:p-6 md:p-7 bg-[#1B1613] flex flex-col justify-between border-b md:border-b-0 md:border-l border-white/10 shrink-0 md:overflow-y-auto md:max-h-[92vh]">
         <div>
           <div className="relative aspect-[4/3] w-full rounded-lg overflow-hidden bg-[#2A231E] border border-white/10 shadow-inner">
             <Image
@@ -2035,7 +2035,7 @@ function DryCleaningServiceModalContent({
       </div>
 
       {/* Configuration Column */}
-      <div className="w-full md:w-[52%] lg:w-[54%] p-5 sm:p-6 md:p-8 flex flex-col justify-between text-right overflow-y-auto max-h-[52vh] md:max-h-[92vh]">
+      <div className="w-full md:w-[52%] lg:w-[54%] p-5 sm:p-6 md:p-8 flex flex-col justify-between text-right md:overflow-y-auto md:max-h-[92vh]">
         <div>
           <div className="flex items-center justify-between gap-2 mb-1">
             <span className="text-xs uppercase tracking-wider text-[#C8AA78] font-bold">
@@ -2202,14 +2202,22 @@ export default function ProductModal() {
   const product = openProductModal;
 
   useEffect(() => {
+    if (product) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setOpenProductModal(null);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [setOpenProductModal]);
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [product, setOpenProductModal]);
 
   if (!product) return null;
 

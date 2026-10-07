@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useCart } from '@/lib/cart-context';
 import {
   CUSTOM_CURTAIN_TYPES,
@@ -59,6 +59,17 @@ export default function CustomQuoteModal() {
   // List of independent curtain items
   const [items, setItems] = useState<CustomCurtainItem[]>([createNewCurtainItem()]);
   const [itemErrors, setItemErrors] = useState<ItemErrorMap>({});
+
+  useEffect(() => {
+    if (isCustomQuoteOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isCustomQuoteOpen]);
 
   // Overall customer details (entered once)
   const [customer, setCustomer] = useState({
