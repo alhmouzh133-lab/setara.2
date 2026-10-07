@@ -2,7 +2,14 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useCart } from '@/lib/cart-context';
-import { SHOP_CONFIG, BUSINESS_WHATSAPP_NUMBER, getWhatsAppUrl } from '@/lib/shop-data';
+import {
+  SHOP_CONFIG,
+  BUSINESS_WHATSAPP_NUMBER,
+  getWhatsAppUrl,
+  BLACKOUT_COLORS,
+  SCREEN_COLORS,
+  ZEBRA_COLORS,
+} from '@/lib/shop-data';
 import {
   X,
   Copy,
@@ -16,7 +23,25 @@ import {
   MapPin,
   User,
   Phone,
+  FileText,
 } from 'lucide-react';
+
+const toArabicDigits = (num: number): string => {
+  const digits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+  return num
+    .toString()
+    .split('')
+    .map((c) => digits[parseInt(c, 10)] ?? c)
+    .join('');
+};
+
+const formatLining = (opt?: string): string => {
+  if (!opt) return 'بدون عزل';
+  if (opt.includes('80%')) return '80%';
+  if (opt.includes('50%')) return '50%';
+  if (opt.includes('100%')) return '100% (بلاك أوت)';
+  return opt.replace(/^(عزل|بطانة)\s*/, '');
+};
 
 export default function CheckoutModal() {
   const {
@@ -32,6 +57,7 @@ export default function CheckoutModal() {
     fullName: '',
     phone: '',
     address: '',
+    notes: '',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -78,83 +104,174 @@ export default function CheckoutModal() {
     return false;
   };
 
-  // Generate compact WhatsApp order message
+  // Generate formatted WhatsApp order message matching customer specification
   const generatedMessage = useMemo(() => {
-    const readyMadeItems = items.filter((i) => !i.isCustom);
-    const customItems = items.filter((i) => i.isCustom);
+    const itemBlocks = items.map((item, idx) => {
+      const numPrefix = `${toArabicDigits(idx + 1)}. `;
+      const lineTotal = item.unitPrice * item.quantity;
+
+      // 1. Fabric Curtains (Electric / Manual)
+      if (
+        item.productId === 'curtain-electric' ||
+        item.productId === 'curtain-manual' ||
+        item.curtainType === 'electric' ||
+        (item.curtainType === 'manual' && !item.isCustom)
+      ) {
+        const title =
+          item.curtainTypeName ||
+          (item.productId === 'curtain-electric' || item.curtainType === 'electric'
+            ? 'ستائر كهربائية'
+            : 'ستائر عادية');
+        const fabric = item.fabricChoice || 'كتان طبيعي';
+        const color = item.color.name;
+        const style = item.curtainStyle || 'ويفي';
+        const lining = formatLining(item.liningOption);
+        const width = item.size.widthCm;
+        const height = item.size.heightCm;
+
+        return [
+          `${numPrefix}${title}`,
+          `الخامة: ${fabric} | اللون: ${color}`,
+          `الطيات: ${style} | التعتيم: ${lining}`,
+          `العرض: ${width} سم | الارتفاع: ${height} سم`,
+          `الكمية: ${item.quantity} | سعر القطعة: ${item.unitPrice} د.أ`,
+          `مجموع الصنف: ${lineTotal} د.أ`,
+        ].join('\n');
+      }
+
+      // 2. Roller Blackout
+      if (item.productId === 'roller-blackout') {
+        const boMatch = BLACKOUT_COLORS.find(
+          (c) => c.id === item.color.id || c.name === item.color.name
+        );
+        const code =
+          boMatch?.sampleCode ||
+          (item.color.id?.startsWith('bo_')
+            ? item.color.id.replace('bo_', '').toUpperCase()
+            : '');
+        const colorName = boMatch?.name || item.color.name;
+
+        return [
+          `${numPrefix}رول بلاك أوت`,
+          `اللون: ${colorName}${code ? ` | رمز القماش: ${code}` : ''}`,
+          `العرض: ${item.size.widthCm} سم | الارتفاع: ${item.size.heightCm} سم`,
+          `الكمية: ${item.quantity} | سعر القطعة: ${item.unitPrice} د.أ`,
+          `مجموع الصنف: ${lineTotal} د.أ`,
+        ].join('\n');
+      }
+
+      // 3. Roller Screen
+      if (item.productId === 'roller-screen') {
+        const scMatch = SCREEN_COLORS.find(
+          (c) => c.id === item.color.id || c.name === item.color.name
+        );
+        const code = scMatch?.sampleCode;
+        const colorName = scMatch?.name || item.color.name;
+
+        return [
+          `${numPrefix}رول سكرين`,
+          `اللون: ${colorName}${code ? ` | رمز القماش: ${code}` : ''}`,
+          `العرض: ${item.size.widthCm} سم | الارتفاع: ${item.size.heightCm} سم`,
+          `الكمية: ${item.quantity} | سعر القطعة: ${item.unitPrice} د.أ`,
+          `مجموع الصنف: ${lineTotal} د.أ`,
+        ].join('\n');
+      }
+
+      // 4. Roller Zebra
+      if (item.productId === 'roller-zebra') {
+        const zbMatch = ZEBRA_COLORS.find(
+          (c) => c.id === item.color.id || c.name === item.color.name
+        );
+        const pattern = zbMatch?.sampleCode;
+        const colorName = zbMatch?.name || item.color.name;
+
+        return [
+          `${numPrefix}رول زيبرا`,
+          `اللون: ${colorName}${pattern ? ` | النمط: ${pattern}` : ''}`,
+          `العرض: ${item.size.widthCm} سم | الارتفاع: ${item.size.heightCm} سم`,
+          `الكمية: ${item.quantity} | سعر القطعة: ${item.unitPrice} د.أ`,
+          `مجموع الصنف: ${lineTotal} د.أ`,
+        ].join('\n');
+      }
+
+      // 5. Dry Cleaning / Washing Service
+      if (item.isDryCleaning || item.productId === 'service-dry-cleaning') {
+        return [
+          `${numPrefix}غسيل وكي البرادي`,
+          `الخدمة: فك وغسيل وكوي بالبخار وإعادة تركيب`,
+          `نطاق الخدمة: داخل عمان فقط`,
+          `الكمية: ${item.quantity} برداية | سعر الخدمة: 25 د.أ لكل برداية`,
+          `مجموع الصنف: ${lineTotal} د.أ`,
+        ].join('\n');
+      }
+
+      // 6. Installation Service
+      if (
+        item.productId === 'service-installation' ||
+        item.curtainType === 'service' ||
+        item.isService
+      ) {
+        const loc = item.serviceLocation || 'داخل عمان';
+        return [
+          `${numPrefix}طلب فني تركيب`,
+          `نطاق الخدمة: ${loc}`,
+          `الكمية: ${item.quantity} ستائر | سعر الخدمة: ${item.unitPrice} د.أ لكل ستارة`,
+          `مجموع الصنف: ${lineTotal} د.أ`,
+        ].join('\n');
+      }
+
+      // 7. Track Aluminum
+      if (item.productId === 'curtain-track-aluminum' || item.curtainType === 'track') {
+        return [
+          `${numPrefix}جسر سكة ألمنيوم سايلنت`,
+          `طول السكة: ${item.size.widthCm || item.size.label} سم`,
+          `الكمية: ${item.quantity} | سعر القطعة: ${item.unitPrice} د.أ`,
+          `مجموع الصنف: ${lineTotal} د.أ`,
+        ].join('\n');
+      }
+
+      // 8. Custom Made Curtain
+      if (item.isCustom) {
+        const d = item.customDetails;
+        const title = `ستارة تفصيل: ${d?.curtainType || item.productName.replace('ستارة تفصيل: ', '') || 'حسب الطلب'}`;
+        const locStr = d?.roomLocation ? `المكان: ${d.roomLocation} | ` : '';
+        const notesLine = d?.itemNotes ? `ملاحظات خاصة: ${d.itemNotes}\n` : '';
+
+        return [
+          `${numPrefix}${title}`,
+          `الخامة: ${d?.fabric || 'حسب الطلب'} | اللون: ${d?.color || item.color.name}`,
+          `${locStr}العرض: ${d?.widthCm || item.size.widthCm} سم | الارتفاع: ${d?.heightCm || item.size.heightCm} سم`,
+          `الكمية: ${item.quantity} | السعر: حسب عرض السعر من المحل`,
+          `${notesLine}مجموع الصنف: بعد مراجعة المقاسات`,
+        ].join('\n');
+      }
+
+      // 9. Standard Catalog Curtain / General Item
+      return [
+        `${numPrefix}${item.productName}`,
+        `اللون: ${item.color.name} | القياس: ${item.size.label}`,
+        `الكمية: ${item.quantity} | سعر القطعة: ${item.isUnpriced ? 'عند الاستفسار' : `${item.unitPrice} د.أ`}`,
+        `مجموع الصنف: ${item.isUnpriced ? 'يُحدد بالتواصل' : `${lineTotal} د.أ`}`,
+      ].join('\n');
+    });
 
     const lines: string[] = [];
-    lines.push(`طلب جديد — سيتارة`);
-    lines.push(`${formData.fullName.trim()} | ${formData.phone.trim()}`);
-    lines.push(`العنوان: ${formData.address.trim()}`);
-
-    const productLines: string[] = [];
-    const pricedReadyMadeItems = readyMadeItems.filter((i) => !i.isUnpriced);
-
-    readyMadeItems.forEach((item) => {
-      const lineTotal = item.unitPrice * item.quantity;
-      const opts = [item.curtainStyle, item.fabricChoice, item.liningOption].filter(Boolean).join('، ');
-      const nameWithOpts = opts ? `${item.productName} (${opts})` : item.productName;
-
-      if (item.isDryCleaning || item.productId === 'service-dry-cleaning') {
-        productLines.push(
-          `• غسيل وكي البرادي — فك وغسيل وكوي وإعادة تركيب (داخل عمان) — عدد ${item.quantity} برداية — ${lineTotal} د.أ`
-        );
-      } else if (item.productId === 'service-installation' || item.curtainType === 'service' || item.isService) {
-        const loc = item.serviceLocation || 'داخل عمان';
-        productLines.push(
-          `• تركيب — ${loc} — عدد ${item.quantity} ستائر — ${lineTotal} د.أ`
-        );
-      } else if (item.productId === 'curtain-track-aluminum' || item.curtainType === 'track') {
-        productLines.push(
-          `• ${item.productName} — طول ${item.size.widthCm} سم — عدد ${item.quantity} — ${lineTotal} د.أ`
-        );
-      } else if (item.productId === 'curtain-electric' || item.productId === 'curtain-manual') {
-        const liningStr = item.liningOption
-          ? item.liningOption.includes('عزل') || item.liningOption.includes('بطانة')
-            ? item.liningOption
-            : `عزل ${item.liningOption}`
-          : '';
-        const optsStr = [item.fabricChoice, item.curtainStyle, liningStr].filter(Boolean).join('، ');
-        productLines.push(
-          `• ${item.productName} (${optsStr}) — ${item.color.name} — ${item.size.widthCm}×${item.size.heightCm} سم — عدد ${item.quantity} — ${lineTotal} د.أ`
-        );
-      } else if (item.productId === 'roller-screen' || item.productId === 'roller-blackout' || item.productId === 'roller-zebra') {
-        productLines.push(
-          `• ${item.productName} — ${item.fabricChoice} — ${item.size.widthCm}×${item.size.heightCm} سم — عدد ${item.quantity} — ${lineTotal} د.أ`
-        );
-      } else if (item.isUnpriced) {
-        productLines.push(
-          `• ${nameWithOpts} — ${item.color.name} — ${item.size.label} — عدد ${item.quantity} — السعر عند الاستفسار`
-        );
-      } else {
-        productLines.push(
-          `• ${nameWithOpts} — ${item.color.name} — ${item.size.label} — عدد ${item.quantity} — ${lineTotal} د.أ`
-        );
-      }
-    });
-
-    customItems.forEach((item) => {
-      const d = item.customDetails;
-      const fabric = d?.fabric || item.productName.replace('ستارة تفصيل: ', '');
-      const color = (d?.color || item.color.name) + (d?.customColorNote ? ` (${d.customColorNote})` : '');
-      const dimensions = `${d?.widthCm || item.size.widthCm}×${d?.heightCm || item.size.heightCm} سم`;
-      productLines.push(
-        `• تفصيل: ${fabric} — ${color} — ${dimensions} — عدد ${item.quantity} — السعر بعد مراجعة الطلب`
-      );
-    });
-
-    if (productLines.length > 0) {
-      lines.push(``);
-      lines.push(...productLines);
-    }
-
-    // Subtotal & Delivery
+    lines.push(`طلب جديد — سيتارة 🪟`);
     lines.push(``);
-    if (pricedReadyMadeItems.length > 0) {
-      lines.push(`مجموع المنتجات: ${subtotal} د.أ`);
+    lines.push(`الاسم: ${formData.fullName.trim() || '[اسم العميل]'}`);
+    lines.push(`رقم الهاتف: ${formData.phone.trim() || '[رقم الهاتف]'}`);
+    lines.push(`العنوان: ${formData.address.trim() || '[المحافظة، المنطقة، الشارع، رقم البناية]'}`);
+    lines.push(``);
+    lines.push(`المنتجات المطلوبة:`);
+    lines.push(``);
+    lines.push(itemBlocks.join('\n\n'));
+    lines.push(``);
+    lines.push(`إجمالي السلة: ${subtotal} د.أ`);
+    lines.push(`رسوم التوصيل: تُحدد بالتواصل مع المحل.`);
+    if (formData.notes.trim()) {
+      lines.push(``);
+      lines.push(`ملاحظات: ${formData.notes.trim()}`);
     }
-    lines.push(`التوصيل: يُحدد بالتواصل.`);
 
     return lines.join('\n');
   }, [items, subtotal, formData]);
@@ -395,16 +512,16 @@ export default function CheckoutModal() {
             {/* Field 3: عنوان السكن */}
             <div>
               <label className="text-xs font-semibold text-[#F5EFE6] block mb-1.5">
-                عنوان السكن <span className="text-red-400">*</span>
+                العنوان بالتفصيل <span className="text-red-400">*</span>
               </label>
               <textarea
-                rows={3}
+                rows={2}
                 value={formData.address}
                 onChange={(e) => {
                   setFormData({ ...formData, address: e.target.value });
                   if (errors.address) setErrors((prev) => ({ ...prev, address: '' }));
                 }}
-                placeholder="المدينة، المنطقة، الشارع، رقم البناية وأي تفاصيل تساعدنا بالوصول"
+                placeholder="المحافظة، المنطقة، الشارع، رقم البناية وأي تفاصيل للوصول"
                 className={`w-full px-3.5 py-2.5 rounded-lg bg-[#171513] border text-[#F5EFE6] text-xs placeholder:text-[#D8C6AE]/40 focus:outline-none transition-colors resize-none ${
                   errors.address
                     ? 'border-red-500 focus:border-red-400 ring-1 ring-red-500/30'
@@ -414,6 +531,21 @@ export default function CheckoutModal() {
               {errors.address && (
                 <p className="text-red-400 text-xs mt-1 font-medium">{errors.address}</p>
               )}
+            </div>
+
+            {/* Field 4: ملاحظات (اختياري) */}
+            <div>
+              <label className="text-xs font-semibold text-[#D8C6AE] block mb-1.5 flex items-center gap-1.5">
+                <FileText className="w-3.5 h-3.5 text-[#C8AA78]" />
+                <span>ملاحظات إضافية (اختياري)</span>
+              </label>
+              <textarea
+                rows={2}
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                placeholder="أي ملاحظات خاصة بالتوصيل أو التوقيت أو مواصفات إضافية"
+                className="w-full px-3.5 py-2.5 rounded-lg bg-[#171513] border border-white/15 focus:border-[#C8AA78] text-[#F5EFE6] text-xs placeholder:text-[#D8C6AE]/40 focus:outline-none transition-colors resize-none"
+              />
             </div>
 
             {/* Dry cleaning availability warning banner */}
@@ -444,6 +576,20 @@ export default function CheckoutModal() {
                 )}
               </div>
             )}
+
+            {/* Live Message Preview */}
+            <details className="group bg-[#171513] rounded-lg border border-white/10 overflow-hidden text-xs">
+              <summary className="px-3.5 py-2.5 cursor-pointer text-[#C8AA78] font-semibold flex items-center justify-between select-none hover:bg-white/5 transition-colors">
+                <span className="flex items-center gap-1.5">
+                  <FileText className="w-3.5 h-3.5 text-[#C8AA78]" />
+                  <span>معاينة نص رسالة الطلب المرسلة للواتساب</span>
+                </span>
+                <span className="text-[10px] text-[#D8C6AE]/60 group-open:rotate-180 transition-transform">▼</span>
+              </summary>
+              <div className="p-3.5 pt-2 text-[11px] font-sans whitespace-pre-wrap text-[#D8C6AE] border-t border-white/5 bg-[#141210] max-h-52 overflow-y-auto leading-relaxed select-all">
+                {generatedMessage}
+              </div>
+            </details>
           </div>
 
           {/* 3. Primary Action & Explanation */}
