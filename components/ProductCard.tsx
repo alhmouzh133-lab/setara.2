@@ -19,7 +19,7 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   const imageAlt =
     product.id === 'service-dry-cleaning' || product.isDryCleaningService
-      ? 'خدمة دراي كلين للستائر — فك وغسيل وكي وتعقيم أقمشة الستائر بالبخار'
+      ? 'خدمة غسيل وكي البرادي — فك وغسيل وكوي وتعقيم أقمشة البرادي بالبخار'
       : product.id === 'service-installation' || product.isInstallationService
       ? 'خدمة فني تركيب ستائر — تثبيت سكة ومسار الستائر باحترافية أعلى النافذة'
       : product.name;

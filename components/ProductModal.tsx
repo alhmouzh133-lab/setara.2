@@ -1926,7 +1926,7 @@ function DryCleaningServiceModalContent({
   const unitPrice = 25; // 25 JOD per curtain
   const lineTotal = isValidCount ? unitPrice * curtainCount : 0;
 
-  const serviceImage = product.mainImage || '/images/curtain_dry_cleaning.jpg';
+  const serviceImage = product.mainImage || '/images/washing_curtains.jpg';
 
   const defaultColor: ColorOption = {
     id: 'dry_cleaning_location',
@@ -1938,7 +1938,7 @@ function DryCleaningServiceModalContent({
 
   const handleAdd = () => {
     if (!isValidCount) {
-      setValidationError('يرجى تحديد عدد صحيح موجب للستائر (ستارة واحدة على الأقل).');
+      setValidationError('يرجى تحديد عدد صحيح موجب للبرادي (برداية واحدة على الأقل).');
       return;
     }
 
@@ -1947,7 +1947,7 @@ function DryCleaningServiceModalContent({
       defaultColor,
       {
         id: `dry_cleaning_${curtainCount}`,
-        label: `${curtainCount} ستائر (داخل عمان فقط)`,
+        label: `${curtainCount} برادي (داخل عمان فقط)`,
         widthCm: 0,
         heightCm: 0,
         price: unitPrice,
@@ -1955,7 +1955,7 @@ function DryCleaningServiceModalContent({
       curtainCount, // Cart quantity = curtain count
       {
         curtainType: 'service',
-        curtainTypeName: product.name || 'دراي كلين للستائر',
+        curtainTypeName: product.name || 'غسيل وكي البرادي',
         serviceLocation: 'داخل عمان فقط',
         isService: true,
         isDryCleaning: true,
@@ -1966,7 +1966,7 @@ function DryCleaningServiceModalContent({
   };
 
   const handleWhatsApp = () => {
-    const message = `مرحباً متجر سيتارة، أود الاستفسار عن خدمة ${product.name} (متوفر داخل عمان فقط، عدد الستائر: ${curtainCount} — التكلفة: ${lineTotal} د.أ).`;
+    const message = `مرحباً متجر سيتارة، أود الاستفسار عن خدمة ${product.name} (متوفر داخل عمان فقط، عدد البرادي: ${curtainCount} — التكلفة: ${lineTotal} د.أ).`;
     const targetUrl = getWhatsAppUrl(message);
     window.open(targetUrl, '_blank', 'noopener,noreferrer');
   };
@@ -1991,7 +1991,7 @@ function DryCleaningServiceModalContent({
           <div className="relative aspect-[4/3] w-full rounded-lg overflow-hidden bg-[#2A231E] border border-white/10 shadow-inner">
             <Image
               src={serviceImage}
-              alt="خدمة دراي كلين للستائر — فك وغسيل وكي وتعقيم أقمشة الستائر بالبخار"
+              alt="خدمة غسيل وكي البرادي — فك وغسيل وكوي وتعقيم أقمشة البرادي بالبخار"
               fill
               sizes="(max-width: 768px) 100vw, 50vw"
               className="object-cover object-center select-none"
@@ -2013,7 +2013,7 @@ function DryCleaningServiceModalContent({
 
           <div className="mt-3 flex items-center justify-between text-[11px] text-[#D8C6AE]/75 px-1">
             <span className="text-[#D8C6AE]">تسعيرة الخدمة:</span>
-            <span className="text-[#C8AA78] font-bold">25 د.أ لكل ستارة</span>
+            <span className="text-[#C8AA78] font-bold">25 د.أ لكل برداية</span>
           </div>
         </div>
 
@@ -2021,7 +2021,7 @@ function DryCleaningServiceModalContent({
         <div className="mt-4 p-3.5 bg-[#171513] rounded-lg border border-white/5 space-y-2 text-xs text-[#D8C6AE]">
           <div className="flex items-center justify-between border-b border-white/5 pb-1.5">
             <span className="text-[#D8C6AE]/70">مراحل الخدمة:</span>
-            <span className="font-semibold text-[#F5EFE6]">فك، غسيل، كوي، وإعادة تركيب</span>
+            <span className="font-semibold text-[#F5EFE6]">فك، غسيل، كوي بالبخار، وإعادة تركيب</span>
           </div>
           <div className="flex items-center justify-between border-b border-white/5 pb-1.5">
             <span className="text-[#D8C6AE]/70">نطاق التغطية:</span>
@@ -2039,7 +2039,7 @@ function DryCleaningServiceModalContent({
         <div>
           <div className="flex items-center justify-between gap-2 mb-1">
             <span className="text-xs uppercase tracking-wider text-[#C8AA78] font-bold">
-              خدمات العناية بالستائر
+              خدمات العناية بالبرادي
             </span>
             <span className="px-2 py-0.5 text-[10px] font-bold text-amber-900 bg-amber-100/95 border border-amber-300/60 rounded-xs">
               متوفر داخل عمان فقط
@@ -2049,7 +2049,7 @@ function DryCleaningServiceModalContent({
             {product.name}
           </h2>
           <p className="text-xs text-[#D8C6AE]/85 mt-1.5 leading-relaxed bg-[#171513] p-2.5 rounded-lg border border-white/5">
-            {product.shortDesc || 'خدمة متكاملة تشمل فك الستارة وغسيلها وكويها وإعادة تركيبها.'}
+            {product.shortDesc || 'خدمة متكاملة تشمل فك البرداية وغسيلها وكويها وإعادة تركيبها بعناية فائقة.'}
           </p>
 
           {/* Rate Banner */}
@@ -2064,13 +2064,13 @@ function DryCleaningServiceModalContent({
                 </span>
                 <span className="text-xs text-[#D8C6AE]">{SHOP_CONFIG.currencySymbol}</span>
                 <span className="text-[11px] text-[#D8C6AE]/70 mr-1.5">
-                  (25 د.أ × {curtainCount} ستائر)
+                  (25 د.أ × {curtainCount} برداية)
                 </span>
               </div>
             </div>
             <div className="text-left">
               <span className="text-[11px] text-[#C8AA78] font-bold block">
-                25 د.أ / للستارة
+                25 د.أ / للبرداية
               </span>
               <span className="text-[10px] text-[#D8C6AE]/60">
                 شامل الفك والكوي والتركيب
@@ -2079,22 +2079,22 @@ function DryCleaningServiceModalContent({
           </div>
 
           <div className="mt-5 space-y-4">
-            {/* “عدد الستائر” input: positive integer, default 1 */}
+            {/* “عدد البرادي” input: positive integer, default 1 */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-xs font-bold text-[#F5EFE6] flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5 text-[#C8AA78]" />
-                  <span>عدد الستائر المطلوب تنظيفها</span>
+                  <span>عدد البرادي المطلوب غسيلها</span>
                   <span className="text-red-400">*</span>
                 </label>
                 <span className="text-xs text-[#C8AA78] font-semibold tabular-nums">
-                  {curtainCount} {curtainCount === 1 ? 'ستارة' : curtainCount === 2 ? 'ستارتان' : 'ستائر'}
+                  {curtainCount} {curtainCount === 1 ? 'برداية' : curtainCount === 2 ? 'بردايتان' : 'برادي'}
                 </span>
               </div>
 
               <div className="flex items-center justify-between p-2.5 bg-[#171513] border border-white/10 rounded-lg">
                 <span className="text-xs text-[#D8C6AE]/80">
-                  حدد عدد الستائر:
+                  حدد عدد البرادي:
                 </span>
                 <div className="flex items-center gap-3">
                   <button
@@ -2129,7 +2129,7 @@ function DryCleaningServiceModalContent({
                 </div>
               </div>
               <span className="text-[11px] text-[#D8C6AE]/60 block mt-1.5">
-                يشمل السعر (25 د.أ لكل ستارة) فك الستارة ونقلها وغسيلها وكويها وإعادة تركيبها بالكامل.
+                يشمل السعر (25 د.أ لكل برداية) فك البرداية ونقلها وغسيلها وكويها وإعادة تركيبها بالكامل.
               </span>
             </div>
 
@@ -2140,15 +2140,15 @@ function DryCleaningServiceModalContent({
                 <span className="font-bold text-[#F5EFE6]">داخل عمان فقط</span>
               </div>
               <div className="flex items-center justify-between text-[#D8C6AE]">
-                <span>تكلفة الخدمة لكل ستارة:</span>
+                <span>تكلفة الخدمة لكل برداية:</span>
                 <span className="font-semibold text-[#C8AA78]">25 د.أ (شاملة الفك والغسيل والكوي والتركيب)</span>
               </div>
               <div className="flex items-center justify-between text-[#D8C6AE]">
-                <span>عدد الستائر:</span>
+                <span>عدد البرادي:</span>
                 <span className="font-bold text-[#F5EFE6] tabular-nums">{curtainCount}</span>
               </div>
               <div className="flex items-center justify-between pt-1.5 border-t border-white/5">
-                <span className="font-bold text-[#F5EFE6]">إجمالي خدمة الدراي كلين:</span>
+                <span className="font-bold text-[#F5EFE6]">إجمالي خدمة غسيل وكي البرادي:</span>
                 <span className="font-extrabold text-[#C8AA78] text-sm tabular-nums">
                   {lineTotal} {SHOP_CONFIG.currencySymbol}
                 </span>
@@ -2185,7 +2185,7 @@ function DryCleaningServiceModalContent({
             className="w-full py-2.5 px-4 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 hover:text-emerald-200 border border-emerald-500/30 text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
           >
             <MessageCircle className="w-3.5 h-3.5 text-emerald-400" />
-            <span>استفسار عن خدمة الدراي كلين عبر واتساب</span>
+            <span>استفسار عن خدمة غسيل وكي البرادي عبر واتساب</span>
           </button>
 
           <p className="text-[11px] text-center text-[#D8C6AE]/60 mt-1.5">

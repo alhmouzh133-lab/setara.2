@@ -145,7 +145,7 @@ const cartStore = {
       Boolean(options?.isDryCleaning);
     const curtainType = isDryCleaning ? 'service' : (options?.curtainType || product.curtainType || 'electric');
     const curtainTypeName = isDryCleaning
-      ? 'دراي كلين للستائر'
+      ? 'غسيل وكي البرادي'
       : (options?.curtainTypeName || product.name);
     const fabricId = options?.fabricId || product.defaultFabricId || 'linen';
     const fabricName = options?.fabricName || 'كتان طبيعي';
@@ -215,7 +215,7 @@ const cartStore = {
           id: compositeId,
           productId: product.id,
           productName: isDryCleaning
-            ? 'دراي كلين للستائر'
+            ? 'غسيل وكي البرادي'
             : isInstallationService
             ? 'طلب فني تركيب'
             : isTrackCustom
@@ -223,7 +223,7 @@ const cartStore = {
             : curtainTypeName,
           curtainType: isDryCleaning || isInstallationService ? 'service' : isTrackCustom ? 'track' : curtainType,
           curtainTypeName: isDryCleaning
-            ? 'دراي كلين للستائر'
+            ? 'غسيل وكي البرادي'
             : isInstallationService
             ? 'طلب فني تركيب'
             : isTrackCustom
@@ -237,7 +237,7 @@ const cartStore = {
             product.mainImage ||
             color.image ||
             (isDryCleaning
-              ? '/images/curtain_dry_cleaning.jpg'
+              ? '/images/washing_curtains.jpg'
               : isInstallationService
               ? '/images/curtain_installation_service.png'
               : '/images/aluminum_curtain_track.jpg'),
@@ -246,7 +246,7 @@ const cartStore = {
                 id: 'dry_cleaning_location',
                 name: 'داخل عمان فقط',
                 hex: '#C8AA78',
-                image: product.mainImage || '/images/curtain_dry_cleaning.jpg',
+                image: product.mainImage || '/images/washing_curtains.jpg',
                 gallery: [],
               }
             : isInstallationService
@@ -290,12 +290,12 @@ const cartStore = {
       {
         id: customId,
         productId: 'custom_curtain',
-        productName: `ستارة تفصيل: ${item.curtainType}`,
+        productName: `ستارة تفصيل: ${item.curtainType.trim() || 'حسب الطلب'}`,
         categoryName: 'تفصيل حسب الطلب',
         image: '/images/craft_textures.jpg',
         color: {
-          id: `custom_${item.color}`,
-          name: item.color + (item.customColorNote ? ` (${item.customColorNote})` : ''),
+          id: `custom_${item.color.trim() || 'custom'}`,
+          name: item.color.trim() || 'حسب الطلب',
           hex: '#C8AA78',
           image: '/images/craft_textures.jpg',
           gallery: [],

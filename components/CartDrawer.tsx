@@ -94,7 +94,7 @@ export default function CartDrawer() {
                       src={item.image}
                       alt={
                         item.isDryCleaning || item.productId === 'service-dry-cleaning'
-                          ? 'خدمة دراي كلين للستائر — فك وغسيل وكي وتعقيم أقمشة الستائر بالبخار'
+                          ? 'خدمة غسيل وكي البرادي — فك وغسيل وكوي وتعقيم أقمشة البرادي بالبخار'
                           : item.productId === 'service-installation' || item.curtainType === 'service' || item.isService
                           ? 'خدمة فني تركيب ستائر — تثبيت سكة ومسار الستائر باحترافية أعلى النافذة'
                           : item.productName
@@ -138,7 +138,7 @@ export default function CartDrawer() {
                               متوفر داخل عمان فقط
                             </span>
                             <span className="text-[11px] text-[#D8C6AE]/75">
-                              فك وغسيل وكوي وإعادة تركيب · 25 د.أ لكل ستارة
+                              فك وغسيل وكوي وإعادة تركيب · 25 د.أ لكل برداية
                             </span>
                           </div>
                         ) : item.curtainType === 'service' ||
@@ -157,6 +157,23 @@ export default function CartDrawer() {
                           <span className="font-medium text-[#C8AA78]">
                             طول السكة: {item.size.widthCm || item.size.label} سم
                           </span>
+                        ) : item.isCustom && item.customDetails ? (
+                          <div className="flex flex-col gap-0.5 text-xs text-[#D8C6AE]">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-[#C8AA78] font-medium">اللون: {item.customDetails.color}</span>
+                              <span>·</span>
+                              <span>{item.customDetails.widthCm}×{item.customDetails.heightCm} سم</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 flex-wrap text-[11px] text-[#D8C6AE]/80">
+                              <span>القماش: {item.customDetails.fabric}</span>
+                              {item.customDetails.roomLocation && (
+                                <>
+                                  <span>·</span>
+                                  <span>المكان: {item.customDetails.roomLocation}</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
                         ) : (
                           <>
                             <span className="flex items-center gap-1">

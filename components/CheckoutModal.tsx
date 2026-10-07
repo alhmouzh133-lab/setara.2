@@ -98,7 +98,7 @@ export default function CheckoutModal() {
 
       if (item.isDryCleaning || item.productId === 'service-dry-cleaning') {
         productLines.push(
-          `• دراي كلين — فك وغسيل وكوي وإعادة تركيب — عدد ${item.quantity} ستائر — ${lineTotal} د.أ`
+          `• غسيل وكي البرادي — فك وغسيل وكوي وإعادة تركيب (داخل عمان) — عدد ${item.quantity} برداية — ${lineTotal} د.أ`
         );
       } else if (item.productId === 'service-installation' || item.curtainType === 'service' || item.isService) {
         const loc = item.serviceLocation || 'داخل عمان';
@@ -181,7 +181,7 @@ export default function CheckoutModal() {
         formData.address.trim().includes('عمان') ||
         formData.address.trim().includes('عمّان');
       if (!isAmman) {
-        newErrors.address = 'خدمة "دراي كلين للستائر" متوفرة داخل محافظة عمّان فقط. يرجى التوضيح أن العنوان داخل عمّان أو إزالة الخدمة لمتابعة الطلب.';
+        newErrors.address = 'خدمة "غسيل وكي البرادي" متوفرة داخل محافظة عمّان فقط. يرجى التوضيح أن العنوان داخل عمّان أو إزالة الخدمة لمتابعة الطلب.';
       }
     }
 
@@ -422,7 +422,7 @@ export default function CheckoutModal() {
                 <div className="flex items-start gap-2">
                   <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
                   <p className="leading-relaxed">
-                    ملاحظة: خدمة &quot;دراي كلين للستائر&quot; متوفرة داخل حدود محافظة عمّان فقط.
+                    ملاحظة: خدمة &quot;غسيل وكي البرادي&quot; متوفرة داخل حدود محافظة عمّان فقط.
                   </p>
                 </div>
                 {dryCleaningItem && (
@@ -439,7 +439,7 @@ export default function CheckoutModal() {
                     className="text-[11px] text-red-300 hover:text-red-200 underline flex items-center gap-1 transition-colors cursor-pointer"
                   >
                     <Trash2 className="w-3 h-3" />
-                    <span>إزالة خدمة الدراي كلين من السلة</span>
+                    <span>إزالة خدمة غسيل وكي البرادي من السلة</span>
                   </button>
                 )}
               </div>

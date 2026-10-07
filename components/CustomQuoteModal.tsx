@@ -3,9 +3,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useCart } from '@/lib/cart-context';
 import {
-  CUSTOM_CURTAIN_TYPES,
-  CUSTOM_FABRIC_OPTIONS,
-  CUSTOM_COLOR_PRESETS,
   CustomCurtainItem,
   SHOP_CONFIG,
   BUSINESS_WHATSAPP_NUMBER,
@@ -29,6 +26,9 @@ import {
 
 interface ItemErrorMap {
   [itemId: string]: {
+    curtainType?: string;
+    fabric?: string;
+    color?: string;
     width?: string;
     height?: string;
     quantity?: string;
@@ -37,9 +37,9 @@ interface ItemErrorMap {
 
 const createNewCurtainItem = (): CustomCurtainItem => ({
   id: `curtain_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-  curtainType: CUSTOM_CURTAIN_TYPES[0],
-  fabric: CUSTOM_FABRIC_OPTIONS[0].name,
-  color: CUSTOM_COLOR_PRESETS[0],
+  curtainType: '',
+  fabric: '',
+  color: '',
   customColorNote: '',
   widthCm: '',
   heightCm: '',
@@ -131,6 +131,21 @@ export default function CustomQuoteModal() {
       const currentErrors: ItemErrorMap[string] = {};
       const numWidth = parseFloat(item.widthCm);
       const numHeight = parseFloat(item.heightCm);
+
+      if (!item.curtainType?.trim()) {
+        currentErrors.curtainType = 'يرجى كتابة نوع أو موديل الستارة يدوياً (مثال: سحب أمريكي، ويفي، رول).';
+        hasItemErrors = true;
+      }
+
+      if (!item.fabric?.trim()) {
+        currentErrors.fabric = 'يرجى كتابة نوع القماش أو الخامة يدوياً (مثال: كتان طبيعي، شيفون، مخمل).';
+        hasItemErrors = true;
+      }
+
+      if (!item.color?.trim()) {
+        currentErrors.color = 'يرجى كتابة اللون أو الدرجة اللونية يدوياً (مثال: بيج رملي، عاجي، رمادي).';
+        hasItemErrors = true;
+      }
 
       if (!item.widthCm || isNaN(numWidth) || numWidth <= 0) {
         currentErrors.width = 'يرجى إدخال عرض صحيح وموجب بالسنتيمتر (مثال: 220).';
@@ -275,7 +290,7 @@ export default function CustomQuoteModal() {
                 طلب تفصيل ستائر حسب الطلب
               </h3>
               <p className="text-[11px] sm:text-xs text-[#D8C6AE]">
-                أدخل مقاسات ستارة واحدة أو عدة ستائر في طلب عرض سعر موحد عبر واتساب
+                أدخل مواصفات ومقاسات وألوان الستائر يدوياً لطلب عرض سعر مخصص عبر واتساب
               </p>
             </div>
           </div>
@@ -293,8 +308,8 @@ export default function CustomQuoteModal() {
         <div className="bg-[#2A231E] border-b border-[#C8AA78]/25 px-4 sm:px-5 py-3 flex items-start gap-2.5 text-xs text-[#F5EFE6] text-right">
           <Info className="w-4 h-4 text-[#C8AA78] shrink-0 mt-0.5" />
           <p className="leading-relaxed">
-            <strong className="text-[#C8AA78]">سيفتح واتساب برسالة جاهزة؛ اضغط إرسال لإكمال طلبك.</strong>{' '}
-            يؤكّد المحل السعر النهائي بعد مراجعة المقاسات ونوع القماش المختار.
+            <strong className="text-[#C8AA78]">إدخال يدوي مخصص:</strong>{' '}
+            اكتب الموديل ونوع القماش واللون المطلوب بدقة، وسيراجع المحل توفر الخامة وتوافق المقاسات لتزويدك بالسعر النهائي عبر واتساب.
           </p>
         </div>
 
@@ -383,70 +398,67 @@ export default function CustomQuoteModal() {
                   {/* Room Name & Design Type */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
+                      <label className="text-xs font-bold text-[#F5EFE6] block mb-1">
+                        نوع الستارة / الموديل (كتابة يدوية) <span className="text-red-400">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={item.curtainType}
+                        onChange={(e) => handleUpdateItem(item.id, 'curtainType', e.target.value)}
+                        placeholder="اكتب الموديل (مثال: سحب أمريكي، ويفي، رول زيبرا، تعتيم...)"
+                        className="w-full px-3 py-2 rounded-lg bg-[#171513] border border-white/15 focus:border-[#C8AA78] text-[#F5EFE6] text-xs placeholder:text-[#D8C6AE]/40 focus:outline-none transition-colors"
+                      />
+                      {err.curtainType && (
+                        <p className="text-red-400 text-[10px] mt-1">{err.curtainType}</p>
+                      )}
+                    </div>
+
+                    <div>
                       <label className="text-xs font-medium text-[#D8C6AE] block mb-1">
-                        اسم الغرفة / مكان التركيب (اختياري)
+                        مكان التركيب / الغرفة (اختياري)
                       </label>
                       <input
                         type="text"
                         value={item.roomLocation}
                         onChange={(e) => handleUpdateItem(item.id, 'roomLocation', e.target.value)}
-                        placeholder="مثال: صالون الضيوف، غرفة النوم"
+                        placeholder="مثال: الصالون الرئيسي، غرفة النوم، المجلس..."
                         className="w-full px-3 py-2 rounded-lg bg-[#171513] border border-white/15 focus:border-[#C8AA78] text-[#F5EFE6] text-xs placeholder:text-[#D8C6AE]/40 focus:outline-none transition-colors"
                       />
                     </div>
-
-                    <div>
-                      <label className="text-xs font-bold text-[#F5EFE6] block mb-1">
-                        نوع الستارة / الموديل <span className="text-red-400">*</span>
-                      </label>
-                      <select
-                        value={item.curtainType}
-                        onChange={(e) => handleUpdateItem(item.id, 'curtainType', e.target.value)}
-                        className="w-full px-3 py-2 rounded-lg bg-[#171513] border border-white/15 focus:border-[#C8AA78] text-[#F5EFE6] text-xs focus:outline-none transition-colors cursor-pointer"
-                      >
-                        {CUSTOM_CURTAIN_TYPES.map((t) => (
-                          <option key={t} value={t}>
-                            {t}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
                   </div>
 
-                  {/* Fabric & Color */}
+                  {/* Fabric & Color (Manual Text Inputs) */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="text-xs font-bold text-[#F5EFE6] block mb-1">
-                        نوع القماش <span className="text-red-400">*</span>
+                        نوع القماش والخامة (كتابة يدوية) <span className="text-red-400">*</span>
                       </label>
-                      <select
+                      <input
+                        type="text"
                         value={item.fabric}
                         onChange={(e) => handleUpdateItem(item.id, 'fabric', e.target.value)}
-                        className="w-full px-3 py-2 rounded-lg bg-[#171513] border border-white/15 focus:border-[#C8AA78] text-[#F5EFE6] text-xs focus:outline-none transition-colors cursor-pointer"
-                      >
-                        {CUSTOM_FABRIC_OPTIONS.map((f) => (
-                          <option key={f.id} value={f.name}>
-                            {f.name}
-                          </option>
-                        ))}
-                      </select>
+                        placeholder="اكتب نوع القماش (مثال: كتان طبيعي، شيفون، مخمل عازل...)"
+                        className="w-full px-3 py-2 rounded-lg bg-[#171513] border border-white/15 focus:border-[#C8AA78] text-[#F5EFE6] text-xs placeholder:text-[#D8C6AE]/40 focus:outline-none transition-colors"
+                      />
+                      {err.fabric && (
+                        <p className="text-red-400 text-[10px] mt-1">{err.fabric}</p>
+                      )}
                     </div>
 
                     <div>
                       <label className="text-xs font-bold text-[#F5EFE6] block mb-1">
-                        الدرجة اللونية <span className="text-red-400">*</span>
+                        اللون / الدرجة المطلوبة (كتابة يدوية) <span className="text-red-400">*</span>
                       </label>
-                      <select
+                      <input
+                        type="text"
                         value={item.color}
                         onChange={(e) => handleUpdateItem(item.id, 'color', e.target.value)}
-                        className="w-full px-3 py-2 rounded-lg bg-[#171513] border border-white/15 focus:border-[#C8AA78] text-[#F5EFE6] text-xs focus:outline-none transition-colors cursor-pointer"
-                      >
-                        {CUSTOM_COLOR_PRESETS.map((c) => (
-                          <option key={c} value={c}>
-                            {c}
-                          </option>
-                        ))}
-                      </select>
+                        placeholder="اكتب اللون بدقة (مثال: بيج رملي، عاجي، أوف وايت، رمادي فحمي...)"
+                        className="w-full px-3 py-2 rounded-lg bg-[#171513] border border-white/15 focus:border-[#C8AA78] text-[#F5EFE6] text-xs placeholder:text-[#D8C6AE]/40 focus:outline-none transition-colors"
+                      />
+                      {err.color && (
+                        <p className="text-red-400 text-[10px] mt-1">{err.color}</p>
+                      )}
                     </div>
                   </div>
 

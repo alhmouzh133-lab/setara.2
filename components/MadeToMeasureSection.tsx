@@ -62,10 +62,10 @@ export default function MadeToMeasureSection() {
                 </div>
                 <div className="text-right">
                   <h4 className="text-sm font-bold text-[#F5EFE6]">
-                    اختر القماش
+                    حدد المواصفات واللون
                   </h4>
                   <p className="text-xs text-[#E2D6C5] font-normal mt-0.5 leading-relaxed">
-                    حدد نوع الخامة (كتان، شيفون، أو مخمل تعتيم) والدرجة اللونية المطلوبة.
+                    اكتب يدوياً نوع الموديل، خامة القماش، والدرجة اللونية المطلوبة بدقة.
                   </p>
                 </div>
               </div>
