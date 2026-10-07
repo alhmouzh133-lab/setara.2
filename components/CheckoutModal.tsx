@@ -13,6 +13,9 @@ import {
   Trash2,
   ExternalLink,
   Info,
+  MapPin,
+  User,
+  Phone,
 } from 'lucide-react';
 
 export default function CheckoutModal() {
@@ -28,9 +31,7 @@ export default function CheckoutModal() {
   const [formData, setFormData] = useState({
     fullName: '',
     phone: '',
-    city: 'عمّان',
     address: '',
-    notes: '',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -48,51 +49,46 @@ export default function CheckoutModal() {
     };
   }, [isCheckoutOpen]);
 
-  // Dry cleaning service detection & city availability check
+  // Dry cleaning service detection
   const dryCleaningItem = items.find(
     (item) => item.isDryCleaning || item.productId === 'service-dry-cleaning'
   );
   const hasDryCleaning = Boolean(dryCleaningItem);
-  const isAmman =
-    formData.city.trim() === 'عمّان' ||
-    formData.city.trim().includes('عمان') ||
-    formData.city.trim().includes('عمّان');
-  const isDryCleaningUnavailable = hasDryCleaning && (!formData.city.trim() || !isAmman);
 
   // Check if business WhatsApp number is configured
   const isWhatsAppConfigured = Boolean(BUSINESS_WHATSAPP_NUMBER && BUSINESS_WHATSAPP_NUMBER.length >= 7);
 
-  // Generate formatted message (compact format)
+  // Validate phone format (local Jordanian 077/078/079, international +962/00962, or general international)
+  const validatePhone = (phoneStr: string): boolean => {
+    const cleaned = phoneStr.trim().replace(/[\s\-\(\)]/g, '');
+    if (!cleaned) return false;
+    
+    // Local Jordanian format: 077, 078, 079 + 7 digits (10 digits total)
+    if (/^07[789]\d{7}$/.test(cleaned)) return true;
+    
+    // International Jordanian format: +96277..., 0096277..., 96277...
+    if (/^(\+?962|00962)7[789]\d{7}$/.test(cleaned)) return true;
+    
+    // General valid international phone format: + or 00 followed by 8 to 14 digits
+    if (/^(\+|\d{2})\d{8,14}$/.test(cleaned)) return true;
+    
+    // Standard 9-14 digit number
+    if (/^\d{9,14}$/.test(cleaned)) return true;
+
+    return false;
+  };
+
+  // Generate compact WhatsApp order message
   const generatedMessage = useMemo(() => {
     const readyMadeItems = items.filter((i) => !i.isCustom);
     const customItems = items.filter((i) => i.isCustom);
 
     const lines: string[] = [];
-    lines.push(`طلب جديد — سيتارة 🪟`);
-    lines.push(``);
+    lines.push(`طلب جديد — سيتارة`);
+    lines.push(`${formData.fullName.trim()} | ${formData.phone.trim()}`);
+    lines.push(`العنوان: ${formData.address.trim()}`);
 
-    // Customer line: [اسم العميل] | [رقم الهاتف]
-    const customerLine = [formData.fullName.trim(), formData.phone.trim()]
-      .filter(Boolean)
-      .join(' | ');
-    if (customerLine) {
-      lines.push(customerLine);
-    }
-
-    // Address line: العنوان: [العنوان] (omit if empty)
-    const addressParts = [formData.city.trim(), formData.address.trim()].filter(Boolean);
-    if (addressParts.length > 0) {
-      lines.push(`العنوان: ${addressParts.join(' - ')}`);
-    }
-
-    // Optional notes (omit if empty)
-    if (formData.notes.trim()) {
-      lines.push(`ملاحظات: ${formData.notes.trim()}`);
-    }
-
-    // Product lines: • [المنتج] — [اللون] — [المقاس] — عدد [الكمية] — [مجموع الصنف] د.أ
     const productLines: string[] = [];
-
     const pricedReadyMadeItems = readyMadeItems.filter((i) => !i.isUnpriced);
 
     readyMadeItems.forEach((item) => {
@@ -119,9 +115,9 @@ export default function CheckoutModal() {
             ? item.liningOption
             : `عزل ${item.liningOption}`
           : '';
-        const opts = [item.fabricChoice, item.curtainStyle, liningStr].filter(Boolean).join('، ');
+        const optsStr = [item.fabricChoice, item.curtainStyle, liningStr].filter(Boolean).join('، ');
         productLines.push(
-          `• ${item.productName} (${opts}) — ${item.color.name} — ${item.size.widthCm}×${item.size.heightCm} سم — عدد ${item.quantity} — ${lineTotal} د.أ`
+          `• ${item.productName} (${optsStr}) — ${item.color.name} — ${item.size.widthCm}×${item.size.heightCm} سم — عدد ${item.quantity} — ${lineTotal} د.أ`
         );
       } else if (item.productId === 'roller-screen' || item.productId === 'roller-blackout' || item.productId === 'roller-zebra') {
         productLines.push(
@@ -153,7 +149,7 @@ export default function CheckoutModal() {
       lines.push(...productLines);
     }
 
-    // Subtotal (only if priced ready-made items exist) & Delivery
+    // Subtotal & Delivery
     lines.push(``);
     if (pricedReadyMadeItems.length > 0) {
       lines.push(`مجموع المنتجات: ${subtotal} د.أ`);
@@ -165,22 +161,27 @@ export default function CheckoutModal() {
 
   if (!isCheckoutOpen) return null;
 
-  const validate = () => {
+  const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
+
     if (!formData.fullName.trim()) {
       newErrors.fullName = 'يرجى إدخال الاسم الكريم.';
     }
+
     if (!formData.phone.trim()) {
       newErrors.phone = 'يرجى إدخال رقم الهاتف للتواصل عبر واتساب.';
-    } else if (formData.phone.trim().length < 8) {
-      newErrors.phone = 'يرجى إدخال رقم هاتف صحيح (مثال: 0791234567).';
+    } else if (!validatePhone(formData.phone)) {
+      newErrors.phone = 'يرجى إدخال رقم هاتف محلي أو دولي صحيح (مثال: 0791234567 أو +962791234567).';
     }
 
-    if (hasDryCleaning) {
-      if (!formData.city.trim()) {
-        newErrors.city = 'يرجى تحديد المحافظة؛ خدمة دراي كلين متوفرة داخل عمّان فقط.';
-      } else if (!isAmman) {
-        newErrors.city = `خدمة "دراي كلين للستائر" متوفرة داخل محافظة عمّان فقط، وغير متاحة في (${formData.city}). يمكنك تغيير المحافظة إلى عمّان أو إزالة خدمة الدراي كلين لمتابعة الطلب.`;
+    if (!formData.address.trim()) {
+      newErrors.address = 'يرجى إدخال عنوان السكن بالتفصيل.';
+    } else if (hasDryCleaning) {
+      const isAmman =
+        formData.address.trim().includes('عمان') ||
+        formData.address.trim().includes('عمّان');
+      if (!isAmman) {
+        newErrors.address = 'خدمة "دراي كلين للستائر" متوفرة داخل محافظة عمّان فقط. يرجى التوضيح أن العنوان داخل عمّان أو إزالة الخدمة لمتابعة الطلب.';
       }
     }
 
@@ -189,24 +190,17 @@ export default function CheckoutModal() {
   };
 
   const handleSendViaWhatsApp = (e: React.MouseEvent) => {
-    if (!validate() || isDryCleaningUnavailable) {
-      e.preventDefault();
-      return;
-    }
+    e.preventDefault();
+    if (!validate()) return;
+    if (!isWhatsAppConfigured) return;
 
-    if (!isWhatsAppConfigured) {
-      e.preventDefault();
-      return;
-    }
-
-    // Set indication that WhatsApp was opened directly on user click
     setHasClickedWhatsApp(true);
     const targetUrl = getWhatsAppUrl(generatedMessage);
     window.open(targetUrl, '_blank', 'noopener,noreferrer');
   };
 
   const handleCopy = () => {
-    if (!validate() || isDryCleaningUnavailable) return;
+    if (!validate()) return;
     navigator.clipboard?.writeText(generatedMessage);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
@@ -220,21 +214,21 @@ export default function CheckoutModal() {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 bg-black/80 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200">
       <div
-        className="relative w-full max-w-2xl bg-[#211B17] text-[#F5EFE6] border border-[#C8AA78]/40 rounded-xl shadow-2xl overflow-hidden my-auto"
+        className="relative w-full max-w-2xl bg-[#211B17] text-[#F5EFE6] border border-[#C8AA78]/40 rounded-xl shadow-2xl overflow-hidden my-auto max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="p-4 sm:p-5 border-b border-white/10 flex items-center justify-between">
+        <div className="p-4 sm:p-5 border-b border-white/10 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5 text-right">
             <div className="w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
               <MessageCircle className="w-4 h-4" />
             </div>
             <div>
               <h3 className="text-base sm:text-lg font-bold text-[#F5EFE6]">
-                إرسال الطلب عبر واتساب
+                إكمال بيانات الطلب
               </h3>
               <p className="text-xs text-[#D8C6AE]">
-                {SHOP_CONFIG.brandName} · التواصل والمتابعة المباشرة مع المحل
+                {SHOP_CONFIG.brandName} · يرجى إدخال معلومات التواصل لإرسال الطلب مباشرة عبر واتساب
               </p>
             </div>
           </div>
@@ -248,26 +242,16 @@ export default function CheckoutModal() {
           </button>
         </div>
 
-        {/* Informational Guidance Banner */}
-        <div className="bg-[#2A231E] border-b border-[#C8AA78]/25 px-4 sm:px-5 py-3 flex items-start gap-2.5 text-xs text-[#F5EFE6] text-right">
-          <Info className="w-4 h-4 text-[#C8AA78] shrink-0 mt-0.5" />
-          <p className="leading-relaxed">
-            <strong className="text-[#C8AA78]">سيفتح واتساب برسالة جاهزة؛ اضغط إرسال لإكمال طلبك.</strong>{' '}
-            تتم مراجعة الطلب وحساب كلفة التوصيل مباشرة بالتنسيق معك.
-          </p>
-        </div>
-
-        {/* WhatsApp Number Unconfigured Alert */}
+        {/* WhatsApp Config Warning */}
         {!isWhatsAppConfigured && (
-          <div className="bg-amber-950/70 border-b border-amber-500/40 px-4 sm:px-5 py-3 flex items-start gap-2.5 text-xs text-amber-200 text-right">
+          <div className="bg-amber-950/70 border-b border-amber-500/40 px-4 sm:px-5 py-3 flex items-start gap-2.5 text-xs text-amber-200 text-right shrink-0">
             <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
             <div className="space-y-0.5">
               <strong className="text-amber-300 block">
                 تنبيه للمتجر: رقم واتساب غير مهيأ (BUSINESS_WHATSAPP_NUMBER)
               </strong>
               <p className="text-[11px] text-amber-200/90 leading-relaxed">
-                يرجى إضافة رقم واتساب المتجر المعتمد في ملف الإعدادات أو المتغير البيئي NEXT_PUBLIC_WHATSAPP_NUMBER.
-                في هذه الأثناء، يمكن للعميل استخدام زر &quot;نسخ تفاصيل الطلب&quot; لإرسالها لأي رقم يدوي.
+                يرجى إضافة رقم واتساب المتجر المعتمد في المتغير البيئي NEXT_PUBLIC_WHATSAPP_NUMBER.
               </p>
             </div>
           </div>
@@ -275,7 +259,7 @@ export default function CheckoutModal() {
 
         {/* Notice after clicking WhatsApp */}
         {hasClickedWhatsApp && (
-          <div className="bg-emerald-950/60 border-b border-emerald-500/40 px-4 sm:px-5 py-3 flex items-start gap-2.5 text-xs text-emerald-200 text-right">
+          <div className="bg-emerald-950/60 border-b border-emerald-500/40 px-4 sm:px-5 py-3 flex items-start gap-2.5 text-xs text-emerald-200 text-right shrink-0">
             <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
             <div className="space-y-0.5">
               <strong className="text-emerald-300 block">
@@ -288,8 +272,8 @@ export default function CheckoutModal() {
           </div>
         )}
 
-        {/* Main Content Area */}
-        <div className="p-4 sm:p-6 text-right space-y-5 max-h-[75vh] overflow-y-auto">
+        {/* Scrollable Form Body */}
+        <div className="p-4 sm:p-6 text-right space-y-5 overflow-y-auto flex-1">
           {/* 1. Itemized Order Summary */}
           <div className="bg-[#171513] p-4 rounded-xl border border-white/10 space-y-3">
             <div className="flex items-center justify-between text-xs text-[#D8C6AE] border-b border-white/5 pb-2">
@@ -299,9 +283,9 @@ export default function CheckoutModal() {
               <span>المجموع الفرعي: {subtotal} {SHOP_CONFIG.currencySymbol}</span>
             </div>
 
-            <div className="divide-y divide-white/5 max-h-40 overflow-y-auto pr-1">
+            <div className="divide-y divide-white/5 max-h-36 overflow-y-auto pr-1">
               {items.map((item) => (
-                <div key={item.id} className="py-2.5 flex items-center justify-between text-xs gap-3">
+                <div key={item.id} className="py-2 flex items-center justify-between text-xs gap-3">
                   <div className="flex items-center gap-2">
                     <span
                       className="w-2.5 h-2.5 rounded-full shrink-0 border border-black/40"
@@ -314,27 +298,14 @@ export default function CheckoutModal() {
                       <span className="text-[11px] text-[#D8C6AE]/70 block">
                         {item.color.name} · {item.size.label} · {item.quantity} قطعة
                       </span>
-                      {(item.curtainStyle || item.fabricChoice || item.liningOption) && (
-                        <span className="text-[10px] text-[#C8AA78] block">
-                          {[item.curtainStyle, item.fabricChoice, item.liningOption].filter(Boolean).join(' · ')}
-                        </span>
-                      )}
                     </div>
                   </div>
 
-                  <div className="text-left rtl:text-left shrink-0">
+                  <div className="text-left rtl:text-left shrink-0 font-bold text-[#C8AA78]">
                     {item.isCustom ? (
-                      <span className="text-[11px] text-[#C8AA78] font-medium">
-                        السعر بعد مراجعة المقاسات والخامة
-                      </span>
-                    ) : item.isUnpriced ? (
-                      <span className="text-[11px] text-[#C8AA78] font-medium">
-                        السعر عند الاستفسار
-                      </span>
+                      <span className="text-[11px] font-medium">السعر بعد المراجعة</span>
                     ) : (
-                      <span className="font-bold text-[#C8AA78] tabular-nums">
-                        {item.unitPrice * item.quantity} {SHOP_CONFIG.currencySymbol}
-                      </span>
+                      <span>{item.unitPrice * item.quantity} {SHOP_CONFIG.currencySymbol}</span>
                     )}
                   </div>
                 </div>
@@ -342,7 +313,7 @@ export default function CheckoutModal() {
             </div>
 
             {/* Subtotal & Delivery note */}
-            <div className="pt-2 border-t border-white/10 space-y-1.5 text-xs">
+            <div className="pt-2 border-t border-white/10 space-y-1 text-xs">
               <div className="flex items-center justify-between text-[#D8C6AE]">
                 <span>المجموع الفرعي للستائر:</span>
                 <span className="text-[#F5EFE6] font-bold tabular-nums">
@@ -361,197 +332,145 @@ export default function CheckoutModal() {
             </div>
           </div>
 
-          {/* 2. Customer Contact Form */}
-          <div className="space-y-3.5">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-[#C8AA78]">
-              بيانات التواصل لإرسالها بالرسالة
+          {/* 2. Customer Contact Form (Exactly 3 Required Fields) */}
+          <div className="space-y-4 bg-[#1B1613] p-4 sm:p-5 rounded-xl border border-[#C8AA78]/20">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-[#C8AA78] flex items-center gap-1.5">
+              <User className="w-4 h-4 text-[#C8AA78]" />
+              <span>معلومات العميل والتوصيل</span>
             </h4>
 
-            {/* Name */}
+            {/* Field 1: الاسم */}
             <div>
-              <label className="text-xs font-medium text-[#D8C6AE] block mb-1">
-                الاسم الكامل <span className="text-red-400">*</span>
+              <label className="text-xs font-semibold text-[#F5EFE6] block mb-1.5">
+                الاسم <span className="text-red-400">*</span>
               </label>
-              <input
-                type="text"
-                value={formData.fullName}
-                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                placeholder="مثال: يوسف الأحمد"
-                className="w-full px-3.5 py-2.5 rounded-lg bg-[#171513] border border-white/15 focus:border-[#C8AA78] text-[#F5EFE6] text-xs placeholder:text-[#D8C6AE]/40 focus:outline-none transition-colors"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  value={formData.fullName}
+                  onChange={(e) => {
+                    setFormData({ ...formData, fullName: e.target.value });
+                    if (errors.fullName) setErrors((prev) => ({ ...prev, fullName: '' }));
+                  }}
+                  placeholder="الاسم الكامل"
+                  className={`w-full px-3.5 py-2.5 rounded-lg bg-[#171513] border text-[#F5EFE6] text-xs placeholder:text-[#D8C6AE]/40 focus:outline-none transition-colors ${
+                    errors.fullName
+                      ? 'border-red-500 focus:border-red-400 ring-1 ring-red-500/30'
+                      : 'border-white/15 focus:border-[#C8AA78]'
+                  }`}
+                />
+              </div>
               {errors.fullName && (
-                <p className="text-red-400 text-[11px] mt-1">{errors.fullName}</p>
+                <p className="text-red-400 text-xs mt-1 font-medium">{errors.fullName}</p>
               )}
             </div>
 
-            {/* Phone */}
+            {/* Field 2: رقم الهاتف */}
             <div>
-              <label className="text-xs font-medium text-[#D8C6AE] block mb-1">
-                رقم الهاتف (للتواصل عبر واتساب) <span className="text-red-400">*</span>
+              <label className="text-xs font-semibold text-[#F5EFE6] block mb-1.5">
+                رقم الهاتف <span className="text-red-400">*</span>
               </label>
-              <input
-                type="tel"
-                dir="ltr"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                placeholder="079 000 0000"
-                className="w-full px-3.5 py-2.5 rounded-lg bg-[#171513] border border-white/15 focus:border-[#C8AA78] text-[#F5EFE6] text-xs text-right placeholder:text-[#D8C6AE]/40 focus:outline-none transition-colors"
-              />
+              <div className="relative">
+                <input
+                  type="tel"
+                  dir="ltr"
+                  value={formData.phone}
+                  onChange={(e) => {
+                    setFormData({ ...formData, phone: e.target.value });
+                    if (errors.phone) setErrors((prev) => ({ ...prev, phone: '' }));
+                  }}
+                  placeholder="مثال: 0791234567 أو +962791234567"
+                  className={`w-full px-3.5 py-2.5 rounded-lg bg-[#171513] border text-[#F5EFE6] text-xs text-right placeholder:text-[#D8C6AE]/40 focus:outline-none transition-colors ${
+                    errors.phone
+                      ? 'border-red-500 focus:border-red-400 ring-1 ring-red-500/30'
+                      : 'border-white/15 focus:border-[#C8AA78]'
+                  }`}
+                />
+              </div>
               {errors.phone && (
-                <p className="text-red-400 text-[11px] mt-1">{errors.phone}</p>
+                <p className="text-red-400 text-xs mt-1 font-medium">{errors.phone}</p>
+              )}
+            </div>
+
+            {/* Field 3: عنوان السكن */}
+            <div>
+              <label className="text-xs font-semibold text-[#F5EFE6] block mb-1.5">
+                عنوان السكن <span className="text-red-400">*</span>
+              </label>
+              <textarea
+                rows={3}
+                value={formData.address}
+                onChange={(e) => {
+                  setFormData({ ...formData, address: e.target.value });
+                  if (errors.address) setErrors((prev) => ({ ...prev, address: '' }));
+                }}
+                placeholder="المدينة، المنطقة، الشارع، رقم البناية وأي تفاصيل تساعدنا بالوصول"
+                className={`w-full px-3.5 py-2.5 rounded-lg bg-[#171513] border text-[#F5EFE6] text-xs placeholder:text-[#D8C6AE]/40 focus:outline-none transition-colors resize-none ${
+                  errors.address
+                    ? 'border-red-500 focus:border-red-400 ring-1 ring-red-500/30'
+                    : 'border-white/15 focus:border-[#C8AA78]'
+                }`}
+              />
+              {errors.address && (
+                <p className="text-red-400 text-xs mt-1 font-medium">{errors.address}</p>
               )}
             </div>
 
             {/* Dry cleaning availability warning banner */}
-            {isDryCleaningUnavailable && dryCleaningItem && (
-              <div className="bg-amber-950/70 border border-amber-500/60 rounded-xl p-3.5 space-y-2.5 text-right">
-                <div className="flex items-start gap-2.5">
-                  <AlertCircle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-                  <div className="space-y-1">
-                    <h5 className="text-xs sm:text-sm font-bold text-amber-300">
-                      خدمة دراي كلين للستائر متوفرة داخل عمّان فقط
-                    </h5>
-                    <p className="text-xs text-amber-200/90 leading-relaxed">
-                      تم اختيار محافظة ({formData.city})، بينما خدمة &quot;دراي كلين للستائر&quot; (فك وغسيل وكوي وإعادة تركيب) متاحة حصرياً داخل حدود محافظة عمّان.
-                      يمكنك تغيير المحافظة إلى عمّان، أو إزالة خدمة الدراي كلين مع الإبقاء على باقي أصناف السلة.
-                    </p>
-                  </div>
+            {hasDryCleaning && (
+              <div className="p-3 bg-amber-950/40 border border-amber-500/30 rounded-lg text-xs text-amber-200 space-y-2">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                  <p className="leading-relaxed">
+                    ملاحظة: خدمة &quot;دراي كلين للستائر&quot; متوفرة داخل حدود محافظة عمّان فقط.
+                  </p>
                 </div>
-                <div className="pt-2 border-t border-amber-500/20 flex justify-end">
+                {dryCleaningItem && (
                   <button
                     type="button"
                     onClick={() => {
                       removeItem(dryCleaningItem.id);
                       setErrors((prev) => {
                         const next = { ...prev };
-                        delete next.city;
+                        delete next.address;
                         return next;
                       });
                     }}
-                    className="px-3 py-1.5 rounded-lg bg-red-900/80 hover:bg-red-800 text-red-200 text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer border border-red-700/60 shadow-xs"
+                    className="text-[11px] text-red-300 hover:text-red-200 underline flex items-center gap-1 transition-colors cursor-pointer"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    <span>إزالة خدمة الدراي كلين فقط ومتابعة الطلب لباقي المنتجات</span>
+                    <Trash2 className="w-3 h-3" />
+                    <span>إزالة خدمة الدراي كلين من السلة</span>
                   </button>
-                </div>
-              </div>
-            )}
-
-            {/* City & Address */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs font-medium text-[#D8C6AE] block">
-                    المحافظة <span className="text-red-400">*</span>
-                  </label>
-                  {hasDryCleaning && (
-                    <span className="text-[10px] text-amber-400 font-semibold">
-                      (عمّان فقط)
-                    </span>
-                  )}
-                </div>
-                <select
-                  value={formData.city}
-                  onChange={(e) => {
-                    const newCity = e.target.value;
-                    setFormData({ ...formData, city: newCity });
-                    if (hasDryCleaning) {
-                      const isNowAmman =
-                        newCity.trim() === 'عمّان' ||
-                        newCity.trim().includes('عمان') ||
-                        newCity.trim().includes('عمّان');
-                      if (isNowAmman) {
-                        setErrors((prev) => {
-                          const next = { ...prev };
-                          delete next.city;
-                          return next;
-                        });
-                      }
-                    }
-                  }}
-                  className={`w-full px-3 py-2.5 rounded-lg bg-[#171513] border text-[#F5EFE6] text-xs focus:outline-none transition-colors cursor-pointer ${
-                    errors.city || isDryCleaningUnavailable
-                      ? 'border-red-500/80 focus:border-red-500 ring-1 ring-red-500/30'
-                      : 'border-white/15 focus:border-[#C8AA78]'
-                  }`}
-                >
-                  <option value="عمّان">عمّان</option>
-                  <option value="إربد">إربد</option>
-                  <option value="الزرقاء">الزرقاء</option>
-                  <option value="العقبة">العقبة</option>
-                  <option value="السلط">السلط / البلقاء</option>
-                  <option value="مأدبا">مأدبا</option>
-                  <option value="جرش">جرش</option>
-                  <option value="عجلون">عجلون</option>
-                  <option value="الكرك">الكرك</option>
-                  <option value="معان">معان</option>
-                  <option value="الطفيلة">الطفيلة</option>
-                  <option value="المفرق">المفرق</option>
-                </select>
-                {errors.city && (
-                  <p className="text-red-400 text-[11px] mt-1 leading-snug">{errors.city}</p>
                 )}
               </div>
-
-              <div className="sm:col-span-2">
-                <label className="text-xs font-medium text-[#D8C6AE] block mb-1">
-                  العنوان للتوصيل (اختياري)
-                </label>
-                <input
-                  type="text"
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  placeholder="المنطقة، الشارع، أو معلم قريب"
-                  className="w-full px-3.5 py-2.5 rounded-lg bg-[#171513] border border-white/15 focus:border-[#C8AA78] text-[#F5EFE6] text-xs placeholder:text-[#D8C6AE]/40 focus:outline-none transition-colors"
-                />
-              </div>
-            </div>
-
-            {/* Notes */}
-            <div>
-              <label className="text-xs font-medium text-[#D8C6AE] block mb-1">
-                ملاحظات إضافية (اختياري)
-              </label>
-              <textarea
-                rows={2}
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                placeholder="أي استفسار عن مواعيد التوصيل أو طريقة التركيب"
-                className="w-full px-3.5 py-2 rounded-lg bg-[#171513] border border-white/15 focus:border-[#C8AA78] text-[#F5EFE6] text-xs placeholder:text-[#D8C6AE]/40 focus:outline-none transition-colors resize-none"
-              />
-            </div>
+            )}
           </div>
 
-          {/* 3. Action Buttons & WhatsApp Ordering Link */}
-          <div className="pt-3 border-t border-white/10 space-y-2.5">
-            {/* Primary WhatsApp Action */}
+          {/* 3. Primary Action & Explanation */}
+          <div className="pt-2 space-y-3">
             <button
               type="button"
               onClick={handleSendViaWhatsApp}
-              disabled={!isWhatsAppConfigured || isDryCleaningUnavailable}
+              disabled={!isWhatsAppConfigured}
               className="w-full py-3.5 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-neutral-800 disabled:text-neutral-500 disabled:cursor-not-allowed text-white font-bold text-sm sm:text-base flex items-center justify-center gap-2.5 transition-all shadow-md active:scale-[0.99] cursor-pointer"
             >
               <MessageCircle className="w-5 h-5 shrink-0" />
-              <span>
-                {isDryCleaningUnavailable
-                  ? 'خدمة الدراي كلين متوفرة في عمّان فقط (يرجى اختيار عمّان أو حذف الخدمة)'
-                  : 'تأكيد الطلب وإرساله عبر واتساب'}
-              </span>
+              <span>تأكيد الطلب عبر واتساب</span>
               <ExternalLink className="w-4 h-4 shrink-0" />
             </button>
 
-            {/* Explanation beside the button */}
-            <p className="text-xs text-[#D8C6AE] text-center flex items-center justify-center gap-1.5 py-1">
+            {/* Explanation beside/below button */}
+            <p className="text-xs text-[#D8C6AE] text-center flex items-center justify-center gap-1.5">
               <Info className="w-3.5 h-3.5 text-[#C8AA78] shrink-0" />
               <span>سيفتح واتساب برسالة جاهزة؛ اضغط إرسال لإكمال طلبك.</span>
             </p>
 
-            {/* Fallback & Clear Cart Action Row */}
-            <div className="flex flex-col sm:flex-row items-center gap-2.5">
+            {/* Fallback Copy & Clear Actions */}
+            <div className="flex flex-col sm:flex-row items-center gap-2 pt-1">
               <button
                 type="button"
                 onClick={handleCopy}
-                className="w-full sm:flex-1 py-2.5 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-[#D8C6AE] hover:text-[#F5EFE6] border border-white/10 flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                className="w-full sm:flex-1 py-2 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-[#D8C6AE] hover:text-[#F5EFE6] border border-white/10 flex items-center justify-center gap-2 transition-colors cursor-pointer"
               >
                 {copied ? (
                   <>
@@ -572,7 +491,7 @@ export default function CheckoutModal() {
                   clearCart();
                   handleClose();
                 }}
-                className="w-full sm:w-auto py-2.5 px-3 rounded-lg bg-red-950/30 hover:bg-red-900/40 text-xs text-red-300 border border-red-500/20 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                className="w-full sm:w-auto py-2 px-3 rounded-lg bg-red-950/30 hover:bg-red-900/40 text-xs text-red-300 border border-red-500/20 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 <span>تفريغ السلة</span>

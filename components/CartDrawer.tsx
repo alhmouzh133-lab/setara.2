@@ -273,14 +273,14 @@ export default function CartDrawer() {
                 </span>
               </div>
 
-              {/* Send Order via WhatsApp Button */}
+              {/* Proceed to Checkout Button */}
               <button
                 type="button"
                 onClick={handleProceedToWhatsApp}
-                className="w-full py-3.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md active:scale-[0.99] cursor-pointer"
+                className="w-full py-3.5 rounded-lg bg-[#C8AA78] hover:bg-[#B59563] text-[#171513] font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md active:scale-[0.99] cursor-pointer"
               >
-                <MessageCircle className="w-4 h-4" />
-                <span>تأكيد الطلب عبر واتساب</span>
+                <ShoppingBag className="w-4 h-4" />
+                <span>متابعة الطلب</span>
               </button>
 
               <div className="flex items-center justify-between text-[11px] text-[#D8C6AE]/60 pt-1">
