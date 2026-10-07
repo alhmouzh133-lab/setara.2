@@ -7,7 +7,6 @@ import { useCart } from '@/lib/cart-context';
 import {
   MapPin,
   MessageSquare,
-  AlertCircle,
   MessageCircle,
   ExternalLink,
   Facebook,
@@ -200,19 +199,10 @@ export default function Footer() {
                 </a>
               </div>
 
-              {/* Phase 1 Notice Box */}
-              <div className="p-3.5 bg-[#171311] rounded-lg border border-[#C8AA78]/20 space-y-1.5 text-[11px] shadow-inner">
-                <div className="flex items-center gap-1.5 text-[#C8AA78] font-bold">
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                  <span>تنويه المرحلة الأولى (Phase 1)</span>
-                </div>
-                <p className="text-[#D8C6AE]/75 font-normal leading-relaxed">
-                  {SHOP_CONFIG.demoNotice}
-                </p>
-                <p className="text-[#C8AA78] font-medium pt-1.5 border-t border-white/5">
-                  رسوم التوصيل: {SHOP_CONFIG.deliveryPricingNote}
-                </p>
-              </div>
+              {/* Delivery Note */}
+              <p className="text-xs text-[#C8AA78] font-medium pt-1">
+                رسوم التوصيل: {SHOP_CONFIG.deliveryPricingNote}
+              </p>
             </div>
           </div>
 
