@@ -78,7 +78,7 @@ export default function ProductSection({
                   : 'text-[#241E1A] hover:text-[#000000] hover:bg-[#DDD0C0]'
               }`}
             >
-              ستائر عادية ({manualCount})
+              ستائر لينين ({manualCount})
             </button>
             <button
               onClick={() => onSelectCategory('roller')}

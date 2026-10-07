@@ -19,6 +19,9 @@ import {
   BlackoutColorOption,
   ZEBRA_COLORS,
   ZebraColorOption,
+  TRACK_OPTIONS,
+  TrackOption,
+  SIDE_PANEL_COLORS,
 } from '@/lib/shop-data';
 import { useCart } from '@/lib/cart-context';
 import {
@@ -60,6 +63,7 @@ interface ProductModalContentProps {
       serviceLocation?: string;
       isService?: boolean;
       isDryCleaning?: boolean;
+      isUnpriced?: boolean;
     }
   ) => void;
 }
@@ -197,7 +201,7 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
   const curtainTypeName = isElectricProduct
     ? 'ستائر كهربائية'
     : isManualProduct
-    ? 'ستائر عادية'
+    ? 'ستائر لينين'
     : isMadeToMeasureScreen
     ? 'رول سكرين'
     : isMadeToMeasureBlackout
@@ -207,7 +211,7 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
     : curtainType === 'electric'
     ? 'ستائر كهربائية'
     : curtainType === 'manual'
-    ? 'ستائر عادية'
+    ? 'ستائر لينين'
     : 'ستارة رول';
 
   const displayFabricName = isCustomRoller ? activeColorOption.name : currentFabric.name;
@@ -310,7 +314,7 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
       }
 
       const itemType = isElectricProduct ? 'electric' : 'manual';
-      const itemTypeName = isElectricProduct ? 'ستائر كهربائية' : 'ستائر عادية';
+      const itemTypeName = isElectricProduct ? 'ستائر كهربائية' : 'ستائر لينين';
 
       onAddToCart(
         product,
@@ -431,7 +435,7 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
       <div className="w-full md:w-[48%] lg:w-[46%] p-5 sm:p-6 md:p-7 bg-[#1B1613] flex flex-col justify-between border-b md:border-b-0 md:border-l border-white/10 shrink-0 md:overflow-y-auto md:max-h-[92vh]">
         <div>
           {/* Main Product Preview Container */}
-          <div className="relative aspect-[4/3] w-full rounded-lg overflow-hidden bg-[#2A231E] border border-white/10 shadow-inner">
+          <div className="relative aspect-[16/10] sm:aspect-[4/3] w-full max-h-[220px] sm:max-h-none rounded-lg overflow-hidden bg-[#2A231E] border border-white/10 shadow-inner">
             <Image
               key={targetImageUrl}
               src={targetImageUrl}
@@ -444,41 +448,140 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
             />
 
             {/* Product & Variant Badges */}
-            <div className="absolute top-3 right-3 flex flex-wrap gap-1.5 max-w-[85%]">
-              <span className="px-2.5 py-1 text-[11px] font-bold text-[#171513] bg-[#C8AA78] rounded-md shadow-xs">
+            <div className="absolute top-2.5 right-2.5 flex flex-wrap gap-1.5 max-w-[85%]">
+              <span className="px-2 py-0.5 text-[10px] sm:text-[11px] font-bold text-[#171513] bg-[#C8AA78] rounded-md shadow-xs">
                 {curtainTypeName}
               </span>
-              <span className="px-2 py-1 text-[11px] font-semibold text-[#F5EFE6] bg-[#171513]/85 backdrop-blur-xs rounded-md border border-white/10">
+              <span className="px-2 py-0.5 text-[10px] sm:text-[11px] font-semibold text-[#F5EFE6] bg-[#171513]/85 backdrop-blur-xs rounded-md border border-white/10">
                 {displayFabricName}
               </span>
               {activeStyleName && (
-                <span className="px-2 py-1 text-[11px] font-medium text-[#D8C6AE] bg-[#171513]/85 backdrop-blur-xs rounded-md border border-white/10">
+                <span className="px-2 py-0.5 text-[10px] sm:text-[11px] font-medium text-[#D8C6AE] bg-[#171513]/85 backdrop-blur-xs rounded-md border border-white/10">
                   {activeStyleName}
                 </span>
               )}
               {activeLiningName && (
-                <span className="px-2 py-1 text-[11px] font-medium text-[#C8AA78] bg-[#171513]/85 backdrop-blur-xs rounded-md border border-white/10">
+                <span className="px-2 py-0.5 text-[10px] sm:text-[11px] font-medium text-[#C8AA78] bg-[#171513]/85 backdrop-blur-xs rounded-md border border-white/10">
                   {activeLiningName}
                 </span>
               )}
             </div>
           </div>
 
-          {/* Live Color Indicator */}
-          <div className="mt-3 flex items-center justify-between text-[11px] text-[#D8C6AE]/75 px-1">
-            <span className="flex items-center gap-1.5">
-              <span
-                className="w-3 h-3 rounded-full border border-black/40"
-                style={{ backgroundColor: activeColorHex }}
-              />
-              <span>اللون: <strong className="text-[#F5EFE6]">{activeColorName}</strong></span>
-            </span>
-            {isFabricCurtain ? (
-              <span className="text-[#C8AA78] font-bold">48 د.أ للمتر الطولي</span>
-            ) : isCustomRoller ? (
-              <span className="text-[#C8AA78] font-bold">20 د.أ / م²</span>
-            ) : null}
-          </div>
+          {/* 1. COLOR SELECTOR FIRST (Placed immediately below photograph) */}
+          {(isFabricCurtain || isCustomRoller || (product.colors && product.colors.length > 0)) && (
+            <div className="mt-3 p-3 rounded-lg bg-[#171513] border border-[#C8AA78]/30">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-[#F5EFE6] flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-[#C8AA78]" />
+                  <span>اللون المختار:</span>
+                  <strong className="text-[#C8AA78]">{activeColorName}</strong>
+                </span>
+                {isFabricCurtain ? (
+                  <span className="text-[11px] text-[#C8AA78] font-bold">48 د.أ / م</span>
+                ) : isCustomRoller ? (
+                  <span className="text-[11px] text-[#C8AA78] font-bold">20 د.أ / م²</span>
+                ) : null}
+              </div>
+
+              {/* Fabric Curtains: CENTRAL_COLORS */}
+              {isFabricCurtain && (
+                <div className="flex flex-wrap gap-2">
+                  {CENTRAL_COLORS.map((color) => {
+                    const isSelected = selectedColor.id === color.id;
+                    return (
+                      <button
+                        key={color.id}
+                        type="button"
+                        onClick={() => handleSelectColor(color)}
+                        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border text-xs font-medium transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-[#2E251F] border-[#C8AA78] text-[#F5EFE6] font-bold shadow-xs ring-1 ring-[#C8AA78]'
+                            : 'bg-[#211B17] border-white/10 text-[#D8C6AE] hover:border-white/30 hover:text-[#F5EFE6]'
+                        }`}
+                      >
+                        <span
+                          className="w-3.5 h-3.5 rounded-full border border-black/40 shrink-0"
+                          style={{ backgroundColor: color.hex }}
+                        />
+                        <span>{color.name}</span>
+                        {isSelected && <Check className="w-3 h-3 text-[#C8AA78]" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Custom Roller Curtains: zebra / blackout / screen options */}
+              {isCustomRoller && (
+                <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto pr-0.5">
+                  {(isMadeToMeasureZebra
+                    ? zebraColors
+                    : isMadeToMeasureBlackout
+                    ? blackoutColors
+                    : screenColors
+                  ).map((opt) => {
+                    const isSelected = activeColorOption.id === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => {
+                          if (isMadeToMeasureZebra) {
+                            setSelectedZebraColor(opt as ZebraColorOption);
+                          } else if (isMadeToMeasureBlackout) {
+                            setSelectedBlackoutColor(opt as BlackoutColorOption);
+                          } else {
+                            setSelectedScreenColor(opt as ScreenColorOption);
+                          }
+                        }}
+                        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border text-xs transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-[#2E251F] border-[#C8AA78] text-[#F5EFE6] font-bold shadow-xs ring-1 ring-[#C8AA78]'
+                            : 'bg-[#211B17] border-white/10 text-[#D8C6AE] hover:border-white/30 hover:text-[#F5EFE6]'
+                        }`}
+                      >
+                        <span
+                          className="w-3.5 h-3.5 rounded-full border border-black/40 shrink-0"
+                          style={{ backgroundColor: opt.hex }}
+                        />
+                        <span className="truncate max-w-[110px]">{opt.name}</span>
+                        {isSelected && <Check className="w-3 h-3 text-[#C8AA78] shrink-0" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Standard product colors if not fabric or custom roller */}
+              {!isFabricCurtain && !isCustomRoller && product.colors && product.colors.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {product.colors.map((color) => {
+                    const isSelected = selectedColor.id === color.id;
+                    return (
+                      <button
+                        key={color.id}
+                        type="button"
+                        onClick={() => handleSelectColor(color)}
+                        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border text-xs font-medium transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-[#2E251F] border-[#C8AA78] text-[#F5EFE6] font-bold shadow-xs ring-1 ring-[#C8AA78]'
+                            : 'bg-[#211B17] border-white/10 text-[#D8C6AE] hover:border-white/30 hover:text-[#F5EFE6]'
+                        }`}
+                      >
+                        <span
+                          className="w-3.5 h-3.5 rounded-full border border-black/40 shrink-0"
+                          style={{ backgroundColor: color.hex }}
+                        />
+                        <span>{color.name}</span>
+                        {isSelected && <Check className="w-3 h-3 text-[#C8AA78]" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Specifications Summary */}
@@ -684,48 +787,11 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
                 </div>
               </div>
 
-              {/* Option 2: Color Selection (basic colors preserved) */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-bold text-[#F5EFE6] flex items-center gap-1.5">
-                    <span>2. اختر اللون</span>
-                    <span className="text-red-400">*</span>
-                  </label>
-                  <span className="text-xs text-[#C8AA78] font-semibold">
-                    {selectedColor.name}
-                  </span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {CENTRAL_COLORS.map((color) => {
-                    const isSelected = selectedColor.id === color.id;
-                    return (
-                      <button
-                        key={color.id}
-                        type="button"
-                        onClick={() => handleSelectColor(color)}
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all cursor-pointer ${
-                          isSelected
-                            ? 'bg-[#2E251F] border-[#C8AA78] text-[#F5EFE6] shadow-sm ring-1 ring-[#C8AA78]'
-                            : 'bg-[#171513] border-white/10 text-[#D8C6AE] hover:border-white/30'
-                        }`}
-                      >
-                        <span
-                          className="w-3.5 h-3.5 rounded-full border border-black/30 shrink-0"
-                          style={{ backgroundColor: color.hex }}
-                        />
-                        <span>{color.name}</span>
-                        {isSelected && <Check className="w-3.5 h-3.5 text-[#C8AA78]" />}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Option 3: Curtain Style (ويفي / أمريكي) */}
+              {/* Option 2: Curtain Style (ويفي / أمريكي) */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="text-xs font-bold text-[#F5EFE6]">
-                    3. طريقة التفصيل (الموديل)
+                    2. طريقة التفصيل (الموديل)
                   </label>
                   <span className="text-xs text-[#C8AA78] font-semibold">{selectedStyle}</span>
                 </div>
@@ -753,12 +819,12 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
                 </div>
               </div>
 
-              {/* Option 4: Independent Darkening Choices: "50%", "80%", "100%" for EVERY fabric */}
+              {/* Option 3: Independent Darkening Choices: "50%", "80%", "100%" for EVERY fabric */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="text-xs font-bold text-[#F5EFE6] flex items-center gap-1">
                     <Shield className="w-3.5 h-3.5 text-[#C8AA78]" />
-                    <span>4. خيار العزل والتعتيم (مستقل لكافة الأقمشة)</span>
+                    <span>3. خيار العزل والتعتيم (مستقل لكافة الأقمشة)</span>
                     <span className="text-red-400">*</span>
                   </label>
                   <span className="text-xs text-[#C8AA78] font-semibold">عزل {selectedLining}</span>
@@ -794,11 +860,11 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
                 </div>
               </div>
 
-              {/* Option 5: Custom Measurements (Horizontal Span & Height) */}
+              {/* Option 4: Custom Measurements (Horizontal Span & Height) */}
               <div className="grid grid-cols-2 gap-3 pt-1">
                 <div>
                   <label className="text-xs font-bold text-[#F5EFE6] block mb-1">
-                    5. طول البرداية / العرض (سم) <span className="text-red-400">*</span>
+                    4. طول البرداية / العرض (سم) <span className="text-red-400">*</span>
                   </label>
                   <input
                     type="number"
@@ -1296,30 +1362,36 @@ function TrackProductModalContent({
   onClose,
   onAddToCart,
 }: ProductModalContentProps) {
-  // Only ONE editable field: “طول السكة (سم)”, initially empty
+  const [selectedTrackId, setSelectedTrackId] = useState<string>(TRACK_OPTIONS[0].id);
   const [trackLengthCm, setTrackLengthCm] = useState<string>('');
   const [validationError, setValidationError] = useState<string | null>(null);
 
+  const selectedTrack = TRACK_OPTIONS.find((t) => t.id === selectedTrackId) || TRACK_OPTIONS[0];
+  const isElectricTrack = selectedTrack.isElectric || selectedTrack.ratePerMeter === null;
+
   const numLength = parseFloat(trackLengthCm) || 0;
   const hasValidLength = Number.isFinite(numLength) && numLength > 0;
-  // Rate: 5 JOD per 100 cm => 0.05 JOD per cm
-  // Example: 100 cm = 5.00 JOD, 250 cm = 12.50 JOD
-  const unitPriceTrack = hasValidLength ? Math.round(numLength * 0.05 * 100) / 100 : 0;
-  const formatPriceDisplay = (val: number) => (val % 1 === 0 ? val.toString() : val.toFixed(2));
 
-  const trackImage = product.mainImage || '/images/aluminum_curtain_track.jpg';
+  // Rate calculation from selected track option
+  const unitPriceTrack =
+    !isElectricTrack && hasValidLength && selectedTrack.ratePerCm
+      ? Math.round(numLength * selectedTrack.ratePerCm * 100) / 100
+      : 0;
+
+  const formatPriceDisplay = (val: number) => (val % 1 === 0 ? val.toString() : val.toFixed(2));
+  const trackImage = selectedTrack.image || product.mainImage || '/images/aluminum_curtain_track.jpg';
 
   const defaultColor: ColorOption = {
-    id: 'white_thermal',
-    name: 'أبيض مدهون حرارياً',
-    hex: '#FFFFFF',
+    id: selectedTrack.id,
+    name: selectedTrack.name,
+    hex: '#D8C6AE',
     image: trackImage,
     gallery: [trackImage],
   };
 
   const handleAdd = () => {
     if (!hasValidLength) {
-      setValidationError('يرجى إدخال طول السكة (قيمة موجبة بالسنتمتر) لحساب السعر.');
+      setValidationError('يرجى إدخال طول السكة (قيمة موجبة بالسنتمتر).');
       return;
     }
 
@@ -1327,27 +1399,32 @@ function TrackProductModalContent({
       product,
       defaultColor,
       {
-        id: `track_${numLength}`,
-        label: `${numLength} سم`,
+        id: `track_${selectedTrack.id}_${numLength}`,
+        label: `${selectedTrack.name} — ${numLength} سم`,
         widthCm: numLength,
         heightCm: 0,
-        price: unitPriceTrack,
+        price: isElectricTrack ? 0 : unitPriceTrack,
       },
-      1, // Add each configured track with quantity 1
+      1,
       {
         curtainType: 'track',
-        curtainTypeName: product.name || 'جسر سكة ألمنيوم',
+        curtainTypeName: `جسر وسكة: ${selectedTrack.name}`,
         resolvedImage: trackImage,
+        isUnpriced: isElectricTrack,
       }
     );
     onClose();
   };
 
   const handleWhatsApp = () => {
-    const lengthStr = hasValidLength
-      ? `${numLength} سم (${formatPriceDisplay(unitPriceTrack)} د.أ)`
-      : 'تفصيل حسب الطول المطلوب';
-    const message = `مرحباً متجر سيتارة، أود الاستفسار عن ${product.name} (طول السكة: ${lengthStr}).`;
+    const lengthStr = hasValidLength ? `طول: ${numLength} سم` : 'تفصيل حسب الطول المطلوب';
+    const priceStr =
+      !isElectricTrack && hasValidLength
+        ? ` (السعر: ${formatPriceDisplay(unitPriceTrack)} د.أ)`
+        : isElectricTrack
+        ? ' (استفسار عن السعر)'
+        : '';
+    const message = `مرحباً متجر سيتارة، أود الاستفسار عن ${product.name} — النوع: ${selectedTrack.name} (${lengthStr})${priceStr}.`;
     const targetUrl = getWhatsAppUrl(message);
     window.open(targetUrl, '_blank', 'noopener,noreferrer');
   };
@@ -1369,44 +1446,45 @@ function TrackProductModalContent({
       {/* Visual Column */}
       <div className="w-full md:w-[48%] lg:w-[46%] p-5 sm:p-6 md:p-7 bg-[#1B1613] flex flex-col justify-between border-b md:border-b-0 md:border-l border-white/10 shrink-0 md:overflow-y-auto md:max-h-[92vh]">
         <div>
-          <div className="relative aspect-[4/3] w-full rounded-lg overflow-hidden bg-[#2A231E] border border-white/10 shadow-inner">
+          <div className="relative aspect-[16/10] sm:aspect-[4/3] w-full max-h-[220px] sm:max-h-none rounded-lg overflow-hidden bg-[#2A231E] border border-white/10 shadow-inner">
             <Image
               src={trackImage}
-              alt={product.name}
+              alt={`${product.name} — ${selectedTrack.name}`}
               fill
               sizes="(max-width: 768px) 100vw, 50vw"
               className="object-cover object-center select-none"
               priority
               referrerPolicy="no-referrer"
             />
-            <div className="absolute top-3 right-3 flex flex-wrap gap-1.5 max-w-[85%]">
+            <div className="absolute top-2.5 right-2.5 flex flex-wrap gap-1.5 max-w-[85%]">
               <span className="px-2.5 py-1 text-[11px] font-bold text-[#171513] bg-[#C8AA78] rounded-md shadow-xs">
-                {product.name}
+                {selectedTrack.name}
               </span>
               <span className="px-2.5 py-1 text-[11px] font-semibold text-[#F5EFE6] bg-[#171513]/85 backdrop-blur-xs rounded-md border border-white/10">
-                سكك وملحقات
-              </span>
-              <span className="px-2.5 py-1 text-[11px] font-medium text-emerald-400 bg-[#171513]/85 backdrop-blur-xs rounded-md border border-white/10">
-                عجلات سايلنت
+                جسور وسكك
               </span>
             </div>
           </div>
 
-          <div className="mt-3 flex items-center justify-between text-[11px] text-[#D8C6AE]/75 px-1">
+          <div className="mt-3 flex items-center justify-between text-[11px] text-[#D8C6AE]/85 px-1">
             <span className="text-[#D8C6AE]">معدل السعر:</span>
-            <span className="text-[#C8AA78] font-bold">5 د.أ للمتر الطولي</span>
+            <span className="text-[#C8AA78] font-bold">
+              {isElectricTrack
+                ? 'السعر عند الاستفسار'
+                : `${selectedTrack.ratePerMeter} د.أ للمتر الطولي`}
+            </span>
           </div>
         </div>
 
         {/* Specifications */}
         <div className="mt-4 p-3.5 bg-[#171513] rounded-lg border border-white/5 space-y-2 text-xs text-[#D8C6AE]">
           <div className="flex items-center justify-between border-b border-white/5 pb-1.5">
-            <span className="text-[#D8C6AE]/70">النوع:</span>
-            <span className="font-semibold text-[#F5EFE6]">سكة ألمنيوم مدهونة حرارياً وملبّسة بالبلاستيك</span>
+            <span className="text-[#D8C6AE]/70">نوع المسار:</span>
+            <span className="font-semibold text-[#F5EFE6]">{selectedTrack.name}</span>
           </div>
           <div className="flex items-center justify-between border-b border-white/5 pb-1.5">
-            <span className="text-[#D8C6AE]/70">الحركة:</span>
-            <span className="font-semibold text-[#C8AA78]">انسيابية وهادئة — سايلنت</span>
+            <span className="text-[#D8C6AE]/70">الوصف:</span>
+            <span className="font-semibold text-[#C8AA78]">{selectedTrack.description}</span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-[#D8C6AE]/70">التفصيل:</span>
@@ -1419,23 +1497,27 @@ function TrackProductModalContent({
       <div className="w-full md:w-[52%] lg:w-[54%] p-5 sm:p-6 md:p-8 flex flex-col justify-between text-right md:overflow-y-auto md:max-h-[92vh]">
         <div>
           <span className="text-xs uppercase tracking-wider text-[#C8AA78] font-bold block mb-1">
-            سكك وملحقات الستائر
+            جسور وسكك الستائر
           </span>
           <h2 className="text-2xl sm:text-3xl font-bold text-[#F5EFE6]">
-            {product.name}
+            {selectedTrack.name}
           </h2>
           <p className="text-xs text-[#D8C6AE]/75 mt-1 leading-relaxed">
-            {product.shortDesc || 'ألمنيوم مدهون حراريًا وملبّس بالبلاستيك لحركة هادئة — سايلنت.'}
+            {selectedTrack.description}
           </p>
 
           {/* Rate Banner */}
           <div className="mt-3.5 p-3.5 bg-[#171513] rounded-lg border border-white/10 flex items-center justify-between">
             <div>
               <span className="text-[11px] text-[#D8C6AE]/70 block">
-                السعر المحسوب:
+                {isElectricTrack ? 'حالة السعر:' : 'السعر المحسوب:'}
               </span>
               <div className="flex items-baseline gap-1.5 mt-0.5">
-                {hasValidLength ? (
+                {isElectricTrack ? (
+                  <span className="text-xl font-bold text-[#C8AA78]">
+                    السعر عند الاستفسار
+                  </span>
+                ) : hasValidLength ? (
                   <>
                     <span className="text-2xl font-extrabold text-[#C8AA78] tabular-nums">
                       {formatPriceDisplay(unitPriceTrack)}
@@ -1445,7 +1527,7 @@ function TrackProductModalContent({
                 ) : (
                   <div className="flex items-baseline gap-2">
                     <span className="text-lg font-bold text-[#C8AA78]">
-                      5 د.أ للمتر الطولي
+                      {selectedTrack.ratePerMeter} د.أ للمتر الطولي
                     </span>
                     <span className="text-xs text-[#D8C6AE]/70">
                       · أدخل طول السكة لحساب السعر
@@ -1455,17 +1537,52 @@ function TrackProductModalContent({
               </div>
             </div>
             <span className="text-[11px] text-[#D8C6AE]/60">
-              0.05 د.أ لكل سم
+              {isElectricTrack ? 'مسار ذكي بمحرك' : `${selectedTrack.ratePerMeter} د.أ / متر`}
             </span>
           </div>
 
-          {/* SINGLE EDITABLE FIELD */}
-          <div className="mt-5 space-y-3">
+          {/* 1. Track Type Selector */}
+          <div className="mt-4">
+            <label className="text-xs font-bold text-[#F5EFE6] block mb-1.5">
+              1. نوع السكة أو الجسر <span className="text-red-400">*</span>
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {TRACK_OPTIONS.map((opt) => {
+                const isSelected = selectedTrack.id === opt.id;
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedTrackId(opt.id);
+                      setValidationError(null);
+                    }}
+                    className={`p-2.5 rounded-lg border text-right transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-[#2E251F] border-[#C8AA78] text-[#F5EFE6] font-bold shadow-xs ring-1 ring-[#C8AA78]/50'
+                        : 'bg-[#171513] border-white/10 text-[#D8C6AE] hover:border-white/30'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold">{opt.name}</span>
+                      {isSelected && <Check className="w-3.5 h-3.5 text-[#C8AA78] shrink-0" />}
+                    </div>
+                    <span className="text-[10px] text-[#C8AA78] block mt-1 font-semibold">
+                      {opt.ratePerMeter !== null ? `${opt.ratePerMeter} د.أ / متر` : 'عند الاستفسار'}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 2. ONE LENGTH INPUT IN CENTIMETERS */}
+          <div className="mt-4 space-y-3">
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-xs font-bold text-[#F5EFE6] flex items-center gap-1.5">
                   <Ruler className="w-3.5 h-3.5 text-[#C8AA78]" />
-                  <span>طول السكة (سم)</span>
+                  <span>2. طول السكة (سم)</span>
                   <span className="text-red-400">*</span>
                 </label>
                 {hasValidLength && (
@@ -1486,10 +1603,11 @@ function TrackProductModalContent({
                 }}
                 placeholder="أدخل طول السكة (سم) — مثال: 250"
                 className="w-full px-3.5 py-3 bg-[#171513] border border-white/15 focus:border-[#C8AA78] rounded-lg text-sm text-[#F5EFE6] outline-none transition-colors tabular-nums placeholder:text-[#D8C6AE]/40"
-                autoFocus
               />
               <span className="text-[11px] text-[#D8C6AE]/60 block mt-1">
-                سعر المتر الطولي 5 د.أ (مثال: 100 سم = 5 د.أ، 250 سم = 12.50 د.أ).
+                {isElectricTrack
+                  ? 'يتم تحديد سعر المسار الكهربائي بالتواصل مع المحل حسب المواصفات المطلوبة.'
+                  : `سعر المتر ${selectedTrack.ratePerMeter} د.أ (مثال: 100 سم = ${selectedTrack.ratePerMeter} د.أ، 250 سم = ${(2.5 * (selectedTrack.ratePerMeter || 0)).toFixed(2)} د.أ).`}
               </span>
             </div>
 
@@ -1497,19 +1615,27 @@ function TrackProductModalContent({
             {hasValidLength && (
               <div className="p-3 bg-[#171513] rounded-lg border border-white/5 space-y-1.5 text-xs">
                 <div className="flex items-center justify-between text-[#D8C6AE]">
-                  <span>الطول المطلوب:</span>
+                  <span>النوع والطول:</span>
                   <span className="font-bold text-[#F5EFE6] tabular-nums">
-                    {numLength} سم ({(numLength / 100).toFixed(2)} م)
+                    {selectedTrack.name} — {numLength} سم ({(numLength / 100).toFixed(2)} م)
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-[#D8C6AE]">
                   <span>معدل السعر:</span>
-                  <span className="font-semibold text-[#C8AA78]">5 د.أ / متر (0.05 د.أ / سم)</span>
+                  <span className="font-semibold text-[#C8AA78]">
+                    {isElectricTrack
+                      ? 'عند الاستفسار'
+                      : `${selectedTrack.ratePerMeter} د.أ / متر`}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between pt-1.5 border-t border-white/5">
-                  <span className="font-bold text-[#F5EFE6]">السعر الإجمالي:</span>
+                  <span className="font-bold text-[#F5EFE6]">
+                    {isElectricTrack ? 'حالة الطلب:' : 'السعر الإجمالي:'}
+                  </span>
                   <span className="font-extrabold text-[#C8AA78] text-sm tabular-nums">
-                    {formatPriceDisplay(unitPriceTrack)} {SHOP_CONFIG.currencySymbol}
+                    {isElectricTrack
+                      ? 'يُحدد بالتواصل'
+                      : `${formatPriceDisplay(unitPriceTrack)} ${SHOP_CONFIG.currencySymbol}`}
                   </span>
                 </div>
               </div>
@@ -1526,28 +1652,53 @@ function TrackProductModalContent({
 
         {/* Modal Bottom CTA */}
         <div className="mt-6 pt-4 border-t border-white/10 space-y-2">
-          <button
-            type="button"
-            onClick={handleAdd}
-            disabled={!hasValidLength}
-            className="w-full py-3.5 px-6 rounded-lg bg-[#C8AA78] hover:bg-[#d5ba8c] disabled:opacity-40 disabled:cursor-not-allowed text-[#171513] font-bold text-sm sm:text-base flex items-center justify-center gap-2 transition-all shadow-md active:scale-[0.99] cursor-pointer"
-          >
-            <ShoppingBag className="w-4 h-4" />
-            <span>
-              {hasValidLength
-                ? `إضافة إلى السلة · ${formatPriceDisplay(unitPriceTrack)} ${SHOP_CONFIG.currencySymbol}`
-                : 'أدخل طول السكة لحساب السعر'}
-            </span>
-          </button>
+          {isElectricTrack ? (
+            <>
+              <button
+                type="button"
+                onClick={handleWhatsApp}
+                className="w-full py-3.5 px-6 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm flex items-center justify-center gap-2.5 transition-all shadow-md active:scale-[0.99] cursor-pointer"
+              >
+                <MessageCircle className="w-5 h-5 shrink-0" />
+                <span>استفسر عن السعر عبر واتساب</span>
+              </button>
 
-          <button
-            type="button"
-            onClick={handleWhatsApp}
-            className="w-full py-2.5 px-4 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 hover:text-emerald-200 border border-emerald-500/30 text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
-          >
-            <MessageCircle className="w-3.5 h-3.5 text-emerald-400" />
-            <span>استفسار عبر واتساب</span>
-          </button>
+              <button
+                type="button"
+                onClick={handleAdd}
+                disabled={!hasValidLength}
+                className="w-full py-2.5 px-4 rounded-lg bg-white/5 hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed text-xs text-[#D8C6AE] hover:text-[#F5EFE6] border border-white/10 flex items-center justify-center gap-2 transition-colors cursor-pointer"
+              >
+                <ShoppingBag className="w-3.5 h-3.5 text-[#C8AA78]" />
+                <span>إضافة لاستفسار السلة (بدون سعر فوري)</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={handleAdd}
+                disabled={!hasValidLength}
+                className="w-full py-3.5 px-6 rounded-lg bg-[#C8AA78] hover:bg-[#d5ba8c] disabled:opacity-40 disabled:cursor-not-allowed text-[#171513] font-bold text-sm sm:text-base flex items-center justify-center gap-2 transition-all shadow-md active:scale-[0.99] cursor-pointer"
+              >
+                <ShoppingBag className="w-4 h-4" />
+                <span>
+                  {hasValidLength
+                    ? `إضافة إلى السلة · ${formatPriceDisplay(unitPriceTrack)} ${SHOP_CONFIG.currencySymbol}`
+                    : 'أدخل طول السكة لحساب السعر'}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleWhatsApp}
+                className="w-full py-2.5 px-4 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 hover:text-emerald-200 border border-emerald-500/30 text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+              >
+                <MessageCircle className="w-3.5 h-3.5 text-emerald-400" />
+                <span>استفسار عبر واتساب</span>
+              </button>
+            </>
+          )}
 
           <p className="text-[11px] text-center text-[#D8C6AE]/60 mt-1.5">
             {SHOP_CONFIG.deliveryPricingNote}
@@ -2197,6 +2348,290 @@ function DryCleaningServiceModalContent({
   );
 }
 
+function SidePanelsProductModalContent({
+  product,
+  onClose,
+  onAddToCart,
+}: {
+  product: Product;
+  onClose: () => void;
+  onAddToCart: any;
+}) {
+  const colorsList = product.colors && product.colors.length > 0 ? product.colors : SIDE_PANEL_COLORS;
+  const [selectedColor, setSelectedColor] = useState<ColorOption>(colorsList[0]);
+  const [selectedSide, setSelectedSide] = useState<'right' | 'left' | 'both'>('both');
+  const [quantity, setQuantity] = useState<number>(1);
+
+  const unitPrice = selectedSide === 'both' ? 60 : 30;
+  const totalPrice = unitPrice * quantity;
+
+  const sideLabel =
+    selectedSide === 'both'
+      ? 'كلاهما (زوج جوانب يمين ويسار)'
+      : selectedSide === 'right'
+      ? 'الجانب الأيمن (يمين)'
+      : 'الجانب الأيسر (يسار)';
+
+  const activeImage = selectedColor.image || product.mainImage || '/images/curtain_linen_charcoal.jpg';
+
+  const handleAdd = () => {
+    onAddToCart(
+      product,
+      selectedColor,
+      {
+        id: `side_${selectedSide}_${selectedColor.id}`,
+        label: sideLabel,
+        widthCm: 0,
+        heightCm: 0,
+        price: unitPrice,
+      },
+      quantity,
+      {
+        curtainType: 'side_panels',
+        curtainTypeName: 'جوانب ستائر كتان',
+        sideSelection: selectedSide,
+        sideSelectionLabel: sideLabel,
+        resolvedImage: activeImage,
+      }
+    );
+    onClose();
+  };
+
+  const handleWhatsApp = () => {
+    const message = `مرحباً متجر سيتارة، أود الاستفسار عن ${product.name} — الجانب: ${sideLabel} | اللون: ${selectedColor.name} | الكمية: ${quantity} (الإجمالي: ${totalPrice} د.أ).`;
+    const targetUrl = getWhatsAppUrl(message);
+    window.open(targetUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  return (
+    <div
+      className="relative w-full max-w-4xl bg-[#211B17] text-[#F5EFE6] border border-[#C8AA78]/30 rounded-xl shadow-2xl overflow-y-auto md:overflow-hidden max-h-[88vh] sm:max-h-[90vh] md:max-h-[92vh] flex flex-col md:flex-row my-auto"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {/* Close Button */}
+      <button
+        onClick={onClose}
+        aria-label="إغلاق"
+        className="sticky top-3 left-3 z-50 self-start float-left -mb-10 sm:-mb-12 p-2 rounded-full bg-[#171513]/90 hover:bg-[#171513] text-[#F5EFE6] hover:text-[#C8AA78] border border-white/10 transition-colors cursor-pointer shadow-md md:absolute md:top-4 md:left-4 md:mb-0"
+      >
+        <X className="w-5 h-5" />
+      </button>
+
+      {/* Visual Column */}
+      <div className="w-full md:w-[48%] lg:w-[46%] p-5 sm:p-6 md:p-7 bg-[#1B1613] flex flex-col justify-between border-b md:border-b-0 md:border-l border-white/10 shrink-0 md:overflow-y-auto md:max-h-[92vh]">
+        <div>
+          {/* Main Installed Photograph */}
+          <div className="relative aspect-[16/10] sm:aspect-[4/3] w-full max-h-[220px] sm:max-h-none rounded-lg overflow-hidden bg-[#2A231E] border border-white/10 shadow-inner">
+            <Image
+              src={activeImage}
+              alt={`${product.name} — ${selectedColor.name}`}
+              fill
+              sizes="(max-width: 768px) 100vw, 50vw"
+              className={`object-cover transition-all duration-300 select-none ${
+                selectedSide === 'right'
+                  ? 'object-right'
+                  : selectedSide === 'left'
+                  ? 'object-left'
+                  : 'object-center'
+              }`}
+              priority
+              referrerPolicy="no-referrer"
+            />
+            {/* Overlay badge for side placement */}
+            <div className="absolute top-2.5 right-2.5 flex flex-wrap gap-1.5 max-w-[85%]">
+              <span className="px-2.5 py-1 text-[11px] font-bold text-[#171513] bg-[#C8AA78] rounded-md shadow-xs">
+                {selectedColor.name}
+              </span>
+              <span className="px-2.5 py-1 text-[11px] font-semibold text-[#F5EFE6] bg-[#171513]/85 backdrop-blur-xs rounded-md border border-white/10">
+                {selectedSide === 'both' ? 'زوج جوانب (يمين ويسار)' : selectedSide === 'right' ? 'الجانب الأيمن (يمين)' : 'الجانب الأيسر (يسار)'}
+              </span>
+            </div>
+          </div>
+
+          {/* 1. COLOR SELECTOR FIRST (directly below main photograph) */}
+          <div className="mt-3 p-3 rounded-lg bg-[#171513] border border-[#C8AA78]/30">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-bold text-[#F5EFE6] flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-[#C8AA78]" />
+                <span>اللون المختار:</span>
+                <strong className="text-[#C8AA78]">{selectedColor.name}</strong>
+              </span>
+              <span className="text-[11px] text-[#D8C6AE]/70 font-medium">11 لوناً متوفراً</span>
+            </div>
+
+            <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto pr-0.5">
+              {colorsList.map((color) => {
+                const isSelected = selectedColor.id === color.id;
+                return (
+                  <button
+                    key={color.id}
+                    type="button"
+                    onClick={() => setSelectedColor(color)}
+                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border text-xs font-medium transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-[#2E251F] border-[#C8AA78] text-[#F5EFE6] font-bold shadow-xs ring-1 ring-[#C8AA78]'
+                        : 'bg-[#211B17] border-white/10 text-[#D8C6AE] hover:border-white/30 hover:text-[#F5EFE6]'
+                    }`}
+                  >
+                    <span
+                      className="w-3.5 h-3.5 rounded-full border border-black/40 shrink-0"
+                      style={{ backgroundColor: color.hex }}
+                    />
+                    <span>{color.name}</span>
+                    {isSelected && <Check className="w-3 h-3 text-[#C8AA78] shrink-0" />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Specifications */}
+        <div className="mt-4 p-3.5 bg-[#171513] rounded-lg border border-white/5 space-y-2 text-xs text-[#D8C6AE]">
+          <div className="flex items-center justify-between border-b border-white/5 pb-1.5">
+            <span className="text-[#D8C6AE]/70">نوع المنتج:</span>
+            <span className="font-semibold text-[#F5EFE6]">جوانب ستائر كتان فاخرة</span>
+          </div>
+          <div className="flex items-center justify-between border-b border-white/5 pb-1.5">
+            <span className="text-[#D8C6AE]/70">الجانب المختار:</span>
+            <span className="font-semibold text-[#C8AA78]">{sideLabel}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[#D8C6AE]/70">السعر:</span>
+            <span className="font-semibold text-emerald-400">
+              {selectedSide === 'both' ? '60 د.أ للزوج (يمين + يسار)' : '30 د.أ للجانب'}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Configuration Column */}
+      <div className="w-full md:w-[52%] lg:w-[54%] p-5 sm:p-6 md:p-8 flex flex-col justify-between text-right md:overflow-y-auto md:max-h-[92vh]">
+        <div>
+          <span className="text-xs uppercase tracking-wider text-[#C8AA78] font-bold block mb-1">
+            جوانب ستائر كتان
+          </span>
+          <h2 className="text-2xl sm:text-3xl font-bold text-[#F5EFE6]">
+            {product.name}
+          </h2>
+          <p className="text-xs text-[#D8C6AE]/75 mt-1 leading-relaxed">
+            {product.description}
+          </p>
+
+          {/* Rate Banner */}
+          <div className="mt-3.5 p-3.5 bg-[#171513] rounded-lg border border-white/10 flex items-center justify-between">
+            <div>
+              <span className="text-[11px] text-[#D8C6AE]/70 block">
+                السعر المحسوب:
+              </span>
+              <div className="flex items-baseline gap-1.5 mt-0.5">
+                <span className="text-2xl font-extrabold text-[#C8AA78] tabular-nums">
+                  {unitPrice}
+                </span>
+                <span className="text-xs text-[#D8C6AE]">{SHOP_CONFIG.currencySymbol}</span>
+                {quantity > 1 && (
+                  <span className="text-xs text-[#D8C6AE]/70 mr-2 tabular-nums">
+                    (الإجمالي: {totalPrice} {SHOP_CONFIG.currencySymbol})
+                  </span>
+                )}
+              </div>
+            </div>
+            <span className="text-[11px] text-[#D8C6AE]/60">
+              {selectedSide === 'both' ? '60 د.أ / زوج' : '30 د.أ / جانب'}
+            </span>
+          </div>
+
+          {/* 1. Side Selection (يمين / يسار / كلاهما) */}
+          <div className="mt-5">
+            <label className="text-xs font-bold text-[#F5EFE6] block mb-2">
+              1. اختر الجانب المطلوب <span className="text-red-400">*</span>
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { id: 'right', name: 'يمين', desc: 'الجانب الأيمن فقط', price: '30 د.أ' },
+                { id: 'left', name: 'يسار', desc: 'الجانب الأيسر فقط', price: '30 د.أ' },
+                { id: 'both', name: 'كلاهما', desc: 'زوج جوانب (يمين ويسار)', price: '60 د.أ' },
+              ].map((opt) => {
+                const isSelected = selectedSide === opt.id;
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => setSelectedSide(opt.id as any)}
+                    className={`p-3 rounded-lg border text-center transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-[#2E251F] border-[#C8AA78] text-[#F5EFE6] font-bold shadow-xs ring-1 ring-[#C8AA78]/50'
+                        : 'bg-[#171513] border-white/10 text-[#D8C6AE] hover:border-white/30'
+                    }`}
+                  >
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="text-xs font-bold">{opt.name}</span>
+                      {isSelected && <Check className="w-3.5 h-3.5 text-[#C8AA78] shrink-0" />}
+                    </div>
+                    <span className="text-[10px] text-[#C8AA78] font-bold block mt-1">
+                      {opt.price}
+                    </span>
+                    <span className="text-[9px] text-[#D8C6AE]/60 block mt-0.5 leading-tight">
+                      {opt.desc}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Quantity Selector */}
+          <div className="mt-5 pt-3 border-t border-white/10 flex items-center justify-between">
+            <span className="text-xs font-bold text-[#F5EFE6]">الكمية:</span>
+            <div className="flex items-center gap-3 bg-[#171513] p-1.5 rounded-lg border border-white/10">
+              <button
+                type="button"
+                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                className="w-8 h-8 rounded-md bg-white/5 hover:bg-white/10 text-[#F5EFE6] flex items-center justify-center transition-colors cursor-pointer"
+                aria-label="تقليل الكمية"
+              >
+                <Minus className="w-4 h-4" />
+              </button>
+              <span className="text-sm font-bold text-[#C8AA78] w-8 text-center tabular-nums">
+                {quantity}
+              </span>
+              <button
+                type="button"
+                onClick={() => setQuantity((q) => q + 1)}
+                className="w-8 h-8 rounded-md bg-white/5 hover:bg-white/10 text-[#F5EFE6] flex items-center justify-center transition-colors cursor-pointer"
+                aria-label="زيادة الكمية"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="mt-6 pt-4 border-t border-white/10 space-y-2.5">
+          <button
+            type="button"
+            onClick={handleAdd}
+            className="w-full py-3.5 px-4 bg-[#C8AA78] hover:bg-[#B89A68] text-[#171513] font-bold rounded-lg transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-lg active:scale-[0.99]"
+          >
+            <ShoppingBag className="w-5 h-5" />
+            <span>إضافة إلى السلة — {totalPrice} {SHOP_CONFIG.currencySymbol}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleWhatsApp}
+            className="w-full py-2.5 px-4 bg-[#171513] hover:bg-white/5 text-[#D8C6AE] border border-white/10 hover:border-[#C8AA78]/40 rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <MessageCircle className="w-4 h-4 text-emerald-400" />
+            <span>استفسار مباشر عبر الواتساب</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ProductModal() {
   const { openProductModal, setOpenProductModal, addItem } = useCart();
   const product = openProductModal;
@@ -2221,16 +2656,23 @@ export default function ProductModal() {
 
   if (!product) return null;
 
+  const isSidePanels =
+    Boolean(product.isLinenSidePanel) ||
+    product.id === 'curtain-linen-side-panels';
+
   const isTrack =
-    Boolean(product.isTrackAccessory) ||
-    product.id === 'curtain-track-aluminum' ||
-    product.category === 'tracks';
+    !isSidePanels &&
+    (Boolean(product.isTrackAccessory) ||
+      product.id === 'curtain-track-aluminum' ||
+      product.category === 'tracks');
 
   const isDryCleaning =
-    Boolean(product.isDryCleaningService) ||
-    product.id === 'service-dry-cleaning';
+    !isSidePanels &&
+    (Boolean(product.isDryCleaningService) ||
+      product.id === 'service-dry-cleaning');
 
   const isInstallationService =
+    !isSidePanels &&
     !isDryCleaning &&
     (Boolean(product.isInstallationService) ||
       product.id === 'service-installation' ||
@@ -2239,7 +2681,14 @@ export default function ProductModal() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 bg-black/75 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200">
-      {isDryCleaning ? (
+      {isSidePanels ? (
+        <SidePanelsProductModalContent
+          key={product.id}
+          product={product}
+          onClose={() => setOpenProductModal(null)}
+          onAddToCart={addItem}
+        />
+      ) : isDryCleaning ? (
         <DryCleaningServiceModalContent
           key={product.id}
           product={product}

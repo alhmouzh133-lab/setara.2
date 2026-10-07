@@ -150,6 +150,7 @@ export interface Product {
   isTrackAccessory?: boolean;
   isInstallationService?: boolean;
   isDryCleaningService?: boolean;
+  isLinenSidePanel?: boolean;
   availabilityBadge?: string;
 }
 
@@ -204,58 +205,42 @@ export const CENTRAL_FABRICS: FabricOption[] = [
 ];
 
 // ----------------------------------------------------------------------------
-// 1b. Dedicated Electric Fabric Options (Replacing "شيفون" with "لينين")
+// 1b. Shared Fabric Options for Linen and Electric Curtains
+// Fabrics: لينين، لينين ديم أوت، لينين موشح، لينين موشح مبزر، جاكار، ديم أوت،
+//          بلاك أوت، أفوال، كروشيه، مطرز، مقصب، تل مقصب، تي ان، مخمل
+// Treat كتان and لينين as the same existing fabric option.
+// Treat velvet / فلفت / مخمل as one option.
 // ----------------------------------------------------------------------------
-export const ELECTRIC_FABRICS: FabricOption[] = [
-  {
-    id: 'linen',
-    name: 'كتان طبيعي',
-    description: 'نسيج كتاني طبيعي مريح ينسدل بخفة وأناقة ويسمح بتدفق ناعم لضوء النهار.',
-    badge: 'طبيعي انسيابي',
-  },
-  {
-    id: 'velvet',
-    name: 'مخمل ناعم',
-    description: 'مخمل فاخر بملمس ناعم وعزل حراري وصوتي عالي مع ثنيات فخمة متناسقة.',
-    badge: 'فاخر ثقيل',
-  },
-  {
-    id: 'flax_linen',
-    name: 'لينين',
-    description: 'قماش لينين راقٍ بنسيج أوروبي فاخر ومظهر طبيعي متهدل بطيات مميزة.',
-    badge: 'لينين فاخر',
-  },
-  {
-    id: 'blackout',
-    name: 'بلاك أوت',
-    description: 'قماش معتم تماماً بنسبة 100% يحجب الضوء الخارجي ويحفظ برودة الغرفة وسكونها.',
-    badge: 'تعتيم 100%',
-  },
-  {
-    id: 'screen',
-    name: 'سكرين',
-    description: 'نسيج شبكي شمسي يرشح وهج الشمس والحرارة مع الحفاظ على وضوح الرؤية للخارج.',
-    badge: 'واقي شمسي ميكروي',
-  },
-  {
-    id: 'zebra',
-    name: 'زيبرا',
-    description: 'شرائح أفقية متناوبة تتيح التبديل الفوري بين الشفافية والخصوصية بحركة سحب واحدة.',
-    badge: 'شرائح متناوبة',
-  },
-];
-
-// ----------------------------------------------------------------------------
-// 1c. Dedicated Manual Fabric Options (ستائر عادية)
-// Fabrics: لينين، جاكار، ديم أوت، بلاك أوت، أفوال، كروشيه، تي ان، مخمل
-// Treat Velvet / فلفت / مخمل as one fabric option.
-// ----------------------------------------------------------------------------
-export const MANUAL_FABRICS: FabricOption[] = [
+export const SHARED_CURTAIN_FABRICS: FabricOption[] = [
   {
     id: 'flax_linen',
     name: 'لينين',
     description: 'قماش لينين راقٍ بنسيج أوروبي فاخر ومظهر طبيعي متهدل بطيات مميزة.',
     badge: 'طبيعي فاخر',
+  },
+  {
+    id: 'linen_dimout',
+    name: 'لينين ديم أوت',
+    description: 'قماش لينين ديم أوت يجمع بين فخامة مظهر اللينين وعزل ناعم لأشعة الشمس والحرارة.',
+    badge: 'لينين عازل ناعم',
+  },
+  {
+    id: 'linen_mowashah',
+    name: 'لينين موشح',
+    description: 'قماش لينين بنسيج موشح متداخل الألوان يضفي لمسة عصرية دافئة وفخمة على المساحة.',
+    badge: 'موشح عصري',
+  },
+  {
+    id: 'mobazar',
+    name: 'مبزر',
+    description: 'قماش مبزر بتموجات ونسيج نافز خفيف يمنح الستارة عمقاً وثراءً بصرياً فاخراً.',
+    badge: 'مبزر فاخر',
+  },
+  {
+    id: 'mankoush',
+    name: 'منكوش',
+    description: 'قماش منكوش أنيق بتموجات عضوية خفيفة تعكس الضوء برقة وأناقة عصرية.',
+    badge: 'منكوش متموج',
   },
   {
     id: 'jacquard',
@@ -284,8 +269,26 @@ export const MANUAL_FABRICS: FabricOption[] = [
   {
     id: 'crochet',
     name: 'كروشيه',
-    description: 'نسيج كروشيه كلاسيكي بتطريزات راقية للمجالس والصالونات الأنيقة.',
-    badge: 'كلاسيكي مطرز',
+    description: 'نسيج كروشيه كلاسيكي محبوك بغرز مفتوحة وتطريزات راقية للصالونات والمجالس.',
+    badge: 'محبوك كلاسيكي',
+  },
+  {
+    id: 'embroidered',
+    name: 'مطرز',
+    description: 'أقمشة شفافة فاخرة بتطريزات ونقوش نباتية وهندسية أنيقة تضفي فخامة استثنائية.',
+    badge: 'مطرز راقٍ',
+  },
+  {
+    id: 'mouqasab',
+    name: 'مقصب',
+    description: 'قماش مقصب بخيوط معدنية برّاقة ناعمة تعكس الإضاءة ببريق خافت هادئ وأنيق.',
+    badge: 'بريق هادئ فاخر',
+  },
+  {
+    id: 'tulle_mouqasab',
+    name: 'تل مقصب',
+    description: 'نسيج تل انسيابي مطعم بخيوط مقصبة لامعة بنعومة تمنح النوافذ حيوية وتألقاً.',
+    badge: 'تل بلمعة ناعمة',
   },
   {
     id: 'tn',
@@ -298,6 +301,69 @@ export const MANUAL_FABRICS: FabricOption[] = [
     name: 'مخمل',
     description: 'مخمل فاخر بملمس ناعم وعزل حراري وصوتي عالي مع ثنيات فخمة متناسقة.',
     badge: 'فاخر ثقيل',
+  },
+];
+
+// Backwards-compatible aliases pointing to the unified shared fabrics
+export const MANUAL_FABRICS: FabricOption[] = SHARED_CURTAIN_FABRICS;
+export const ELECTRIC_FABRICS: FabricOption[] = SHARED_CURTAIN_FABRICS;
+
+// ----------------------------------------------------------------------------
+// 1c. Pattern / Design Options for Embroidered (مطرز) and Crochet (كروشيه)
+// ----------------------------------------------------------------------------
+export interface FabricPatternOption {
+  id: string;
+  name: string;
+  description: string;
+  image: string;
+  badge?: string;
+}
+
+export const EMBROIDERED_PATTERNS: FabricPatternOption[] = [
+  {
+    id: 'floral_white',
+    name: 'ورد ناعم أبيض / عاجي',
+    description: 'تطريز نباتي زهري ناعم متساقط بخيوط عاجية نقية',
+    image: '/images/curtain_emb_floral.jpg',
+    badge: 'ورد أبيض عاجي',
+  },
+  {
+    id: 'gold_branch',
+    name: 'أغصان ذهبية',
+    description: 'أغصان شجرية مذهبة برّاقة تمتد بأناقة على قماش التول الشفاف',
+    image: '/images/curtain_emb_goldbranch.jpg',
+    badge: 'أغصان ذهبية',
+  },
+  {
+    id: 'gold_decorative',
+    name: 'زخارف ذهبية',
+    description: 'نقوش وزخارف كلاسيكية ذهبية فخمة بحواف مموجة أنيقة',
+    image: '/images/curtain_emb_goldscallop.jpg',
+    badge: 'زخارف ذهبية',
+  },
+];
+
+export const CROCHET_PATTERNS: FabricPatternOption[] = [
+  {
+    id: 'crochet_stripe',
+    name: 'كروشيه شبكي مقلم',
+    description: 'نسيج كروشيه مفتوح بخطوط رأسية مقلمة عصرية وأنيقة',
+    image: '/images/curtain_crochet_stripe.jpg',
+    badge: 'شبكي مقلم',
+  },
+  {
+    id: 'crochet_grid',
+    name: 'كروشيه شبكي مربعات',
+    description: 'نسيج كروشيه محبوك بغرز شبكية مربعة بنمط وافل هندسي',
+    image: '/images/curtain_crochet_grid.jpg',
+    badge: 'شبكي مربعات',
+  },
+  {
+    id: 'crochet_zigzag',
+    name: 'كروشيه شبكي زكزاك',
+    description: 'نسيج كروشيه مفتوح بنقشات زكزاك متعرجة هندسية فخمة',
+    image: '/images/curtain_crochet_zigzag.jpg',
+    badge: 'شبكي زكزاك',
   },
 ];
 
@@ -339,6 +405,87 @@ export const CENTRAL_COLORS: ColorOption[] = [
     hex: '#FFFFFF',
     image: '/images/linen_sheer_white.jpg',
     gallery: ['/images/linen_sheer_white.jpg'],
+  },
+];
+
+// Palette for جوانب ستائر كتان (Side Panels)
+export const SIDE_PANEL_COLORS: ColorOption[] = [
+  {
+    id: 'white',
+    name: 'أبيض',
+    hex: '#FFFFFF',
+    image: '/images/elec_flax_white_w.jpg',
+    gallery: ['/images/elec_flax_white_w.jpg'],
+  },
+  {
+    id: 'ivory',
+    name: 'عاجي',
+    hex: '#F5EFE6',
+    image: '/images/side_linen_panels.jpg',
+    gallery: ['/images/side_linen_panels.jpg'],
+  },
+  {
+    id: 'light_beige',
+    name: 'بيج فاتح',
+    hex: '#EAE2D6',
+    image: '/images/elec_flax_ivory_w.jpg',
+    gallery: ['/images/elec_flax_ivory_w.jpg'],
+  },
+  {
+    id: 'sand_beige',
+    name: 'بيج رملي',
+    hex: '#D8C6AE',
+    image: '/images/elec_flax_sand_w.jpg',
+    gallery: ['/images/elec_flax_sand_w.jpg'],
+  },
+  {
+    id: 'grey_beige',
+    name: 'بيج رمادي',
+    hex: '#B8AF9E',
+    image: '/images/lustre_warmgrey.jpg',
+    gallery: ['/images/lustre_warmgrey.jpg'],
+  },
+  {
+    id: 'light_grey',
+    name: 'رمادي فاتح',
+    hex: '#C5C3C0',
+    image: '/images/curtain_charcoal_roller.jpg',
+    gallery: ['/images/curtain_charcoal_roller.jpg'],
+  },
+  {
+    id: 'medium_grey',
+    name: 'رمادي متوسط',
+    hex: '#8B8884',
+    image: '/images/elec_flax_charcoal_w.jpg',
+    gallery: ['/images/elec_flax_charcoal_w.jpg'],
+  },
+  {
+    id: 'dark_grey',
+    name: 'رمادي غامق',
+    hex: '#4A4846',
+    image: '/images/curtain_linen_charcoal.jpg',
+    gallery: ['/images/curtain_linen_charcoal.jpg'],
+  },
+  {
+    id: 'blue_grey',
+    name: 'رمادي مزرق',
+    hex: '#5B6B7C',
+    image: '/images/chiffon_charcoal.jpg',
+    gallery: ['/images/chiffon_charcoal.jpg'],
+  },
+  {
+    id: 'blue',
+    name: 'أزرق',
+    hex: '#3B6282',
+    image: '/images/curtain_olive.jpg',
+    gallery: ['/images/curtain_olive.jpg'],
+  },
+  {
+    id: 'navy_blue',
+    name: 'كحلي',
+    hex: '#1B2A4A',
+    image: '/images/elec_flax_charcoal_am.jpg',
+    gallery: ['/images/elec_flax_charcoal_am.jpg'],
   },
 ];
 
@@ -713,6 +860,93 @@ export const IMAGE_MAP: Record<string, string> = {
   'manual:velvet:white:wave': '/images/velvet_white_w.jpg',
   'manual:velvet:white:american': '/images/velvet_white_am.jpg',
 
+  // --- NEW MERCHANT FABRICS (Electric & Manual) ---
+  // linen_dimout (لينين ديم أوت)
+  'electric:linen_dimout:ivory': '/images/elec_linen_iv_w_80.jpg',
+  'electric:linen_dimout:ivory:wave': '/images/elec_linen_iv_w_80.jpg',
+  'electric:linen_dimout:ivory:american': '/images/elec_linen_iv_am_80.jpg',
+  'electric:linen_dimout:sand': '/images/elec_flax_sand_w_80.jpg',
+  'electric:linen_dimout:sand:wave': '/images/elec_flax_sand_w_80.jpg',
+  'electric:linen_dimout:sand:american': '/images/elec_flax_sand_am.jpg',
+  'electric:linen_dimout:cocoa': '/images/curtain_velvet_cocoa.jpg',
+  'electric:linen_dimout:charcoal': '/images/curtain_linen_charcoal.jpg',
+  'electric:linen_dimout:white': '/images/raw_linen_white.jpg',
+
+  'manual:linen_dimout:ivory': '/images/elec_linen_iv_w_80.jpg',
+  'manual:linen_dimout:ivory:wave': '/images/elec_linen_iv_w_80.jpg',
+  'manual:linen_dimout:ivory:american': '/images/elec_linen_iv_am_80.jpg',
+  'manual:linen_dimout:sand': '/images/elec_flax_sand_w_80.jpg',
+  'manual:linen_dimout:sand:wave': '/images/elec_flax_sand_w_80.jpg',
+  'manual:linen_dimout:sand:american': '/images/elec_flax_sand_am.jpg',
+  'manual:linen_dimout:cocoa': '/images/curtain_velvet_cocoa.jpg',
+  'manual:linen_dimout:charcoal': '/images/curtain_linen_charcoal.jpg',
+  'manual:linen_dimout:white': '/images/raw_linen_white.jpg',
+
+  // linen_mowashah (لينين موشح)
+  'electric:linen_mowashah:ivory': '/images/nordic_sand.jpg',
+  'electric:linen_mowashah:sand': '/images/nordic_sand.jpg',
+  'electric:linen_mowashah:cocoa': '/images/lustre_cocoa.jpg',
+  'electric:linen_mowashah:charcoal': '/images/lustre_warmgrey.jpg',
+  'electric:linen_mowashah:white': '/images/prod_raw_linen.jpg',
+
+  'manual:linen_mowashah:ivory': '/images/nordic_sand.jpg',
+  'manual:linen_mowashah:sand': '/images/nordic_sand.jpg',
+  'manual:linen_mowashah:cocoa': '/images/lustre_cocoa.jpg',
+  'manual:linen_mowashah:charcoal': '/images/lustre_warmgrey.jpg',
+  'manual:linen_mowashah:white': '/images/prod_raw_linen.jpg',
+
+  // linen_mowashah_mobazar (لينين موشح مبزر)
+  'electric:linen_mowashah_mobazar:ivory': '/images/craft_textures.jpg',
+  'electric:linen_mowashah_mobazar:sand': '/images/craft_textures.jpg',
+  'electric:linen_mowashah_mobazar:cocoa': '/images/craft_textures.jpg',
+  'electric:linen_mowashah_mobazar:charcoal': '/images/craft_fabric_textures_1790877431954.jpg',
+  'electric:linen_mowashah_mobazar:white': '/images/craft_textures.jpg',
+
+  'manual:linen_mowashah_mobazar:ivory': '/images/craft_textures.jpg',
+  'manual:linen_mowashah_mobazar:sand': '/images/craft_textures.jpg',
+  'manual:linen_mowashah_mobazar:cocoa': '/images/craft_textures.jpg',
+  'manual:linen_mowashah_mobazar:charcoal': '/images/craft_fabric_textures_1790877431954.jpg',
+  'manual:linen_mowashah_mobazar:white': '/images/craft_textures.jpg',
+
+  // embroidered (مطرز)
+  'electric:embroidered:ivory': '/images/prod_andalusian.jpg',
+  'electric:embroidered:sand': '/images/chiffon_champagne.jpg',
+  'electric:embroidered:cocoa': '/images/chiffon_cocoa.jpg',
+  'electric:embroidered:charcoal': '/images/chiffon_charcoal.jpg',
+  'electric:embroidered:white': '/images/linen_sheer_white.jpg',
+
+  'manual:embroidered:ivory': '/images/prod_andalusian.jpg',
+  'manual:embroidered:sand': '/images/chiffon_champagne.jpg',
+  'manual:embroidered:cocoa': '/images/chiffon_cocoa.jpg',
+  'manual:embroidered:charcoal': '/images/chiffon_charcoal.jpg',
+  'manual:embroidered:white': '/images/linen_sheer_white.jpg',
+
+  // mouqasab (مقصب - subtle metallic shine)
+  'electric:mouqasab:ivory': '/images/velvet_champagne.jpg',
+  'electric:mouqasab:sand': '/images/lustre_warmgrey.jpg',
+  'electric:mouqasab:cocoa': '/images/lustre_cocoa.jpg',
+  'electric:mouqasab:charcoal': '/images/lustre_warmgrey.jpg',
+  'electric:mouqasab:white': '/images/linen_sheer_white.jpg',
+
+  'manual:mouqasab:ivory': '/images/velvet_champagne.jpg',
+  'manual:mouqasab:sand': '/images/lustre_warmgrey.jpg',
+  'manual:mouqasab:cocoa': '/images/lustre_cocoa.jpg',
+  'manual:mouqasab:charcoal': '/images/lustre_warmgrey.jpg',
+  'manual:mouqasab:white': '/images/linen_sheer_white.jpg',
+
+  // tulle_mouqasab (تل مقصب)
+  'electric:tulle_mouqasab:ivory': '/images/chiffon_champagne.jpg',
+  'electric:tulle_mouqasab:sand': '/images/chiffon_champagne.jpg',
+  'electric:tulle_mouqasab:cocoa': '/images/chiffon_cocoa.jpg',
+  'electric:tulle_mouqasab:charcoal': '/images/chiffon_charcoal.jpg',
+  'electric:tulle_mouqasab:white': '/images/voile_iv_w_lined.jpg',
+
+  'manual:tulle_mouqasab:ivory': '/images/chiffon_champagne.jpg',
+  'manual:tulle_mouqasab:sand': '/images/chiffon_champagne.jpg',
+  'manual:tulle_mouqasab:cocoa': '/images/chiffon_cocoa.jpg',
+  'manual:tulle_mouqasab:charcoal': '/images/chiffon_charcoal.jpg',
+  'manual:tulle_mouqasab:white': '/images/voile_iv_w_lined.jpg',
+
   // Legacy manual aliases
   'manual:linen:ivory': '/images/curtain_manual.jpg',
   'manual:linen:sand': '/images/linen_sheer_sand.jpg',
@@ -741,14 +975,53 @@ export function resolveCurtainImage(
   fabricId: string,
   colorId: string,
   style?: string,
-  lining?: string
+  lining?: string,
+  patternId?: string
 ): string {
   const normType = curtainType.toLowerCase().trim();
   const normFabric = fabricId.toLowerCase().trim();
   const normColor = colorId.toLowerCase().trim();
 
+  // 1. Direct Pattern resolution for Embroidered (مطرز)
+  if (normFabric === 'embroidered') {
+    if (patternId === 'gold_branch') return '/images/curtain_emb_goldbranch.jpg';
+    if (patternId === 'gold_decorative') return '/images/curtain_emb_goldscallop.jpg';
+    if (patternId === 'floral_white') return '/images/curtain_emb_floral.jpg';
+    return '/images/curtain_emb_floral.jpg';
+  }
+
+  // 2. Direct Pattern resolution for Crochet (كروشيه)
+  if (normFabric === 'crochet') {
+    if (patternId === 'crochet_stripe') return '/images/curtain_crochet_stripe.jpg';
+    if (patternId === 'crochet_grid') return '/images/curtain_crochet_grid.jpg';
+    if (patternId === 'crochet_zigzag') return '/images/curtain_crochet_zigzag.jpg';
+    if (style?.includes('أمريكي') || style?.includes('american')) {
+      return '/images/crochet_iv_am.jpg';
+    }
+    return '/images/crochet_iv_w.jpg';
+  }
+
+  // 3. Direct resolution for Mobazar & Mankoush
+  if (normFabric === 'mobazar' || normFabric === 'linen_mowashah_mobazar') {
+    return '/images/curtain_mobazar.jpg';
+  }
+  if (normFabric === 'mankoush') {
+    return '/images/curtain_mankoush.jpg';
+  }
+
   // Normalize style
-  const normStyle = style === 'أمريكي' || style === 'american' ? 'american' : 'wave';
+  const normStyle =
+    style?.includes('أمريكي') || style?.includes('american')
+      ? 'american'
+      : style?.includes('ويفي') || style?.includes('wave')
+      ? 'wave'
+      : style === 'زم'
+      ? 'shirred'
+      : style === 'دكة'
+      ? 'rod_pocket'
+      : style === 'رينجات'
+      ? 'rings'
+      : 'wave';
 
   // Normalize lining
   const normLining =
@@ -758,25 +1031,25 @@ export function resolveCurtainImage(
       ? 'lining80'
       : 'lining50';
 
-  // 1. Try full 5-key exact match: type:fabric:color:style:lining
+  // 4. Try full 5-key exact match: type:fabric:color:style:lining
   const fullKey = `${normType}:${normFabric}:${normColor}:${normStyle}:${normLining}`;
   if (IMAGE_MAP[fullKey]) {
     return IMAGE_MAP[fullKey];
   }
 
-  // 2. Try 4-key style match: type:fabric:color:style
+  // 5. Try 4-key style match: type:fabric:color:style
   const styleKey = `${normType}:${normFabric}:${normColor}:${normStyle}`;
   if (IMAGE_MAP[styleKey]) {
     return IMAGE_MAP[styleKey];
   }
 
-  // 3. Try standard 3-key match: type:fabric:color
+  // 6. Try standard 3-key match: type:fabric:color
   const key = `${normType}:${normFabric}:${normColor}`;
   if (IMAGE_MAP[key]) {
     return IMAGE_MAP[key];
   }
 
-  // 4. Try counterpart fallback between electric and manual
+  // 7. Try counterpart fallback between electric and manual
   if (normType === 'manual') {
     const elecFullKey = `electric:${normFabric}:${normColor}:${normStyle}:${normLining}`;
     if (IMAGE_MAP[elecFullKey]) return IMAGE_MAP[elecFullKey];
@@ -797,6 +1070,32 @@ export function resolveCurtainImage(
     if (IMAGE_MAP[manKey]) return IMAGE_MAP[manKey];
   }
 
+  // Fabric-specific graceful fallbacks
+  if (normFabric === 'voile') {
+    return normStyle === 'american' ? '/images/voile_iv_am.jpg' : '/images/chiffon_champagne.jpg';
+  }
+  if (normFabric === 'jacquard') {
+    return normStyle === 'american' ? '/images/jacquard_iv_am.jpg' : '/images/jacquard_iv_w.jpg';
+  }
+  if (normFabric === 'blackout') {
+    return normStyle === 'american' ? '/images/elec_blackout_iv_am.jpg' : '/images/curtain_blackout_ivory.jpg';
+  }
+  if (normFabric === 'dimout' || normFabric === 'linen_dimout') {
+    return normStyle === 'american' ? '/images/elec_linen_iv_am_80.jpg' : '/images/elec_linen_iv_w_80.jpg';
+  }
+  if (normFabric === 'velvet') {
+    return normStyle === 'american' ? '/images/elec_velvet_iv_am.jpg' : '/images/velvet_champagne.jpg';
+  }
+  if (normFabric === 'tn') {
+    return normStyle === 'american' ? '/images/tn_iv_am.jpg' : '/images/tn_iv_w.jpg';
+  }
+  if (normFabric === 'mouqasab') {
+    return '/images/velvet_champagne.jpg';
+  }
+  if (normFabric === 'tulle_mouqasab') {
+    return '/images/chiffon_champagne.jpg';
+  }
+
   // Fallbacks by fabric and color
   const fabricColorKey = `roller:${normFabric}:${normColor}`;
   if (IMAGE_MAP[fabricColorKey]) {
@@ -809,8 +1108,61 @@ export function resolveCurtainImage(
     return colorMatch.image;
   }
 
-  return '/images/curtain_manual.jpg';
+  return normType === 'electric' ? '/images/curtain_electric.jpg' : '/images/curtain_manual.jpg';
 }
+
+export interface TrackOption {
+  id: string;
+  name: string;
+  ratePerMeter: number | null; // null if unpriced
+  ratePerCm: number | null;
+  description: string;
+  isElectric?: boolean;
+  image: string;
+}
+
+export const TRACK_OPTIONS: TrackOption[] = [
+  {
+    id: 'standard_track',
+    name: 'سكة عادية',
+    ratePerMeter: 4,
+    ratePerCm: 0.04,
+    description: 'سكة ألمنيوم كلاسيكية بحركة انسيابية — 4 د.أ للمتر الطولي',
+    image: '/images/aluminum_curtain_track.jpg',
+  },
+  {
+    id: 'turbo_steel',
+    name: 'سكة حديد تيربو',
+    ratePerMeter: 5,
+    ratePerCm: 0.05,
+    description: 'سكة حديد تيربو فائقة المتانة للأوزان الثقيلة — 5 د.أ للمتر الطولي',
+    image: '/images/aluminum_curtain_track.jpg',
+  },
+  {
+    id: 'pipe',
+    name: 'بايب',
+    ratePerMeter: 3,
+    ratePerCm: 0.03,
+    description: 'ماسورة بايب معدنية لتعليق الستائر — 3 د.أ للمتر الطولي',
+    image: '/images/aluminum_curtain_track.jpg',
+  },
+  {
+    id: 'wave_track',
+    name: 'ويفي كهربائي',
+    ratePerMeter: 10,
+    ratePerCm: 0.10,
+    description: 'مسار ويفي كهربائي متناسق لطيات انسيابية — 10 د.أ للمتر الطولي (25 د.أ لكل 250 سم)',
+    image: '/images/aluminum_curtain_track.jpg',
+  },
+  {
+    id: 'american_track',
+    name: 'جسر أمريكي كهربائي',
+    ratePerMeter: 10,
+    ratePerCm: 0.10,
+    description: 'مسار سحب أمريكي كهربائي ميكانيكي — 10 د.أ للمتر الطولي (25 د.أ لكل 250 سم)',
+    image: '/images/aluminum_curtain_track.jpg',
+  },
+];
 
 // ----------------------------------------------------------------------------
 // 4. Stored Base-Pricing Metadata (for upcoming phase)
@@ -845,9 +1197,9 @@ export const CATEGORIES: CategoryInfo[] = [
   },
   {
     id: 'manual',
-    name: 'ستائر عادية',
+    name: 'ستائر لينين',
     subtitle: 'تشغيل يدوي — 48 د.أ / م',
-    description: 'ستائر قماشية يدوية بدون محرك بطيات ويفي أو أمريكي أنيقة، تفصيل حسب المقاس والارتفاع مشمول حتى 360 سم.',
+    description: 'ستائر لينين يدوية بدون محرك بطيات ويفي أو أمريكي أو زم أو دكة أو رينجات، تفصيل حسب المقاس والارتفاع مشمول حتى 360 سم.',
     image: '/images/curtain_manual.jpg',
   },
   {
@@ -859,9 +1211,9 @@ export const CATEGORIES: CategoryInfo[] = [
   },
   {
     id: 'tracks',
-    name: 'سكك وملحقات',
-    subtitle: 'ألمنيوم سايلنت — 5 د.أ / م',
-    description: 'سكك ألمنيوم مدهونة حراريًا وملبّسة بالبلاستيك لحركة انسيابية وهادئة، تفصيل حسب الطول المطلوب.',
+    name: 'جسور وسكك الستائر',
+    subtitle: 'عادية، تيربو، بايب، كهربائية',
+    description: 'تشكيلة متكاملة من سكك الألمنيوم والحديد والمواسير والمسارات الكهربائية، تفصيل حسب الطول المطلوب بالسنتيمتر.',
     image: '/images/aluminum_curtain_track.jpg',
   },
   {
@@ -886,16 +1238,16 @@ export const PRODUCTS: Product[] = [
     category: 'electric',
     categoryName: 'ستائر كهربائية',
     shortDesc: 'ستائر كهربائية تعمل باللمس، وبالريموت كنترول، وعبر تطبيق على الهاتف.',
-    description: 'ستائر كهربائية تعمل باللمس، وبالريموت كنترول، وعبر تطبيق على الهاتف.',
-    fabric: 'تشمل خيارات أقمشة فاخرة: لينين، جاكار، ديم أوت، بلاك أوت، أفوال، كروشيه، تي ان، مخمل',
+    description: 'ستائر كهربائية تعمل باللمس، وبالريموت كنترول، وعبر تطبيق على الهاتف. تشمل خيارات أقمشة فاخرة متعددة مع شمول الارتفاع حتى 360 سم.',
+    fabric: 'تشمل خيارات أقمشة فاخرة: لينين، لينين ديم أوت، لينين موشح، مبزر، منكوش، جاكار، ديم أوت، بلاك أوت، أفوال، كروشيه، مطرز، مقصب، تل مقصب، تي ان، مخمل',
     lightBlocking: 'خيارات عزل وتعتيم مستقلة: 50%، 80%، 100% لكافة الأقمشة',
     mainImage: '/images/curtain_electric.jpg',
     images: ['/images/curtain_electric.jpg', '/images/elec_flax_ivory_w.jpg', '/images/velvet_champagne.jpg'],
     defaultFabricId: 'flax_linen',
-    curtainStyles: ['ويفي', 'أمريكي'],
+    curtainStyles: ['ويفي كهربائي', 'أمريكي كهربائي'],
     liningOptions: ['50%', '80%', '100%'],
     pricingMeta: FABRIC_CURTAINS_METADATA.electric,
-    fabricOptions: MANUAL_FABRICS,
+    fabricOptions: SHARED_CURTAIN_FABRICS,
     colors: CENTRAL_COLORS,
     sizes: [],
     priceDisplay: '48 د.أ للمتر الطولي',
@@ -904,32 +1256,32 @@ export const PRODUCTS: Product[] = [
       'ستائر كهربائية تعمل باللمس، وبالريموت كنترول، وعبر تطبيق على الهاتف',
       'تفصيل دقيق حسب المقاس: 48 د.أ للمتر الطولي (120 د.أ لكل 250 سم عرض)',
       'الارتفاع من 100 إلى 360 سم مشمول بالسعر دون تكلفة إضافية',
-      'خيارات تفصيل: طيات ويفي أو أمريكي',
+      'خيارات تفصيل: ويفي كهربائي أو أمريكي كهربائي',
       'خيارات عزل وتعتيم مستقلة: 50%، 80%، 100% لكافة الأقمشة',
-      'أقمشة فاخرة: لينين، جاكار، ديم أوت، بلاك أوت، أفوال، كروشيه، تي ان، مخمل',
+      'أقمشة فاخرة: لينين، لينين ديم أوت، لينين موشح، مبزر، منكوش، جاكار، ديم أوت، بلاك أوت، أفوال، كروشيه، مطرز، مقصب، تل مقصب، تي ان، مخمل',
     ],
     isFeatured: true,
   },
 
-  // 2. ستائر عادية
+  // 2. ستائر لينين (formerly ستائر عادية)
   {
     id: 'curtain-manual',
     slug: 'manual-curtain',
-    name: 'ستائر عادية',
+    name: 'ستائر لينين',
     curtainType: 'manual',
     category: 'manual',
-    categoryName: 'ستائر عادية',
-    shortDesc: 'ستارة قماشية يدوية انسيابية بدون محرك، تفصيل حسب المقاس بدقة (120 د.أ لكل 250 سم عرض) مع شمول الارتفاع حتى 360 سم.',
-    description: 'ستارة قماشية كلاسيكية بتشغيل يدوي سلس بدون محرك. تفصيل حسب المقاس (48 د.أ للمتر الطولي) مع شمول الارتفاع من 100 إلى 360 سم بالسعر دون تكلفة إضافية، وخيارات تفصيل ويفي أو أمريكي وخيارات عزل 50%، 80%، 100% لكافة الأقمشة.',
-    fabric: 'تشمل خيارات أقمشة فاخرة: لينين، جاكار، ديم أوت، بلاك أوت، أفوال، كروشيه، تي ان، مخمل',
+    categoryName: 'ستائر لينين',
+    shortDesc: 'ستائر لينين يدوية انسيابية بدون محرك، تفصيل حسب المقاس بدقة (120 د.أ لكل 250 سم عرض) مع شمول الارتفاع حتى 360 سم.',
+    description: 'ستائر لينين راقية بتشغيل يدوي سلس بدون محرك. تشمل خيارات أقمشة فاخرة متعددة، تفصيل حسب المقاس (48 د.أ للمتر الطولي) مع شمول الارتفاع من 100 إلى 360 سم بالسعر دون تكلفة إضافية، وخيارات تفصيل (ويفي، أمريكي، زم، دكة، رينجات) وخيارات عزل 50%، 80%، 100% لكافة الأقمشة.',
+    fabric: 'تشمل خيارات أقمشة فاخرة: لينين، لينين ديم أوت، لينين موشح، مبزر، منكوش، جاكار، ديم أوت، بلاك أوت، أفوال، كروشيه، مطرز، مقصب، تل مقصب، تي ان، مخمل',
     lightBlocking: 'خيارات عزل وتعتيم مستقلة: 50%، 80%، 100% لكافة الأقمشة',
     mainImage: '/images/curtain_manual.jpg',
     images: ['/images/curtain_manual.jpg', '/images/elec_flax_ivory_w.jpg', '/images/velvet_champagne.jpg'],
     defaultFabricId: 'flax_linen',
-    curtainStyles: ['ويفي', 'أمريكي'],
+    curtainStyles: ['ويفي', 'أمريكي', 'زم', 'دكة', 'رينجات'],
     liningOptions: ['50%', '80%', '100%'],
     pricingMeta: FABRIC_CURTAINS_METADATA.manual,
-    fabricOptions: MANUAL_FABRICS,
+    fabricOptions: SHARED_CURTAIN_FABRICS,
     colors: CENTRAL_COLORS,
     sizes: [],
     priceDisplay: '48 د.أ للمتر الطولي',
@@ -938,9 +1290,9 @@ export const PRODUCTS: Product[] = [
       'تشغيل يدوي كلاسيكي انسيابي بدون محرك',
       'تفصيل دقيق حسب المقاس: 48 د.أ للمتر الطولي (120 د.أ لكل 250 سم عرض)',
       'الارتفاع من 100 إلى 360 سم مشمول بالسعر دون تكلفة إضافية',
-      'خيارات تفصيل: طيات ويفي أو أمريكي',
+      'خيارات تفصيل متعددة: ويفي، أمريكي، زم، دكة، رينجات',
       'خيارات عزل وتعتيم مستقلة: 50%، 80%، 100% لكافة الأقمشة',
-      'أقمشة فاخرة: لينين، جاكار، ديم أوت، بلاك أوت، أفوال، كروشيه، تي ان، مخمل',
+      'أقمشة فاخرة: لينين، لينين ديم أوت، لينين موشح، مبزر، منكوش، جاكار، ديم أوت، بلاك أوت، أفوال، كروشيه، مطرز، مقصب، تل مقصب، تي ان، مخمل',
     ],
     isFeatured: true,
   },
@@ -1044,23 +1396,23 @@ export const PRODUCTS: Product[] = [
     isFeatured: true,
   },
 
-  // 6. جسر سكة ألمنيوم
+  // 6. جسور وسكك الستائر
   {
     id: 'curtain-track-aluminum',
     slug: 'aluminum-curtain-track',
-    name: 'جسر سكة ألمنيوم',
+    name: 'جسور وسكك الستائر',
     curtainType: 'track',
     category: 'tracks',
     categoryName: 'سكك وملحقات',
-    shortDesc: 'ألمنيوم مدهون حراريًا وملبّس بالبلاستيك لحركة هادئة — سايلنت.',
-    description: 'ألمنيوم مدهون حراريًا وملبّس بالبلاستيك لحركة هادئة — سايلنت.',
-    fabric: 'ألمنيوم مدهون حرارياً وملبس بالبلاستيك',
-    lightBlocking: 'ملحق مسار وسكك للستائر',
+    shortDesc: 'سكك عادية، تيربو، بايب، ويفي كهربائي، وجسر أمريكي كهربائي، تفصيل حسب الطول بالسنتيمتر بدقة.',
+    description: 'تشكيلة متكاملة من جسور وسكك الستائر: سكة عادية (4 د.أ/م)، سكة حديد تيربو (5 د.أ/م)، بايب (3 د.أ/م)، ويفي كهربائي (10 د.أ/م)، جسر أمريكي كهربائي (10 د.أ/م).',
+    fabric: 'سكك ألمنيوم وحديد تيربو ومواسير بايب ومسارات ويفي وأمريكي متطورة',
+    lightBlocking: 'ملحقات ومسارات لكافة أنواع الستائر',
     mainImage: '/images/aluminum_curtain_track.jpg',
     images: ['/images/aluminum_curtain_track.jpg'],
-    defaultFabricId: 'track_aluminum',
+    defaultFabricId: 'track_standard',
     isTrackAccessory: true,
-    priceDisplay: '5 د.أ للمتر الطولي',
+    priceDisplay: 'ابتداءً من 3 د.أ للمتر الطولي',
     colors: [
       {
         id: 'white_thermal',
@@ -1073,10 +1425,41 @@ export const PRODUCTS: Product[] = [
     sizes: [],
     care: ['مسح المسار بقطعة قماش ناعمة وجافة للحفاظ على انسيابية الحركة', 'عجلات سايلنت هادئة تدوم طويلاً'],
     features: [
-      'سكة ألمنيوم مدهونة حرارياً ومقاومة للصدأ والتآكل',
-      'ملبّسة بالبلاستيك لتقليل الاحتكاك وحركة سايلنت فائقة الهدوء',
-      'تفصيل حسب الطول المطلوب بالسنتيمتر بدقة: 5 د.أ للمتر الطولي',
-      'تتضمن المسار الداخلي وعجلات السحب الانسيابية',
+      'سكة عادية: 4 د.أ للمتر الطولي',
+      'سكة حديد تيربو: 5 د.أ للمتر الطولي',
+      'بايب: 3 د.أ للمتر الطولي',
+      'ويفي كهربائي: 10 د.أ للمتر الطولي (25 د.أ لكل 250 سم)',
+      'جسر أمريكي كهربائي: 10 د.أ للمتر الطولي (25 د.أ لكل 250 سم)',
+      'تفصيل دقيق حسب الطول المطلوب بالسنتيمتر',
+    ],
+    isFeatured: true,
+  },
+
+  // 7. جوانب ستائر كتان
+  {
+    id: 'curtain-linen-side-panels',
+    slug: 'linen-side-panels',
+    name: 'جوانب ستائر كتان',
+    curtainType: 'manual',
+    category: 'manual',
+    categoryName: 'ستائر لينين',
+    shortDesc: 'جوانب ستائر كتان أنيقة لتأطير النوافذ، اختر الجانب (يمين، يسار، كلاهما) واللون.',
+    description: 'جوانب ستائر قماشية من الكتان الفاخر المنسوج لتأطير النوافذ وتوفير لمسة دافئة وفخمة. تتوفر للجانب الأيمن (30 د.أ)، الجانب الأيسر (30 د.أ)، أو كلاهما كزوج متكامل (60 د.أ).',
+    fabric: 'كتان فاخر 100% (100% Linen)',
+    lightBlocking: 'تأطير أنيق وتمرير لطيف للضوء',
+    mainImage: '/images/side_linen_panels.jpg',
+    images: ['/images/side_linen_panels.jpg', '/images/curtain_linen_charcoal.jpg', '/images/elec_flax_sand_w.jpg'],
+    defaultFabricId: 'flax_linen',
+    isLinenSidePanel: true,
+    priceDisplay: '30 د.أ للجانب · 60 د.أ للزوج',
+    colors: SIDE_PANEL_COLORS,
+    sizes: [],
+    care: ['تنظيف جاف موصى به لحفظ جودة وانسيابية القماش', 'كي خفيف بالبخار لترتيب الجوانب'],
+    features: [
+      'جوانب ستائر كتان فاخرة لتأطير النوافذ بأناقة',
+      'اختيار تحديد الجانب: يمين (30 د.أ)، يسار (30 د.أ)، كلاهما (60 د.أ)',
+      'تشكيلة من 11 لوناً مميزاً تناسب كافة الديكورات والمجالس',
+      'قماش كتان طبيعي عالي الجودة بانسيابية ممتازة',
     ],
     isFeatured: true,
   },

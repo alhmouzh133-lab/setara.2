@@ -121,7 +121,7 @@ export default function CheckoutModal() {
           item.curtainTypeName ||
           (item.productId === 'curtain-electric' || item.curtainType === 'electric'
             ? 'ستائر كهربائية'
-            : 'ستائر عادية');
+            : 'ستائر لينين');
         const fabric = item.fabricChoice || 'كتان طبيعي';
         const color = item.color.name;
         const style = item.curtainStyle || 'ويفي';
@@ -220,11 +220,35 @@ export default function CheckoutModal() {
         ].join('\n');
       }
 
-      // 7. Track Aluminum
+      // 7. Tracks & Rails (جسور وسكك الستائر)
       if (item.productId === 'curtain-track-aluminum' || item.curtainType === 'track') {
+        const title = item.curtainTypeName || 'جسور وسكك الستائر';
+        const lengthStr = item.size.widthCm ? `${item.size.widthCm} سم` : item.size.label;
+        const priceStr = item.isUnpriced ? 'عند الاستفسار' : `${item.unitPrice} د.أ`;
+        const totalStr = item.isUnpriced ? 'يُحدد بالتواصل' : `${lineTotal} د.أ`;
+
         return [
-          `${numPrefix}جسر سكة ألمنيوم سايلنت`,
-          `طول السكة: ${item.size.widthCm || item.size.label} سم`,
+          `${numPrefix}${title}`,
+          `نوع السكة: ${item.color.name || 'سكة مخصصة'} | طول السكة: ${lengthStr}`,
+          `الكمية: ${item.quantity} | سعر القطعة: ${priceStr}`,
+          `مجموع الصنف: ${totalStr}`,
+        ].join('\n');
+      }
+
+      // 8. Side Panels (جوانب ستائر كتان)
+      if (item.productId === 'curtain-linen-side-panels' || item.sideSelection) {
+        const sideText =
+          item.sideSelection === 'both' || item.sideSelectionLabel?.includes('كلاهما')
+            ? 'كلاهما (زوج جوانب يمين ويسار)'
+            : item.sideSelection === 'right' || item.sideSelectionLabel?.includes('يمين')
+            ? 'الجانب الأيمن (يمين)'
+            : item.sideSelection === 'left' || item.sideSelectionLabel?.includes('يسار')
+            ? 'الجانب الأيسر (يسار)'
+            : item.sideSelectionLabel || 'كلاهما';
+
+        return [
+          `${numPrefix}جوانب ستائر كتان`,
+          `اللون: ${item.color.name} | الجانب المختار: ${sideText}`,
           `الكمية: ${item.quantity} | سعر القطعة: ${item.unitPrice} د.أ`,
           `مجموع الصنف: ${lineTotal} د.أ`,
         ].join('\n');
