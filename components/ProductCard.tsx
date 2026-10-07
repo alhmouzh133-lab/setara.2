@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Product, SHOP_CONFIG, getWhatsAppUrl } from '@/lib/shop-data';
 import { useCart } from '@/lib/cart-context';
@@ -12,6 +12,24 @@ interface ProductCardProps {
 
 export default function ProductCard({ product }: ProductCardProps) {
   const { setOpenProductModal } = useCart();
+
+  const [hasError, setHasError] = useState(false);
+
+  const initialImage =
+    product.id === 'service-dry-cleaning'
+      ? '/images/washing_curtains.jpg'
+      : product.id === 'roller-screen'
+      ? '/images/roller_screen.jpg'
+      : product.mainImage || product.images?.[0] || '/images/hero.jpg';
+
+  const fallbackImage =
+    product.id === 'roller-screen'
+      ? '/images/roller_screen_ivory.jpg'
+      : product.id === 'service-dry-cleaning'
+      ? '/images/curtain_dry_cleaning.jpg'
+      : '/images/hero.jpg';
+
+  const imageSrc = hasError ? fallbackImage : initialImage;
 
   // Determine pricing display
   const isUnpriced = Boolean(product.isUnpriced);
@@ -33,12 +51,13 @@ export default function ProductCard({ product }: ProductCardProps) {
         {/* Product Image Area with Consistent 4:3 Ratio */}
         <div className="relative aspect-[4/3] w-full overflow-hidden bg-[#EFE9DF]">
           <Image
-            src={product.mainImage || product.images[0] || '/images/hero.jpg'}
+            src={imageSrc}
             alt={imageAlt}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
             className="object-cover object-center group-hover:scale-103 transition-transform duration-500"
             referrerPolicy="no-referrer"
+            onError={() => setHasError(true)}
           />
 
           {/* Category Tag & Availability Badge */}

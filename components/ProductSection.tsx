@@ -111,7 +111,7 @@ export default function ProductSection({
                     : 'text-[#241E1A] hover:text-[#000000] hover:bg-[#DDD0C0]'
                 }`}
               >
-                خدمات التركيب ({servicesCount})
+                خدمات التركيب والغسيل ({servicesCount})
               </button>
             )}
           </div>

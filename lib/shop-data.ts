@@ -13,6 +13,10 @@ export interface ShopConfig {
   country: string;
   city: string;
   locationConfirmed: string;
+  streetAddress: string;
+  googleMapsUrl: string;
+  facebookUrl: string;
+  instagramUrl: string;
   contactConfirmed: string;
   currencySymbol: string;
   currencyCode: string;
@@ -53,8 +57,12 @@ export const SHOP_CONFIG: ShopConfig = {
   brandTagline: 'ستائر فاخرة وتفصيل حسب الطلب',
   country: 'الأردن',
   city: 'عمّان',
-  locationConfirmed: 'عمّان، المملكة الأردنية الهاشمية',
-  contactConfirmed: 'الاستفسارات والطلبات متاحة عبر واتساب (+962 79 818 7000) ونموذج التفصيل المخصص',
+  locationConfirmed: 'عمّان، شارع الحرية',
+  streetAddress: 'عمّان - شارع الحرية',
+  googleMapsUrl: 'https://maps.app.goo.gl/rJBRPYXM7kzaTgo6A',
+  facebookUrl: 'https://web.facebook.com/profile.php?id=61556559196127',
+  instagramUrl: 'https://www.instagram.com/setara.store.fabrics/?fbclid=IwY2xjawUyzSxleHRuA2FlbQIxMABwZG9mBWJyaWQRMTQ5QTJTRWNxdmxqRVdnNXVzcnRjBmFwcF9pZBAyMjIwMzkxNzg4MjAwODkyAAEe2oOs7IXjMKM8NS5hOJFyLnEFd40TYTNjKt4aV91YlhsnwVyIvuOyG9fZ1i8_aem_lY2M4__mQNNpbey61CBtsQ',
+  contactConfirmed: 'الاستفسارات والطلبات متاحة عبر واتساب (+962 79 818 7000) وزيارة معرضنا في شارع الحرية',
   currencySymbol: 'د.أ',
   currencyCode: 'JOD',
   deliveryPricingNote: 'تُحدّد بالتواصل مع المحل',

@@ -866,9 +866,9 @@ export const CATEGORIES: CategoryInfo[] = [
   },
   {
     id: 'services',
-    name: 'خدمات التركيب',
-    subtitle: 'فني معتمد — 10 د.أ / 25 د.أ',
-    description: 'خدمة فني تركيب معتمد لكافة أنواع الستائر والسكك، داخل عمّان وخارجها.',
+    name: 'خدمات التركيب والغسيل',
+    subtitle: 'تركيب، غسيل وكي البرادي — 25 د.أ',
+    description: 'خدمة فني تركيب معتمد، وخدمة متكاملة لفك وغسيل وكوي البرادي بالبخار وإعادة تركيبها داخل عمان.',
     image: '/images/curtain_installation_service.png',
   },
 ];
