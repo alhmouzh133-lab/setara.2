@@ -91,6 +91,7 @@ export default function CartDrawer() {
                   {/* Item Image */}
                   <div className="relative w-20 h-20 rounded-md overflow-hidden bg-[#2A231E] border border-white/10 shrink-0">
                     <Image
+                      key={item.image}
                       src={item.image}
                       alt={
                         item.isDryCleaning || item.productId === 'service-dry-cleaning'
@@ -189,27 +190,39 @@ export default function CartDrawer() {
                         )}
                       </div>
 
-                      {/* Selected Curtain Options */}
+                      {/* Selected Curtain Options & Lining Details */}
                       {item.curtainType !== 'track' &&
                         item.productId !== 'curtain-track-aluminum' &&
                         item.curtainType !== 'service' &&
                         item.productId !== 'service-installation' &&
                         item.productId !== 'service-dry-cleaning' &&
+                        item.productId !== 'curtain-linen-side-panels' &&
+                        !item.sideSelection &&
                         !item.isService &&
                         !item.isDryCleaning &&
-                        (item.curtainStyle || item.fabricChoice || item.liningOption) && (
-                        <div className="mt-1 text-[11px] text-[#C8AA78]">
-                          {[
-                            item.fabricChoice,
-                            item.curtainStyle,
-                            item.liningOption
-                              ? item.liningOption.includes('عزل') || item.liningOption.includes('بطانة')
-                                ? item.liningOption
-                                : `عزل ${item.liningOption}`
-                              : '',
-                          ]
-                            .filter(Boolean)
-                            .join(' · ')}
+                        (item.curtainStyle || item.fabricChoice || item.productId === 'curtain-electric' || item.productId === 'curtain-manual') && (
+                        <div className="mt-1 space-y-0.5 text-[11px] text-[#C8AA78]">
+                          <div>
+                            {[
+                              item.fabricChoice,
+                              item.curtainStyle,
+                              item.hasLining
+                                ? `بطانة (+10 د.أ) · نسبة تعتيم البطانة: ${item.liningOption || '50%'}`
+                                : 'بدون بطانة',
+                            ]
+                              .filter(Boolean)
+                              .join(' · ')}
+                          </div>
+                          {(item.productId === 'curtain-electric' ||
+                            item.productId === 'curtain-manual' ||
+                            item.curtainType === 'electric' ||
+                            item.curtainType === 'manual') &&
+                            typeof item.basePrice === 'number' && (
+                            <div className="text-[10px] text-[#D8C6AE]/75 tabular-nums">
+                              سعر الستارة: {item.basePrice} د.أ
+                              {item.hasLining ? ` + بطانة: 10 د.أ = ${item.unitPrice} د.أ` : ''}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -247,11 +260,11 @@ export default function CartDrawer() {
                           </span>
                         ) : (
                           <>
-                            <span className="text-[11px] text-[#D8C6AE]/70 block">
+                            <span className="text-[11px] text-[#D8C6AE]/70 block tabular-nums">
                               {item.unitPrice} {SHOP_CONFIG.currencySymbol} / قطعة
                             </span>
                             <span className="text-sm font-bold text-[#C8AA78] tabular-nums">
-                              {item.unitPrice * item.quantity} {SHOP_CONFIG.currencySymbol}
+                              {Math.round(item.unitPrice * item.quantity * 100) / 100} {SHOP_CONFIG.currencySymbol}
                             </span>
                           </>
                         )}

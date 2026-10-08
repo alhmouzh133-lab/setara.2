@@ -1,10 +1,17 @@
 'use client';
 
 import React, { createContext, useContext, useSyncExternalStore, useState, useCallback } from 'react';
-import { ColorOption, Product, SizeOption, CustomCurtainItem } from './shop-data';
+import {
+  ColorOption,
+  Product,
+  SizeOption,
+  CustomCurtainItem,
+  calculateFabricCurtainPricing,
+  resolveSidePanelImage,
+} from './shop-data';
 
 export interface CartItem {
-  id: string; // unique composite key: `${curtainType}_${fabricId}_${color.id}_${size.id}_${curtainStyle || ''}_${liningOption || ''}` or `custom_${id}`
+  id: string; // unique composite key
   productId: string;
   productName: string;
   categoryName: string;
@@ -15,6 +22,9 @@ export interface CartItem {
   image: string;
   color: ColorOption;
   size: SizeOption;
+  basePrice?: number; // Curtain price without lining
+  hasLining?: boolean; // Whether optional 10 JOD lining is enabled
+  liningFee?: number; // 10 JOD if hasLining is true, else 0
   unitPrice: number; // in JOD (0 if unpriced)
   quantity: number;
   isCustom?: boolean;
@@ -23,7 +33,7 @@ export interface CartItem {
   fabricChoice?: string; // 'كتان طبيعي', 'مخمل ناعم', 'شيفون انسيابي', etc.
   patternId?: string;
   patternName?: string;
-  liningOption?: string; // 'بطانة 50%', 'بطانة 80%', 'تعتيم 100% — Blackout'
+  liningOption?: string; // Only present when hasLining === true: '50%', '80%', '100%'
   serviceLocation?: string; // 'داخل عمان' | 'خارج عمان'
   isService?: boolean;
   isDryCleaning?: boolean;
@@ -41,6 +51,27 @@ export interface CartItem {
   };
 }
 
+export interface CartAddOptions {
+  curtainType?: string;
+  curtainTypeName?: string;
+  fabricId?: string;
+  fabricName?: string;
+  patternId?: string;
+  patternName?: string;
+  curtainStyle?: string;
+  hasLining?: boolean;
+  liningOption?: string;
+  basePrice?: number;
+  liningFee?: number;
+  resolvedImage?: string;
+  serviceLocation?: string;
+  isService?: boolean;
+  isDryCleaning?: boolean;
+  isUnpriced?: boolean;
+  sideSelection?: string;
+  sideSelectionLabel?: string;
+}
+
 interface CartContextType {
   items: CartItem[];
   addItem: (
@@ -48,26 +79,13 @@ interface CartContextType {
     color: ColorOption,
     size: SizeOption,
     quantity?: number,
-    options?: {
-      curtainType?: string;
-      curtainTypeName?: string;
-      fabricId?: string;
-      fabricName?: string;
-      patternId?: string;
-      patternName?: string;
-      curtainStyle?: string;
-      liningOption?: string;
-      resolvedImage?: string;
-      serviceLocation?: string;
-      isService?: boolean;
-      isDryCleaning?: boolean;
-      isUnpriced?: boolean;
-    }
+    options?: CartAddOptions
   ) => void;
   addCustomItem: (customItem: CustomCurtainItem) => void;
   updateQuantity: (itemId: string, newQuantity: number) => void;
   removeItem: (itemId: string) => void;
   clearCart: () => void;
+  validateCartPrices: () => void;
   totalItems: number;
   subtotal: number;
   isCartOpen: boolean;
@@ -91,6 +109,93 @@ let memoryCart: CartItem[] = [];
 let listeners: Array<() => void> = [];
 let isInitialized = false;
 
+function normalizeLiningPercentage(raw?: string): string {
+  if (!raw) return '50%';
+  if (raw.includes('100')) return '100%';
+  if (raw.includes('80')) return '80%';
+  if (raw.includes('50')) return '50%';
+  return raw;
+}
+
+/**
+ * Normalizes and validates a cart item loaded from storage or before checkout:
+ * - Never silently adds a lining fee to saved legacy cart items (if hasLining is undefined, defaults to false and removes legacy liningOption).
+ * - Recalculates Linen (0.24 JOD/cm) and Electric (0.48 JOD/cm) curtain prices + optional 10 JOD lining fee.
+ * - Ensures Linen Side Panels use the exact color + placement image and 30/60 JOD pricing.
+ */
+export function normalizeAndValidateCartItem(item: CartItem): CartItem {
+  if (!item || item.isCustom) return item;
+
+  const isSidePanels =
+    item.productId === 'curtain-linen-side-panels' ||
+    item.curtainType === 'side_panels' ||
+    Boolean(item.sideSelection);
+
+  if (isSidePanels) {
+    const placement =
+      item.sideSelection === 'right' || item.sideSelection === 'left' || item.sideSelection === 'both'
+        ? item.sideSelection
+        : 'both';
+    const expectedPrice = placement === 'both' ? 60 : 30;
+    const { image: resolvedSideImg, isMissing } = resolveSidePanelImage(item.color?.id, placement);
+    const updatedImage = !isMissing && resolvedSideImg ? resolvedSideImg : item.image;
+    return {
+      ...item,
+      sideSelection: placement,
+      unitPrice: expectedPrice,
+      size: {
+        ...item.size,
+        price: expectedPrice,
+      },
+      image: updatedImage,
+      hasLining: undefined,
+      liningFee: undefined,
+      liningOption: undefined,
+    };
+  }
+
+  const isFabricCurtain =
+    item.productId === 'curtain-electric' ||
+    item.productId === 'curtain-manual' ||
+    ((item.curtainType === 'electric' || item.curtainType === 'manual') &&
+      !item.isService &&
+      !item.isDryCleaning);
+
+  if (isFabricCurtain) {
+    const isElectric =
+      item.productId === 'curtain-electric' || item.curtainType === 'electric';
+    // Saved legacy items without explicit boolean hasLining must NOT silently receive a 10 JOD lining fee
+    const hasLining = typeof item.hasLining === 'boolean' ? item.hasLining : false;
+    const cleanLiningOption = hasLining ? normalizeLiningPercentage(item.liningOption) : undefined;
+    const widthCm = item.size?.widthCm && item.size.widthCm > 0 ? item.size.widthCm : 250;
+
+    const calc = calculateFabricCurtainPricing(
+      isElectric ? 'electric' : 'manual',
+      widthCm,
+      hasLining,
+      item.quantity
+    );
+
+    return {
+      ...item,
+      curtainType: isElectric ? 'electric' : 'manual',
+      curtainTypeName: isElectric ? 'ستائر كهربائية' : 'ستائر لينين',
+      hasLining,
+      liningOption: cleanLiningOption,
+      basePrice: calc.basePrice,
+      liningFee: calc.liningFee,
+      unitPrice: calc.unitPrice,
+      size: {
+        ...item.size,
+        widthCm,
+        price: calc.unitPrice,
+      },
+    };
+  }
+
+  return item;
+}
+
 function initCartFromStorage() {
   if (isInitialized || typeof window === 'undefined') return;
   try {
@@ -104,7 +209,8 @@ function initCartFromStorage() {
     if (stored) {
       const parsed = JSON.parse(stored);
       if (Array.isArray(parsed)) {
-        memoryCart = parsed;
+        memoryCart = parsed.map(normalizeAndValidateCartItem);
+        window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(memoryCart));
       }
     }
   } catch {
@@ -132,23 +238,7 @@ const cartStore = {
     color: ColorOption,
     size: SizeOption,
     quantity = 1,
-    options?: {
-      curtainType?: string;
-      curtainTypeName?: string;
-      fabricId?: string;
-      fabricName?: string;
-      patternId?: string;
-      patternName?: string;
-      curtainStyle?: string;
-      liningOption?: string;
-      resolvedImage?: string;
-      serviceLocation?: string;
-      isService?: boolean;
-      isDryCleaning?: boolean;
-      isUnpriced?: boolean;
-      sideSelection?: string;
-      sideSelectionLabel?: string;
-    }
+    options?: CartAddOptions
   ) {
     initCartFromStorage();
     const isDryCleaning =
@@ -162,13 +252,13 @@ const cartStore = {
     const fabricId = options?.fabricId || product.defaultFabricId || 'linen';
     const fabricName = options?.fabricName || 'كتان طبيعي';
     const curtainStyle = options?.curtainStyle || (curtainType !== 'roller' ? 'ويفي' : undefined);
-    const liningOption = options?.liningOption || (curtainType !== 'roller' ? 'بطانة 50%' : undefined);
 
     const isScreenScreen = product.id === 'roller-screen';
     const isBlackoutCustom = product.id === 'roller-blackout';
     const isZebraCustom = product.id === 'roller-zebra';
     const isManualCustom = product.id === 'curtain-manual';
     const isElectricCustom = product.id === 'curtain-electric';
+    const isFabricCurtainCustom = isManualCustom || isElectricCustom || curtainType === 'manual' || curtainType === 'electric';
     const isTrackCustom =
       product.id === 'curtain-track-aluminum' ||
       product.category === 'tracks' ||
@@ -184,6 +274,13 @@ const cartStore = {
       product.id === 'curtain-linen-side-panels' ||
       Boolean(product.isLinenSidePanel) ||
       options?.curtainType === 'side_panels';
+
+    // Optional lining is ONLY for Linen & Electric curtains, and OFF by default
+    const hasLining =
+      !isSidePanels && !isTrackCustom && !isInstallationService && !isDryCleaning && isFabricCurtainCustom
+        ? Boolean(options?.hasLining)
+        : false;
+    const liningOption = hasLining ? normalizeLiningPercentage(options?.liningOption) : undefined;
 
     const isPricedCustom =
       isScreenScreen ||
@@ -201,10 +298,31 @@ const cartStore = {
         : isPricedCustom
         ? false
         : curtainType === 'roller' || Boolean(product.isUnpriced);
-    const unitPrice = isDryCleaning ? 25 : (isUnpriced ? 0 : size.price);
 
-    const styleKey = isTrackCustom || isInstallationService || isDryCleaning ? '' : (curtainStyle || '');
-    const liningKey = isTrackCustom || isInstallationService || isDryCleaning ? '' : (liningOption || '');
+    // Authoritative price calculation for Linen & Electric curtains
+    let basePrice = options?.basePrice;
+    let liningFee = options?.liningFee;
+    let computedUnitPrice = isDryCleaning ? 25 : (isUnpriced ? 0 : size.price);
+
+    if (!isSidePanels && !isTrackCustom && !isInstallationService && !isDryCleaning && (isManualCustom || isElectricCustom)) {
+      const calc = calculateFabricCurtainPricing(
+        isElectricCustom ? 'electric' : 'manual',
+        size.widthCm || 250,
+        hasLining,
+        quantity
+      );
+      basePrice = calc.basePrice;
+      liningFee = calc.liningFee;
+      computedUnitPrice = calc.unitPrice;
+    } else if (isSidePanels) {
+      const side = options?.sideSelection || 'both';
+      computedUnitPrice = side === 'both' ? 60 : 30;
+    }
+
+    const unitPrice = computedUnitPrice;
+
+    const styleKey = isTrackCustom || isInstallationService || isDryCleaning || isSidePanels ? '' : (curtainStyle || '');
+    const liningKey = hasLining ? `lined_${liningOption || '50%'}` : 'nolining';
     const patternKey = options?.patternId || '';
     const serviceLoc = isDryCleaning
       ? 'داخل عمان فقط'
@@ -229,86 +347,104 @@ const cartStore = {
       ? `manual_${fabricId}_${patternKey}_${color.id}_${styleKey}_${liningKey}_${size.widthCm || 0}_${size.heightCm || 0}`
       : `${curtainType}_${fabricId}_${color.id}_${size.id}_${styleKey}_${liningKey}`;
 
+    const resolvedSidePanelImg = isSidePanels
+      ? resolveSidePanelImage(color.id, options?.sideSelection || 'both').image
+      : '';
+
+    const finalImage =
+      (isSidePanels && resolvedSidePanelImg) ||
+      options?.resolvedImage ||
+      product.mainImage ||
+      color.image ||
+      (isDryCleaning
+        ? '/images/washing_curtains.jpg'
+        : isInstallationService
+        ? '/images/curtain_installation_service.png'
+        : '/images/aluminum_curtain_track.jpg');
+
     const existingIndex = memoryCart.findIndex((item) => item.id === compositeId);
     if (existingIndex > -1) {
       memoryCart = memoryCart.map((item, idx) =>
-        idx === existingIndex ? { ...item, quantity: item.quantity + quantity } : item
+        idx === existingIndex
+          ? normalizeAndValidateCartItem({
+              ...item,
+              image: finalImage,
+              quantity: item.quantity + quantity,
+            })
+          : item
       );
     } else {
-      memoryCart = [
-        ...memoryCart,
-        {
-          id: compositeId,
-          productId: product.id,
-          productName: isDryCleaning
-            ? 'غسيل وكي البرادي'
-            : isInstallationService
-            ? 'طلب فني تركيب'
-            : isTrackCustom
-            ? 'جسر سكة ألمنيوم'
-            : curtainTypeName,
-          curtainType: isDryCleaning || isInstallationService ? 'service' : isTrackCustom ? 'track' : curtainType,
-          curtainTypeName: isDryCleaning
-            ? 'غسيل وكي البرادي'
-            : isInstallationService
-            ? 'طلب فني تركيب'
-            : isTrackCustom
-            ? 'جسر سكة ألمنيوم'
-            : curtainTypeName,
-          fabricId: isDryCleaning || isInstallationService || isTrackCustom ? '' : fabricId,
-          fabricName: isDryCleaning || isInstallationService || isTrackCustom ? '' : fabricName,
-          categoryName: product.categoryName || (isDryCleaning ? 'خدمات العناية والتركيب' : isInstallationService ? 'خدمات التركيب' : 'سكك وملحقات'),
-          image:
-            options?.resolvedImage ||
-            product.mainImage ||
-            color.image ||
-            (isDryCleaning
-              ? '/images/washing_curtains.jpg'
-              : isInstallationService
-              ? '/images/curtain_installation_service.png'
-              : '/images/aluminum_curtain_track.jpg'),
-          color: isDryCleaning
-            ? {
-                id: 'dry_cleaning_location',
-                name: 'داخل عمان فقط',
-                hex: '#C8AA78',
-                image: product.mainImage || '/images/washing_curtains.jpg',
-                gallery: [],
-              }
-            : isInstallationService
-            ? {
-                id: 'service_location',
-                name: serviceLoc,
-                hex: '#C8AA78',
-                image: product.mainImage || '/images/curtain_installation_service.png',
-                gallery: [],
-              }
-            : isTrackCustom
-            ? {
-                id: 'track_aluminum',
-                name: 'ألمنيوم مدهون حرارياً',
-                hex: '#FFFFFF',
-                image: product.mainImage || '/images/aluminum_curtain_track.jpg',
-                gallery: [],
-              }
-            : color,
-          size,
-          unitPrice,
-          quantity,
-          isCustom: false,
-          isUnpriced: Boolean(isUnpriced),
-          curtainStyle: isDryCleaning || isInstallationService || isTrackCustom ? undefined : curtainStyle,
-          fabricChoice: isDryCleaning || isInstallationService || isTrackCustom ? undefined : fabricName,
-          patternId: options?.patternId,
-          patternName: options?.patternName,
-          liningOption: isDryCleaning || isInstallationService || isTrackCustom ? undefined : liningOption,
-          serviceLocation: isDryCleaning ? 'داخل عمان فقط' : isInstallationService ? serviceLoc : undefined,
-          isService: isDryCleaning || isInstallationService,
-          isDryCleaning,
-          sideSelection: isSidePanels ? (options?.sideSelection || 'both') : undefined,
-          sideSelectionLabel: isSidePanels ? options?.sideSelectionLabel : undefined,
+      const newItem: CartItem = normalizeAndValidateCartItem({
+        id: compositeId,
+        productId: product.id,
+        productName: isDryCleaning
+          ? 'غسيل وكي البرادي'
+          : isInstallationService
+          ? 'طلب فني تركيب'
+          : isTrackCustom
+          ? 'جسر سكة ألمنيوم'
+          : curtainTypeName,
+        curtainType: isDryCleaning || isInstallationService ? 'service' : isTrackCustom ? 'track' : curtainType,
+        curtainTypeName: isDryCleaning
+          ? 'غسيل وكي البرادي'
+          : isInstallationService
+          ? 'طلب فني تركيب'
+          : isTrackCustom
+          ? 'جسر سكة ألمنيوم'
+          : curtainTypeName,
+        fabricId: isDryCleaning || isInstallationService || isTrackCustom ? '' : fabricId,
+        fabricName: isDryCleaning || isInstallationService || isTrackCustom ? '' : fabricName,
+        categoryName: product.categoryName || (isDryCleaning ? 'خدمات العناية والتركيب' : isInstallationService ? 'خدمات التركيب' : 'سكك وملحقات'),
+        image: finalImage,
+        color: isDryCleaning
+          ? {
+              id: 'dry_cleaning_location',
+              name: 'داخل عمان فقط',
+              hex: '#C8AA78',
+              image: product.mainImage || '/images/washing_curtains.jpg',
+              gallery: [],
+            }
+          : isInstallationService
+          ? {
+              id: 'service_location',
+              name: serviceLoc,
+              hex: '#C8AA78',
+              image: product.mainImage || '/images/curtain_installation_service.png',
+              gallery: [],
+            }
+          : isTrackCustom
+          ? {
+              id: 'track_aluminum',
+              name: 'ألمنيوم مدهون حرارياً',
+              hex: '#FFFFFF',
+              image: product.mainImage || '/images/aluminum_curtain_track.jpg',
+              gallery: [],
+            }
+          : color,
+        size: {
+          ...size,
+          price: unitPrice,
         },
-      ];
+        basePrice,
+        hasLining: isManualCustom || isElectricCustom ? hasLining : undefined,
+        liningFee: isManualCustom || isElectricCustom ? liningFee : undefined,
+        unitPrice,
+        quantity,
+        isCustom: false,
+        isUnpriced: Boolean(isUnpriced),
+        curtainStyle: isDryCleaning || isInstallationService || isTrackCustom || isSidePanels ? undefined : curtainStyle,
+        fabricChoice: isDryCleaning || isInstallationService || isTrackCustom || isSidePanels ? undefined : fabricName,
+        patternId: options?.patternId,
+        patternName: options?.patternName,
+        liningOption: isDryCleaning || isInstallationService || isTrackCustom || isSidePanels ? undefined : liningOption,
+        serviceLocation: isDryCleaning ? 'داخل عمان فقط' : isInstallationService ? serviceLoc : undefined,
+        isService: isDryCleaning || isInstallationService,
+        isDryCleaning,
+        sideSelection: isSidePanels ? (options?.sideSelection || 'both') : undefined,
+        sideSelectionLabel: isSidePanels ? options?.sideSelectionLabel : undefined,
+      });
+
+      memoryCart = [...memoryCart, newItem];
     }
     emitChange();
   },
@@ -361,8 +497,13 @@ const cartStore = {
       return;
     }
     memoryCart = memoryCart.map((item) =>
-      item.id === itemId ? { ...item, quantity: newQuantity } : item
+      item.id === itemId ? normalizeAndValidateCartItem({ ...item, quantity: newQuantity }) : item
     );
+    emitChange();
+  },
+  validateAll() {
+    initCartFromStorage();
+    memoryCart = memoryCart.map(normalizeAndValidateCartItem);
     emitChange();
   },
   remove(itemId: string) {
@@ -397,9 +538,20 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   );
 
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [isCheckoutOpen, setIsCheckoutOpenState] = useState(false);
   const [openProductModal, setOpenProductModal] = useState<Product | null>(null);
   const [isCustomQuoteOpen, setIsCustomQuoteOpen] = useState(false);
+
+  const validateCartPrices = useCallback(() => {
+    cartStore.validateAll();
+  }, []);
+
+  const setIsCheckoutOpen = useCallback((open: boolean) => {
+    if (open) {
+      cartStore.validateAll();
+    }
+    setIsCheckoutOpenState(open);
+  }, []);
 
   const addItem = useCallback(
     (
@@ -407,18 +559,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       color: ColorOption,
       size: SizeOption,
       quantity = 1,
-      options?: {
-        curtainType?: string;
-        curtainTypeName?: string;
-        fabricId?: string;
-        fabricName?: string;
-        curtainStyle?: string;
-        liningOption?: string;
-        resolvedImage?: string;
-        serviceLocation?: string;
-        isService?: boolean;
-        isDryCleaning?: boolean;
-      }
+      options?: CartAddOptions
     ) => {
       cartStore.add(product, color, size, quantity, options);
       setIsCartOpen(true);
@@ -444,9 +585,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const totalItems = items.reduce((acc, curr) => acc + curr.quantity, 0);
-  const subtotal = items
-    .filter((item) => !item.isCustom && !item.isUnpriced)
-    .reduce((acc, curr) => acc + (curr.unitPrice || 0) * curr.quantity, 0);
+  const subtotal = Math.round(
+    items
+      .filter((item) => !item.isCustom && !item.isUnpriced)
+      .reduce((acc, curr) => acc + (curr.unitPrice || 0) * curr.quantity, 0) * 100
+  ) / 100;
 
   return (
     <CartContext.Provider
@@ -457,6 +600,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         updateQuantity,
         removeItem,
         clearCart,
+        validateCartPrices,
         totalItems,
         subtotal,
         isCartOpen,

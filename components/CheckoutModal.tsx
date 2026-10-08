@@ -49,6 +49,7 @@ export default function CheckoutModal() {
     subtotal,
     isCheckoutOpen,
     setIsCheckoutOpen,
+    validateCartPrices,
     clearCart,
     removeItem,
   } = useCart();
@@ -66,6 +67,7 @@ export default function CheckoutModal() {
 
   useEffect(() => {
     if (isCheckoutOpen) {
+      validateCartPrices();
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -73,7 +75,7 @@ export default function CheckoutModal() {
     return () => {
       document.body.style.overflow = '';
     };
-  }, [isCheckoutOpen]);
+  }, [isCheckoutOpen, validateCartPrices]);
 
   // Dry cleaning service detection
   const dryCleaningItem = items.find(
@@ -108,14 +110,16 @@ export default function CheckoutModal() {
   const generatedMessage = useMemo(() => {
     const itemBlocks = items.map((item, idx) => {
       const numPrefix = `${toArabicDigits(idx + 1)}. `;
-      const lineTotal = item.unitPrice * item.quantity;
+      const lineTotal = Math.round(item.unitPrice * item.quantity * 100) / 100;
 
-      // 1. Fabric Curtains (Electric / Manual)
+      // 1. Fabric Curtains (Electric / Manual) — excluding Linen Side Panels
       if (
-        item.productId === 'curtain-electric' ||
-        item.productId === 'curtain-manual' ||
-        item.curtainType === 'electric' ||
-        (item.curtainType === 'manual' && !item.isCustom)
+        !item.sideSelection &&
+        item.productId !== 'curtain-linen-side-panels' &&
+        (item.productId === 'curtain-electric' ||
+          item.productId === 'curtain-manual' ||
+          item.curtainType === 'electric' ||
+          (item.curtainType === 'manual' && !item.isCustom))
       ) {
         const title =
           item.curtainTypeName ||
@@ -125,17 +129,30 @@ export default function CheckoutModal() {
         const fabric = item.fabricChoice || 'كتان طبيعي';
         const color = item.color.name;
         const style = item.curtainStyle || 'ويفي';
-        const lining = formatLining(item.liningOption);
+        const hasLining = Boolean(item.hasLining);
+        const liningPct = formatLining(item.liningOption);
         const width = item.size.widthCm;
         const height = item.size.heightCm;
+        const basePrice =
+          typeof item.basePrice === 'number'
+            ? item.basePrice
+            : Math.round((item.unitPrice - (hasLining ? 10 : 0)) * 100) / 100;
+
+        const liningLine = hasLining
+          ? `البطانة: إضافة بطانة (+10 د.أ) | نسبة تعتيم البطانة: ${liningPct}`
+          : `البطانة: بدون بطانة`;
+
+        const priceBreakdownLine = hasLining
+          ? `سعر الستارة: ${basePrice} د.أ | البطانة: 10 د.أ | سعر القطعة: ${item.unitPrice} د.أ`
+          : `سعر الستارة (بدون بطانة): ${item.unitPrice} د.أ`;
 
         return [
           `${numPrefix}${title}`,
           `الخامة: ${fabric} | اللون: ${color}`,
-          `الطيات: ${style} | التعتيم: ${lining}`,
+          `الطيات: ${style} | ${liningLine}`,
           `العرض: ${width} سم | الارتفاع: ${height} سم`,
-          `الكمية: ${item.quantity} | سعر القطعة: ${item.unitPrice} د.أ`,
-          `مجموع الصنف: ${lineTotal} د.أ`,
+          priceBreakdownLine,
+          `الكمية: ${item.quantity} | مجموع الصنف: ${lineTotal} د.أ`,
         ].join('\n');
       }
 
@@ -437,7 +454,13 @@ export default function CheckoutModal() {
                         {item.productName}
                       </span>
                       <span className="text-[11px] text-[#D8C6AE]/70 block">
-                        {item.color.name} · {item.size.label} · {item.quantity} قطعة
+                        {item.color.name} · {item.size.label}
+                        {typeof item.hasLining === 'boolean'
+                          ? item.hasLining
+                            ? ` · بطانة (+10 د.أ — ${item.liningOption || '50%'})`
+                            : ' · بدون بطانة'
+                          : ''}{' '}
+                        · {item.quantity} قطعة
                       </span>
                     </div>
                   </div>
@@ -446,7 +469,7 @@ export default function CheckoutModal() {
                     {item.isCustom ? (
                       <span className="text-[11px] font-medium">السعر بعد المراجعة</span>
                     ) : (
-                      <span>{item.unitPrice * item.quantity} {SHOP_CONFIG.currencySymbol}</span>
+                      <span>{Math.round(item.unitPrice * item.quantity * 100) / 100} {SHOP_CONFIG.currencySymbol}</span>
                     )}
                   </div>
                 </div>

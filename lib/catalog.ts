@@ -88,6 +88,11 @@ export interface ColorOption {
   hex: string;
   image: string;
   gallery: string[];
+  sidePanelImages?: {
+    both: string;
+    right: string;
+    left: string;
+  };
 }
 
 export interface FabricOption {
@@ -414,80 +419,204 @@ export const SIDE_PANEL_COLORS: ColorOption[] = [
     id: 'white',
     name: 'أبيض',
     hex: '#FFFFFF',
-    image: '/images/elec_flax_white_w.jpg',
-    gallery: ['/images/elec_flax_white_w.jpg'],
+    image: '/images/side_panel_white_both.jpg',
+    gallery: [
+      '/images/side_panel_white_both.jpg',
+      '/images/side_panel_white_right.jpg',
+      '/images/side_panel_white_left.jpg',
+    ],
+    sidePanelImages: {
+      both: '/images/side_panel_white_both.jpg',
+      right: '/images/side_panel_white_right.jpg',
+      left: '/images/side_panel_white_left.jpg',
+    },
   },
   {
     id: 'ivory',
     name: 'عاجي',
     hex: '#F5EFE6',
-    image: '/images/side_linen_panels.jpg',
-    gallery: ['/images/side_linen_panels.jpg'],
+    image: '/images/side_panel_ivory_both.jpg',
+    gallery: [
+      '/images/side_panel_ivory_both.jpg',
+      '/images/side_panel_ivory_right.jpg',
+      '/images/side_panel_ivory_left.jpg',
+    ],
+    sidePanelImages: {
+      both: '/images/side_panel_ivory_both.jpg',
+      right: '/images/side_panel_ivory_right.jpg',
+      left: '/images/side_panel_ivory_left.jpg',
+    },
   },
   {
     id: 'light_beige',
     name: 'بيج فاتح',
     hex: '#EAE2D6',
-    image: '/images/elec_flax_ivory_w.jpg',
-    gallery: ['/images/elec_flax_ivory_w.jpg'],
+    image: '/images/side_panel_light_beige_both.jpg',
+    gallery: [
+      '/images/side_panel_light_beige_both.jpg',
+      '/images/side_panel_light_beige_right.jpg',
+      '/images/side_panel_light_beige_left.jpg',
+    ],
+    sidePanelImages: {
+      both: '/images/side_panel_light_beige_both.jpg',
+      right: '/images/side_panel_light_beige_right.jpg',
+      left: '/images/side_panel_light_beige_left.jpg',
+    },
   },
   {
     id: 'sand_beige',
     name: 'بيج رملي',
     hex: '#D8C6AE',
-    image: '/images/elec_flax_sand_w.jpg',
-    gallery: ['/images/elec_flax_sand_w.jpg'],
+    image: '/images/side_panel_sand_beige_both.jpg',
+    gallery: [
+      '/images/side_panel_sand_beige_both.jpg',
+      '/images/side_panel_sand_beige_right.jpg',
+      '/images/side_panel_sand_beige_left.jpg',
+    ],
+    sidePanelImages: {
+      both: '/images/side_panel_sand_beige_both.jpg',
+      right: '/images/side_panel_sand_beige_right.jpg',
+      left: '/images/side_panel_sand_beige_left.jpg',
+    },
   },
   {
     id: 'grey_beige',
     name: 'بيج رمادي',
     hex: '#B8AF9E',
-    image: '/images/lustre_warmgrey.jpg',
-    gallery: ['/images/lustre_warmgrey.jpg'],
+    image: '/images/side_panel_grey_beige_both.jpg',
+    gallery: [
+      '/images/side_panel_grey_beige_both.jpg',
+      '/images/side_panel_grey_beige_right.jpg',
+      '/images/side_panel_grey_beige_left.jpg',
+    ],
+    sidePanelImages: {
+      both: '/images/side_panel_grey_beige_both.jpg',
+      right: '/images/side_panel_grey_beige_right.jpg',
+      left: '/images/side_panel_grey_beige_left.jpg',
+    },
   },
   {
     id: 'light_grey',
     name: 'رمادي فاتح',
     hex: '#C5C3C0',
-    image: '/images/curtain_charcoal_roller.jpg',
-    gallery: ['/images/curtain_charcoal_roller.jpg'],
+    image: '/images/side_panel_light_grey_both.jpg',
+    gallery: [
+      '/images/side_panel_light_grey_both.jpg',
+      '/images/side_panel_light_grey_right.jpg',
+      '/images/side_panel_light_grey_left.jpg',
+    ],
+    sidePanelImages: {
+      both: '/images/side_panel_light_grey_both.jpg',
+      right: '/images/side_panel_light_grey_right.jpg',
+      left: '/images/side_panel_light_grey_left.jpg',
+    },
   },
   {
     id: 'medium_grey',
     name: 'رمادي متوسط',
     hex: '#8B8884',
-    image: '/images/elec_flax_charcoal_w.jpg',
-    gallery: ['/images/elec_flax_charcoal_w.jpg'],
+    image: '/images/side_panel_medium_grey_both.jpg',
+    gallery: [
+      '/images/side_panel_medium_grey_both.jpg',
+      '/images/side_panel_medium_grey_right.jpg',
+      '/images/side_panel_medium_grey_left.jpg',
+    ],
+    sidePanelImages: {
+      both: '/images/side_panel_medium_grey_both.jpg',
+      right: '/images/side_panel_medium_grey_right.jpg',
+      left: '/images/side_panel_medium_grey_left.jpg',
+    },
   },
   {
     id: 'dark_grey',
     name: 'رمادي غامق',
     hex: '#4A4846',
-    image: '/images/curtain_linen_charcoal.jpg',
-    gallery: ['/images/curtain_linen_charcoal.jpg'],
+    image: '/images/side_panel_dark_grey_both.jpg',
+    gallery: [
+      '/images/side_panel_dark_grey_both.jpg',
+      '/images/side_panel_dark_grey_right.jpg',
+      '/images/side_panel_dark_grey_left.jpg',
+    ],
+    sidePanelImages: {
+      both: '/images/side_panel_dark_grey_both.jpg',
+      right: '/images/side_panel_dark_grey_right.jpg',
+      left: '/images/side_panel_dark_grey_left.jpg',
+    },
   },
   {
     id: 'blue_grey',
     name: 'رمادي مزرق',
     hex: '#5B6B7C',
-    image: '/images/chiffon_charcoal.jpg',
-    gallery: ['/images/chiffon_charcoal.jpg'],
+    image: '/images/side_panel_blue_grey_both.jpg',
+    gallery: [
+      '/images/side_panel_blue_grey_both.jpg',
+      '/images/side_panel_blue_grey_right.jpg',
+      '/images/side_panel_blue_grey_left.jpg',
+    ],
+    sidePanelImages: {
+      both: '/images/side_panel_blue_grey_both.jpg',
+      right: '/images/side_panel_blue_grey_right.jpg',
+      left: '/images/side_panel_blue_grey_left.jpg',
+    },
   },
   {
     id: 'blue',
     name: 'أزرق',
     hex: '#3B6282',
-    image: '/images/curtain_olive.jpg',
-    gallery: ['/images/curtain_olive.jpg'],
+    image: '/images/side_panel_blue_both.jpg',
+    gallery: [
+      '/images/side_panel_blue_both.jpg',
+      '/images/side_panel_blue_right.jpg',
+      '/images/side_panel_blue_left.jpg',
+    ],
+    sidePanelImages: {
+      both: '/images/side_panel_blue_both.jpg',
+      right: '/images/side_panel_blue_right.jpg',
+      left: '/images/side_panel_blue_left.jpg',
+    },
   },
   {
     id: 'navy_blue',
     name: 'كحلي',
     hex: '#1B2A4A',
-    image: '/images/elec_flax_charcoal_am.jpg',
-    gallery: ['/images/elec_flax_charcoal_am.jpg'],
+    image: '/images/side_panel_navy_blue_both.jpg',
+    gallery: [
+      '/images/side_panel_navy_blue_both.jpg',
+      '/images/side_panel_navy_blue_right.jpg',
+      '/images/side_panel_navy_blue_left.jpg',
+    ],
+    sidePanelImages: {
+      both: '/images/side_panel_navy_blue_both.jpg',
+      right: '/images/side_panel_navy_blue_right.jpg',
+      left: '/images/side_panel_navy_blue_left.jpg',
+    },
   },
 ];
+
+/**
+ * Resolves the exact installed linen side-panel photograph matching BOTH
+ * selected color and selected placement ('right', 'left', 'both').
+ * Never substitutes roller blinds, unrelated curtains, or fabric sample sheets.
+ */
+export function resolveSidePanelImage(
+  colorId: string,
+  placement: 'right' | 'left' | 'both' | string = 'both'
+): { image: string; isMissing: boolean } {
+  const normColor = colorId?.toLowerCase().trim() || '';
+  const normPlacement: 'right' | 'left' | 'both' =
+    placement === 'right' || placement === 'left' || placement === 'both'
+      ? placement
+      : 'both';
+
+  const colorEntry = SIDE_PANEL_COLORS.find((c) => c.id === normColor);
+  const resolved = colorEntry?.sidePanelImages?.[normPlacement];
+
+  if (!resolved) {
+    return { image: '', isMissing: true };
+  }
+
+  return { image: resolved, isMissing: false };
+}
 
 // ----------------------------------------------------------------------------
 // 3. Stable Image Resolution Engine
@@ -1165,22 +1294,74 @@ export const TRACK_OPTIONS: TrackOption[] = [
 ];
 
 // ----------------------------------------------------------------------------
-// 4. Stored Base-Pricing Metadata (for upcoming phase)
+// 4. Stored Base-Pricing Metadata & Central Pricing Calculator
 // ----------------------------------------------------------------------------
+export const LINEN_CURTAIN_RATE_PER_CM = 60 / 250; // 0.24 JOD/cm (60 JOD per 250 cm)
+export const ELECTRIC_CURTAIN_RATE_PER_CM = 120 / 250; // 0.48 JOD/cm (120 JOD per 250 cm)
+export const OPTIONAL_LINING_FEE_JOD = 10; // Fixed 10 JOD per curtain regardless of length or blackout %
+
+export interface FabricCurtainPriceCalculation {
+  ratePerCm: number;
+  ratePerMeter: number;
+  basePrice: number;
+  liningFee: number;
+  unitPrice: number;
+  lineTotal: number;
+}
+
+/**
+ * Single authoritative pricing calculator for Linen ("ستائر لينين") and Electric ("ستائر كهربائية") curtains.
+ * - Linen without lining: 60 JOD per 250 cm => 0.24 JOD/cm (height 100-360 cm included, never multiplies price)
+ * - Electric without lining: 120 JOD per 250 cm => 0.48 JOD/cm (height 100-360 cm included, never multiplies price)
+ * - Optional lining: fixed +10 JOD per curtain regardless of horizontal length or blackout percentage
+ * - unitPrice = basePrice + (hasLining ? 10 : 0)
+ * - lineTotal = unitPrice * quantity
+ */
+export function calculateFabricCurtainPricing(
+  curtainType: 'manual' | 'electric' | string,
+  horizontalLengthCm: number,
+  hasLining: boolean,
+  quantity: number = 1
+): FabricCurtainPriceCalculation {
+  const isManual =
+    curtainType === 'manual' ||
+    curtainType === 'curtain-manual' ||
+    curtainType === 'linen';
+  const ratePerCm = isManual ? LINEN_CURTAIN_RATE_PER_CM : ELECTRIC_CURTAIN_RATE_PER_CM;
+  const ratePerMeter = isManual ? 24 : 48;
+  const validLength =
+    Number.isFinite(horizontalLengthCm) && horizontalLengthCm > 0 ? horizontalLengthCm : 0;
+  const validQty = Number.isFinite(quantity) && quantity >= 1 ? quantity : 1;
+
+  const basePrice = validLength > 0 ? Math.round(validLength * ratePerCm * 100) / 100 : 0;
+  const liningFee = validLength > 0 && hasLining ? OPTIONAL_LINING_FEE_JOD : 0;
+  const unitPrice = validLength > 0 ? Math.round((basePrice + liningFee) * 100) / 100 : 0;
+  const lineTotal = validLength > 0 ? Math.round(unitPrice * validQty * 100) / 100 : 0;
+
+  return {
+    ratePerCm,
+    ratePerMeter,
+    basePrice,
+    liningFee,
+    unitPrice,
+    lineTotal,
+  };
+}
+
 export const FABRIC_CURTAINS_METADATA: Record<'electric' | 'manual', FabricCurtainPricingMetadata> = {
   electric: {
     standardWidthCm: 250,
     standardHeightCm: 300,
     maxIncludedHeightCm: 360,
-    basePrice: 120, // 120 JOD for 250 cm horizontal span
+    basePrice: 120, // 120 JOD for 250 cm horizontal span without lining
     pricePerCm: 0.48, // 120 / 250 = 0.48 JOD per cm (48 JOD per running metre)
   },
   manual: {
     standardWidthCm: 250,
     standardHeightCm: 300,
     maxIncludedHeightCm: 360,
-    basePrice: 120, // 120 JOD for 250 cm horizontal span
-    pricePerCm: 0.48, // 120 / 250 = 0.48 JOD per cm (48 JOD per running metre)
+    basePrice: 60, // 60 JOD for 250 cm horizontal span without lining
+    pricePerCm: 0.24, // 60 / 250 = 0.24 JOD per cm (24 JOD per running metre)
   },
 };
 
@@ -1191,14 +1372,14 @@ export const CATEGORIES: CategoryInfo[] = [
   {
     id: 'electric',
     name: 'ستائر كهربائية',
-    subtitle: 'تشغيل ذكي ثلاثي — 48 د.أ / م',
+    subtitle: 'تشغيل ذكي ثلاثي — 120 د.أ / 250 سم (0.48 د.أ/سم)',
     description: 'ستائر كهربائية تعمل باللمس، وبالريموت كنترول، وعبر تطبيق على الهاتف، تفصيل حسب المقاس والارتفاع مشمول حتى 360 سم.',
     image: '/images/curtain_electric.jpg',
   },
   {
     id: 'manual',
     name: 'ستائر لينين',
-    subtitle: 'تشغيل يدوي — 48 د.أ / م',
+    subtitle: 'تشغيل يدوي — 60 د.أ / 250 سم (0.24 د.أ/سم)',
     description: 'ستائر لينين يدوية بدون محرك بطيات ويفي أو أمريكي أو زم أو دكة أو رينجات، تفصيل حسب المقاس والارتفاع مشمول حتى 360 سم.',
     image: '/images/curtain_manual.jpg',
   },
@@ -1237,10 +1418,10 @@ export const PRODUCTS: Product[] = [
     curtainType: 'electric',
     category: 'electric',
     categoryName: 'ستائر كهربائية',
-    shortDesc: 'ستائر كهربائية تعمل باللمس، وبالريموت كنترول، وعبر تطبيق على الهاتف.',
-    description: 'ستائر كهربائية تعمل باللمس، وبالريموت كنترول، وعبر تطبيق على الهاتف. تشمل خيارات أقمشة فاخرة متعددة مع شمول الارتفاع حتى 360 سم.',
+    shortDesc: 'ستائر كهربائية تعمل باللمس، وبالريموت كنترول، وعبر تطبيق على الهاتف (120 د.أ لكل 250 سم عرض بدون بطانة).',
+    description: 'ستائر كهربائية تعمل باللمس، وبالريموت كنترول، وعبر تطبيق على الهاتف. تشمل خيارات أقمشة فاخرة متعددة، تفصيل حسب المقاس (120 د.أ لكل 250 سم عرض — 0.48 د.أ/سم بدون بطانة) مع شمول الارتفاع حتى 360 سم، وإمكانية إضافة بطانة اختيارية بسعر ثابت 10 دنانير.',
     fabric: 'تشمل خيارات أقمشة فاخرة: لينين، لينين ديم أوت، لينين موشح، مبزر، منكوش، جاكار، ديم أوت، بلاك أوت، أفوال، كروشيه، مطرز، مقصب، تل مقصب، تي ان، مخمل',
-    lightBlocking: 'خيارات عزل وتعتيم مستقلة: 50%، 80%، 100% لكافة الأقمشة',
+    lightBlocking: 'إضافة بطانة اختيارية (10 دنانير) بنسب تعتيم: 50%، 80%، 100%',
     mainImage: '/images/curtain_electric.jpg',
     images: ['/images/curtain_electric.jpg', '/images/elec_flax_ivory_w.jpg', '/images/velvet_champagne.jpg'],
     defaultFabricId: 'flax_linen',
@@ -1250,14 +1431,14 @@ export const PRODUCTS: Product[] = [
     fabricOptions: SHARED_CURTAIN_FABRICS,
     colors: CENTRAL_COLORS,
     sizes: [],
-    priceDisplay: '48 د.أ للمتر الطولي',
+    priceDisplay: '120 د.أ / 250 سم (48 د.أ/م)',
     care: ['تنظيف جاف موصى به للمحافظة على انسيابية الطيات', 'مسح المسار الكهربائي بقطعة قماش ناعمة جافة'],
     features: [
       'ستائر كهربائية تعمل باللمس، وبالريموت كنترول، وعبر تطبيق على الهاتف',
-      'تفصيل دقيق حسب المقاس: 48 د.أ للمتر الطولي (120 د.أ لكل 250 سم عرض)',
+      'تفصيل دقيق حسب المقاس بدون بطانة: 120 د.أ لكل 250 سم عرض (0.48 د.أ / سم)',
       'الارتفاع من 100 إلى 360 سم مشمول بالسعر دون تكلفة إضافية',
+      'إمكانية إضافة بطانة اختيارية بتكلفة ثابتة 10 دنانير للستارة (بنسب تعتيم 50%، 80%، 100%)',
       'خيارات تفصيل: ويفي كهربائي أو أمريكي كهربائي',
-      'خيارات عزل وتعتيم مستقلة: 50%، 80%، 100% لكافة الأقمشة',
       'أقمشة فاخرة: لينين، لينين ديم أوت، لينين موشح، مبزر، منكوش، جاكار، ديم أوت، بلاك أوت، أفوال، كروشيه، مطرز، مقصب، تل مقصب، تي ان، مخمل',
     ],
     isFeatured: true,
@@ -1271,10 +1452,10 @@ export const PRODUCTS: Product[] = [
     curtainType: 'manual',
     category: 'manual',
     categoryName: 'ستائر لينين',
-    shortDesc: 'ستائر لينين يدوية انسيابية بدون محرك، تفصيل حسب المقاس بدقة (120 د.أ لكل 250 سم عرض) مع شمول الارتفاع حتى 360 سم.',
-    description: 'ستائر لينين راقية بتشغيل يدوي سلس بدون محرك. تشمل خيارات أقمشة فاخرة متعددة، تفصيل حسب المقاس (48 د.أ للمتر الطولي) مع شمول الارتفاع من 100 إلى 360 سم بالسعر دون تكلفة إضافية، وخيارات تفصيل (ويفي، أمريكي، زم، دكة، رينجات) وخيارات عزل 50%، 80%، 100% لكافة الأقمشة.',
+    shortDesc: 'ستائر لينين يدوية انسيابية بدون محرك، تفصيل حسب المقاس بدقة (60 د.أ لكل 250 سم عرض بدون بطانة) مع شمول الارتفاع حتى 360 سم.',
+    description: 'ستائر لينين راقية بتشغيل يدوي سلس بدون محرك. تشمل خيارات أقمشة فاخرة متعددة، تفصيل حسب المقاس (60 د.أ لكل 250 سم عرض — 0.24 د.أ/سم بدون بطانة) مع شمول الارتفاع من 100 إلى 360 سم بالسعر دون تكلفة إضافية، وإمكانية إضافة بطانة اختيارية بسعر ثابت 10 دنانير.',
     fabric: 'تشمل خيارات أقمشة فاخرة: لينين، لينين ديم أوت، لينين موشح، مبزر، منكوش، جاكار، ديم أوت، بلاك أوت، أفوال، كروشيه، مطرز، مقصب، تل مقصب، تي ان، مخمل',
-    lightBlocking: 'خيارات عزل وتعتيم مستقلة: 50%، 80%، 100% لكافة الأقمشة',
+    lightBlocking: 'إضافة بطانة اختيارية (10 دنانير) بنسب تعتيم: 50%، 80%، 100%',
     mainImage: '/images/curtain_manual.jpg',
     images: ['/images/curtain_manual.jpg', '/images/elec_flax_ivory_w.jpg', '/images/velvet_champagne.jpg'],
     defaultFabricId: 'flax_linen',
@@ -1284,14 +1465,14 @@ export const PRODUCTS: Product[] = [
     fabricOptions: SHARED_CURTAIN_FABRICS,
     colors: CENTRAL_COLORS,
     sizes: [],
-    priceDisplay: '48 د.أ للمتر الطولي',
+    priceDisplay: '60 د.أ / 250 سم (24 د.أ/م)',
     care: ['تنظيف جاف موصى به للمحافظة على انسيابية الطيات', 'كي خفيف بالبخار لترتيب القماش'],
     features: [
       'تشغيل يدوي كلاسيكي انسيابي بدون محرك',
-      'تفصيل دقيق حسب المقاس: 48 د.أ للمتر الطولي (120 د.أ لكل 250 سم عرض)',
+      'تفصيل دقيق حسب المقاس بدون بطانة: 60 د.أ لكل 250 سم عرض (0.24 د.أ / سم)',
       'الارتفاع من 100 إلى 360 سم مشمول بالسعر دون تكلفة إضافية',
+      'إمكانية إضافة بطانة اختيارية بتكلفة ثابتة 10 دنانير للستارة (بنسب تعتيم 50%، 80%، 100%)',
       'خيارات تفصيل متعددة: ويفي، أمريكي، زم، دكة، رينجات',
-      'خيارات عزل وتعتيم مستقلة: 50%، 80%، 100% لكافة الأقمشة',
       'أقمشة فاخرة: لينين، لينين ديم أوت، لينين موشح، مبزر، منكوش، جاكار، ديم أوت، بلاك أوت، أفوال، كروشيه، مطرز، مقصب، تل مقصب، تي ان، مخمل',
     ],
     isFeatured: true,
@@ -1447,8 +1628,12 @@ export const PRODUCTS: Product[] = [
     description: 'جوانب ستائر قماشية من الكتان الفاخر المنسوج لتأطير النوافذ وتوفير لمسة دافئة وفخمة. تتوفر للجانب الأيمن (30 د.أ)، الجانب الأيسر (30 د.أ)، أو كلاهما كزوج متكامل (60 د.أ).',
     fabric: 'كتان فاخر 100% (100% Linen)',
     lightBlocking: 'تأطير أنيق وتمرير لطيف للضوء',
-    mainImage: '/images/side_linen_panels.jpg',
-    images: ['/images/side_linen_panels.jpg', '/images/curtain_linen_charcoal.jpg', '/images/elec_flax_sand_w.jpg'],
+    mainImage: '/images/side_panel_ivory_both.jpg',
+    images: [
+      '/images/side_panel_ivory_both.jpg',
+      '/images/side_panel_sand_beige_right.jpg',
+      '/images/side_panel_dark_grey_left.jpg',
+    ],
     defaultFabricId: 'flax_linen',
     isLinenSidePanel: true,
     priceDisplay: '30 د.أ للجانب · 60 د.أ للزوج',
