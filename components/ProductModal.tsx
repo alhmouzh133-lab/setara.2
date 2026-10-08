@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Image from 'next/image';
 import {
   ColorOption,
@@ -72,6 +72,12 @@ interface ProductModalContentProps {
     }
   ) => void;
 }
+
+// Keep the gallery and options in one mobile scroll area for every product type.
+const modalPanelClass = 'relative my-auto flex min-h-0 w-full max-w-4xl flex-col overflow-y-auto overscroll-contain touch-pan-y rounded-xl border border-[#C8AA78]/30 bg-[#211B17] text-[#F5EFE6] shadow-2xl max-h-[calc(var(--modal-viewport-height,100dvh)-1.5rem)] sm:max-h-[calc(var(--modal-viewport-height,100dvh)-2rem)] md:max-h-[92vh] md:flex-row md:overflow-hidden';
+const modalCloseHeaderClass = 'sticky top-0 z-40 flex shrink-0 justify-end bg-[#211B17] p-2 md:absolute md:top-4 md:left-4 md:bg-transparent md:p-0';
+const modalGalleryClass = 'w-full shrink-0 border-b border-white/10 bg-[#1B1613] p-5 sm:p-6 md:w-[48%] md:min-h-0 md:shrink md:overflow-y-auto md:border-b-0 md:border-l md:p-7 lg:w-[46%] flex flex-col justify-between';
+const modalOptionsClass = 'w-full shrink-0 p-5 text-right sm:p-6 md:w-[52%] md:min-h-0 md:shrink md:overflow-y-auto md:p-8 lg:w-[54%] flex flex-col justify-between';
 
 function ProductModalContent({ product, onClose, onAddToCart }: ProductModalContentProps) {
   const isElectricProduct = product.id === 'curtain-electric' || product.curtainType === 'electric';
@@ -454,20 +460,22 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
 
   return (
     <div
-      className="relative w-full max-w-4xl bg-[#211B17] text-[#F5EFE6] border border-[#C8AA78]/30 rounded-xl shadow-2xl overflow-y-auto md:overflow-hidden max-h-[88vh] sm:max-h-[90vh] md:max-h-[92vh] flex flex-col md:flex-row my-auto"
+      className={modalPanelClass}
       onClick={(e) => e.stopPropagation()}
     >
-      {/* Close Button */}
-      <button
-        onClick={onClose}
-        aria-label="إغلاق"
-        className="sticky top-3 left-3 z-50 self-start float-left -mb-10 sm:-mb-12 p-2 rounded-full bg-[#171513]/90 hover:bg-[#171513] text-[#F5EFE6] hover:text-[#C8AA78] border border-white/10 transition-colors cursor-pointer shadow-md md:absolute md:top-4 md:left-4 md:mb-0"
-      >
-        <X className="w-5 h-5" />
-      </button>
+      {/* Close button stays visible while the mobile panel scrolls. */}
+      <div className={modalCloseHeaderClass}>
+        <button
+          onClick={onClose}
+          aria-label="إغلاق"
+          className="cursor-pointer rounded-full border border-white/10 bg-[#171513]/90 p-2 text-[#F5EFE6] shadow-md transition-colors hover:bg-[#171513] hover:text-[#C8AA78]"
+        >
+          <X className="h-5 w-5" />
+        </button>
+      </div>
 
       {/* Visual Gallery Column */}
-      <div className="w-full md:w-[48%] lg:w-[46%] p-5 sm:p-6 md:p-7 bg-[#1B1613] flex flex-col justify-between border-b md:border-b-0 md:border-l border-white/10 shrink-0 md:overflow-y-auto md:max-h-[92vh]">
+      <div className={modalGalleryClass}>
         <div>
           {/* Main Product Preview Container */}
           <div className="relative aspect-[16/10] sm:aspect-[4/3] w-full max-h-[220px] sm:max-h-none rounded-lg overflow-hidden bg-[#2A231E] border border-white/10 shadow-inner">
@@ -551,7 +559,7 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
 
               {/* Custom Roller Curtains: zebra / blackout / screen options */}
               {isCustomRoller && (
-                <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto pr-0.5">
+                <div className="flex flex-wrap gap-1.5 md:max-h-36 md:overflow-y-auto pr-0.5">
                   {(isMadeToMeasureZebra
                     ? zebraColors
                     : isMadeToMeasureBlackout
@@ -655,7 +663,7 @@ function ProductModalContent({ product, onClose, onAddToCart }: ProductModalCont
       </div>
 
       {/* Options & Configuration Column */}
-      <div className="w-full md:w-[52%] lg:w-[54%] p-5 sm:p-6 md:p-8 flex flex-col justify-between text-right md:overflow-y-auto md:max-h-[92vh]">
+      <div className={modalOptionsClass}>
         <div>
           {/* Header & Title */}
           <span className="text-xs uppercase tracking-wider text-[#C8AA78] font-bold block mb-1">
@@ -1531,20 +1539,22 @@ function TrackProductModalContent({
 
   return (
     <div
-      className="relative w-full max-w-4xl bg-[#211B17] text-[#F5EFE6] border border-[#C8AA78]/30 rounded-xl shadow-2xl overflow-y-auto md:overflow-hidden max-h-[88vh] sm:max-h-[90vh] md:max-h-[92vh] flex flex-col md:flex-row my-auto"
+      className={modalPanelClass}
       onClick={(e) => e.stopPropagation()}
     >
-      {/* Close Button */}
-      <button
-        onClick={onClose}
-        aria-label="إغلاق"
-        className="sticky top-3 left-3 z-50 self-start float-left -mb-10 sm:-mb-12 p-2 rounded-full bg-[#171513]/90 hover:bg-[#171513] text-[#F5EFE6] hover:text-[#C8AA78] border border-white/10 transition-colors cursor-pointer shadow-md md:absolute md:top-4 md:left-4 md:mb-0"
-      >
-        <X className="w-5 h-5" />
-      </button>
+      {/* Close button stays visible while the mobile panel scrolls. */}
+      <div className={modalCloseHeaderClass}>
+        <button
+          onClick={onClose}
+          aria-label="إغلاق"
+          className="cursor-pointer rounded-full border border-white/10 bg-[#171513]/90 p-2 text-[#F5EFE6] shadow-md transition-colors hover:bg-[#171513] hover:text-[#C8AA78]"
+        >
+          <X className="h-5 w-5" />
+        </button>
+      </div>
 
       {/* Visual Column */}
-      <div className="w-full md:w-[48%] lg:w-[46%] p-5 sm:p-6 md:p-7 bg-[#1B1613] flex flex-col justify-between border-b md:border-b-0 md:border-l border-white/10 shrink-0 md:overflow-y-auto md:max-h-[92vh]">
+      <div className={modalGalleryClass}>
         <div>
           <div className="relative aspect-[16/10] sm:aspect-[4/3] w-full max-h-[220px] sm:max-h-none rounded-lg overflow-hidden bg-[#2A231E] border border-white/10 shadow-inner">
             <Image
@@ -1594,7 +1604,7 @@ function TrackProductModalContent({
       </div>
 
       {/* Configuration Column */}
-      <div className="w-full md:w-[52%] lg:w-[54%] p-5 sm:p-6 md:p-8 flex flex-col justify-between text-right md:overflow-y-auto md:max-h-[92vh]">
+      <div className={modalOptionsClass}>
         <div>
           <span className="text-xs uppercase tracking-wider text-[#C8AA78] font-bold block mb-1">
             جسور وسكك الستائر
@@ -1877,20 +1887,22 @@ function InstallationServiceModalContent({
 
   return (
     <div
-      className="relative w-full max-w-4xl bg-[#211B17] text-[#F5EFE6] border border-[#C8AA78]/30 rounded-xl shadow-2xl overflow-y-auto md:overflow-hidden max-h-[88vh] sm:max-h-[90vh] md:max-h-[92vh] flex flex-col md:flex-row my-auto"
+      className={modalPanelClass}
       onClick={(e) => e.stopPropagation()}
     >
-      {/* Close Button */}
-      <button
-        onClick={onClose}
-        aria-label="إغلاق"
-        className="sticky top-3 left-3 z-50 self-start float-left -mb-10 sm:-mb-12 p-2 rounded-full bg-[#171513]/90 hover:bg-[#171513] text-[#F5EFE6] hover:text-[#C8AA78] border border-white/10 transition-colors cursor-pointer shadow-md md:absolute md:top-4 md:left-4 md:mb-0"
-      >
-        <X className="w-5 h-5" />
-      </button>
+      {/* Close button stays visible while the mobile panel scrolls. */}
+      <div className={modalCloseHeaderClass}>
+        <button
+          onClick={onClose}
+          aria-label="إغلاق"
+          className="cursor-pointer rounded-full border border-white/10 bg-[#171513]/90 p-2 text-[#F5EFE6] shadow-md transition-colors hover:bg-[#171513] hover:text-[#C8AA78]"
+        >
+          <X className="h-5 w-5" />
+        </button>
+      </div>
 
       {/* Visual Column */}
-      <div className="w-full md:w-[48%] lg:w-[46%] p-5 sm:p-6 md:p-7 bg-[#1B1613] flex flex-col justify-between border-b md:border-b-0 md:border-l border-white/10 shrink-0 md:overflow-y-auto md:max-h-[92vh]">
+      <div className={modalGalleryClass}>
         <div>
           <div className="relative aspect-[4/3] w-full rounded-lg overflow-hidden bg-[#2A231E] border border-white/10 shadow-inner">
             <Image
@@ -1939,7 +1951,7 @@ function InstallationServiceModalContent({
       </div>
 
       {/* Configuration Column */}
-      <div className="w-full md:w-[52%] lg:w-[54%] p-5 sm:p-6 md:p-8 flex flex-col justify-between text-right md:overflow-y-auto md:max-h-[92vh]">
+      <div className={modalOptionsClass}>
         <div>
           <span className="text-xs uppercase tracking-wider text-[#C8AA78] font-bold block mb-1">
             خدمات التركيب والتثبيت
@@ -2224,20 +2236,22 @@ function DryCleaningServiceModalContent({
 
   return (
     <div
-      className="relative w-full max-w-4xl bg-[#211B17] text-[#F5EFE6] border border-[#C8AA78]/30 rounded-xl shadow-2xl overflow-y-auto md:overflow-hidden max-h-[88vh] sm:max-h-[90vh] md:max-h-[92vh] flex flex-col md:flex-row my-auto"
+      className={modalPanelClass}
       onClick={(e) => e.stopPropagation()}
     >
-      {/* Close Button */}
-      <button
-        onClick={onClose}
-        aria-label="إغلاق"
-        className="sticky top-3 left-3 z-50 self-start float-left -mb-10 sm:-mb-12 p-2 rounded-full bg-[#171513]/90 hover:bg-[#171513] text-[#F5EFE6] hover:text-[#C8AA78] border border-white/10 transition-colors cursor-pointer shadow-md md:absolute md:top-4 md:left-4 md:mb-0"
-      >
-        <X className="w-5 h-5" />
-      </button>
+      {/* Close button stays visible while the mobile panel scrolls. */}
+      <div className={modalCloseHeaderClass}>
+        <button
+          onClick={onClose}
+          aria-label="إغلاق"
+          className="cursor-pointer rounded-full border border-white/10 bg-[#171513]/90 p-2 text-[#F5EFE6] shadow-md transition-colors hover:bg-[#171513] hover:text-[#C8AA78]"
+        >
+          <X className="h-5 w-5" />
+        </button>
+      </div>
 
       {/* Visual Column */}
-      <div className="w-full md:w-[48%] lg:w-[46%] p-5 sm:p-6 md:p-7 bg-[#1B1613] flex flex-col justify-between border-b md:border-b-0 md:border-l border-white/10 shrink-0 md:overflow-y-auto md:max-h-[92vh]">
+      <div className={modalGalleryClass}>
         <div>
           <div className="relative aspect-[4/3] w-full rounded-lg overflow-hidden bg-[#2A231E] border border-white/10 shadow-inner">
             <Image
@@ -2286,7 +2300,7 @@ function DryCleaningServiceModalContent({
       </div>
 
       {/* Configuration Column */}
-      <div className="w-full md:w-[52%] lg:w-[54%] p-5 sm:p-6 md:p-8 flex flex-col justify-between text-right md:overflow-y-auto md:max-h-[92vh]">
+      <div className={modalOptionsClass}>
         <div>
           <div className="flex items-center justify-between gap-2 mb-1">
             <span className="text-xs uppercase tracking-wider text-[#C8AA78] font-bold">
@@ -2539,20 +2553,22 @@ function SidePanelsProductModalContent({
 
   return (
     <div
-      className="relative w-full max-w-4xl bg-[#211B17] text-[#F5EFE6] border border-[#C8AA78]/30 rounded-xl shadow-2xl overflow-y-auto md:overflow-hidden max-h-[88vh] sm:max-h-[90vh] md:max-h-[92vh] flex flex-col md:flex-row my-auto"
+      className={modalPanelClass}
       onClick={(e) => e.stopPropagation()}
     >
-      {/* Close Button */}
-      <button
-        onClick={onClose}
-        aria-label="إغلاق"
-        className="sticky top-3 left-3 z-50 self-start float-left -mb-10 sm:-mb-12 p-2 rounded-full bg-[#171513]/90 hover:bg-[#171513] text-[#F5EFE6] hover:text-[#C8AA78] border border-white/10 transition-colors cursor-pointer shadow-md md:absolute md:top-4 md:left-4 md:mb-0"
-      >
-        <X className="w-5 h-5" />
-      </button>
+      {/* Close button stays visible while the mobile panel scrolls. */}
+      <div className={modalCloseHeaderClass}>
+        <button
+          onClick={onClose}
+          aria-label="إغلاق"
+          className="cursor-pointer rounded-full border border-white/10 bg-[#171513]/90 p-2 text-[#F5EFE6] shadow-md transition-colors hover:bg-[#171513] hover:text-[#C8AA78]"
+        >
+          <X className="h-5 w-5" />
+        </button>
+      </div>
 
       {/* Visual Column */}
-      <div className="w-full md:w-[48%] lg:w-[46%] p-5 sm:p-6 md:p-7 bg-[#1B1613] flex flex-col justify-between border-b md:border-b-0 md:border-l border-white/10 shrink-0 md:overflow-y-auto md:max-h-[92vh]">
+      <div className={modalGalleryClass}>
         <div>
           {/* Main Installed Photograph matching BOTH color and placement */}
           <div className="relative aspect-[16/10] sm:aspect-[4/3] w-full max-h-[220px] sm:max-h-none rounded-lg overflow-hidden bg-[#2A231E] border border-white/10 shadow-inner">
@@ -2601,7 +2617,7 @@ function SidePanelsProductModalContent({
               <span className="text-[11px] text-[#D8C6AE]/70 font-medium">{colorsList.length} لوناً متوفراً</span>
             </div>
 
-            <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto pr-0.5">
+            <div className="flex flex-wrap gap-1.5 md:max-h-40 md:overflow-y-auto pr-0.5">
               {colorsList.map((color) => {
                 const isSelected = selectedColor.id === color.id;
                 return (
@@ -2648,7 +2664,7 @@ function SidePanelsProductModalContent({
       </div>
 
       {/* Configuration Column */}
-      <div className="w-full md:w-[52%] lg:w-[54%] p-5 sm:p-6 md:p-8 flex flex-col justify-between text-right md:overflow-y-auto md:max-h-[92vh]">
+      <div className={modalOptionsClass}>
         <div>
           <span className="text-xs uppercase tracking-wider text-[#C8AA78] font-bold block mb-1">
             جوانب ستائر كتان
@@ -2777,24 +2793,60 @@ function SidePanelsProductModalContent({
 export default function ProductModal() {
   const { openProductModal, setOpenProductModal, addItem } = useCart();
   const product = openProductModal;
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const isOpen = Boolean(product);
 
   useEffect(() => {
-    if (product) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setOpenProductModal(null);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.body.style.overflow = '';
-      window.removeEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [setOpenProductModal]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const scrollY = window.scrollY;
+    const body = document.body;
+    const root = document.documentElement;
+    const previous = {
+      position: body.style.position,
+      top: body.style.top,
+      width: body.style.width,
+      overflow: body.style.overflow,
+      rootOverflow: root.style.overflow,
     };
-  }, [product, setOpenProductModal]);
+
+    body.style.position = 'fixed';
+    body.style.top = `-${scrollY}px`;
+    body.style.width = '100%';
+    body.style.overflow = 'hidden';
+    root.style.overflow = 'hidden';
+
+    const viewport = window.visualViewport;
+    const updateViewport = () => {
+      if (!viewport || !overlayRef.current) return;
+      overlayRef.current.style.top = `${viewport.offsetTop}px`;
+      overlayRef.current.style.setProperty('--modal-viewport-height', `${viewport.height}px`);
+    };
+    updateViewport();
+    viewport?.addEventListener('resize', updateViewport);
+    viewport?.addEventListener('scroll', updateViewport);
+
+    return () => {
+      viewport?.removeEventListener('resize', updateViewport);
+      viewport?.removeEventListener('scroll', updateViewport);
+      body.style.position = previous.position;
+      body.style.top = previous.top;
+      body.style.width = previous.width;
+      body.style.overflow = previous.overflow;
+      root.style.overflow = previous.rootOverflow;
+      window.scrollTo(0, scrollY);
+    };
+  }, [isOpen]);
 
   if (!product) return null;
 
@@ -2822,7 +2874,7 @@ export default function ProductModal() {
       (product.curtainType === 'service' && product.id !== 'service-dry-cleaning'));
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 bg-black/75 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200">
+    <div ref={overlayRef} className="fixed inset-x-0 top-0 z-50 flex h-[var(--modal-viewport-height,100dvh)] items-center justify-center overflow-hidden bg-black/75 p-3 backdrop-blur-sm animate-in fade-in duration-200 sm:p-4 md:p-6">
       {isSidePanels ? (
         <SidePanelsProductModalContent
           key={product.id}

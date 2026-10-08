@@ -38,81 +38,46 @@ function shadeChannel(targetC, normLuma) {
   return targetC + (250 - targetC) * highlight;
 }
 
-/**
- * Computes per-row panel horizontal intervals for 'both' or 'right' base image.
- */
-function buildPanelMask(data, width, height, channels, mode) {
+function interpolate(knots, y) {
+  for (let i = 1; i < knots.length; i++) {
+    if (y <= knots[i][0]) {
+      const [y0, x0] = knots[i - 1];
+      const [y1, x1] = knots[i];
+      return x0 + (x1 - x0) * ((y - y0) / (y1 - y0));
+    }
+  }
+  return knots[knots.length - 1][1];
+}
+
+// Intervals follow the swept-back linen drapes in the new product photographs.
+// The middle sheer curtain, wall, gold rod, and furniture remain untouched.
+function buildPanelMask(width, height, mode) {
   const mask = new Float32Array(width * height);
+  const topY = Math.floor(height * 0.05);
+  const botY = Math.floor(height * 0.90);
+  const outerEdge = [[0.05, 0.118], [0.45, 0.115], [0.70, 0.105], [0.90, 0.087]];
+  const innerEdge = [
+    [0.05, 0.328], [0.15, 0.316], [0.30, 0.282], [0.44, 0.264],
+    [0.54, 0.220], [0.65, 0.208], [0.78, 0.228], [0.90, 0.248],
+  ];
 
-  const topY = mode === 'both' ? Math.floor(height * 0.109) : Math.floor(height * 0.114);
-  const botY = mode === 'both' ? Math.floor(height * 0.862) : Math.floor(height * 0.854);
-
-  for (let y = topY - 3; y <= botY + 3; y++) {
+  for (let y = topY - 4; y <= botY + 4; y++) {
     if (y < 0 || y >= height) continue;
-
-    // Vertical feather weight at top track and bottom hem
-    let vWeight = 1.0;
-    if (y < topY + 3) {
-      vWeight = smoothstep(topY - 2, topY + 3, y);
-    } else if (y > botY - 3) {
-      vWeight = 1.0 - smoothstep(botY - 3, botY + 2, y);
-    }
+    const vWeight = smoothstep(topY - 4, topY + 4, y) *
+      (1 - smoothstep(botY - 4, botY + 4, y));
     if (vWeight <= 0) continue;
-
-    const yProgress = (y - topY) / Math.max(1, botY - topY);
-
-    const intervals = [];
-    if (mode === 'both') {
-      // Left panel interval
-      const leftOuter = Math.round(width * 0.075);
-      // Scan inner edge near x = 21.5%..24% where sheer begins
-      let leftInner = Math.round(width * (0.224 + 0.006 * yProgress));
-      for (let x = Math.floor(width * 0.205); x <= Math.floor(width * 0.242); x++) {
-        const idx = (y * width + x) * channels;
-        const r = data[idx], b = data[idx + 2];
-        if (b > 192 && (r - b) < 16) {
-          leftInner = x - 1;
-          break;
-        }
-      }
-      intervals.push([leftOuter, leftInner]);
-
-      // Right panel interval
-      let rightInner = Math.round(width * 0.773);
-      for (let x = Math.floor(width * 0.795); x >= Math.floor(width * 0.760); x--) {
-        const idx = (y * width + x) * channels;
-        const r = data[idx], b = data[idx + 2];
-        if (b > 192 && (r - b) < 16) {
-          rightInner = x + 1;
-          break;
-        }
-      }
-      const rightOuter = Math.round(width * 0.925);
-      intervals.push([rightInner, rightOuter]);
-    } else if (mode === 'right') {
-      // Single right panel interval
-      let rightInner = Math.round(width * 0.745);
-      for (let x = Math.floor(width * 0.768); x >= Math.floor(width * 0.730); x--) {
-        const idx = (y * width + x) * channels;
-        const r = data[idx], b = data[idx + 2];
-        if (b > 188 && (r - b) < 20) {
-          rightInner = x + 1;
-          break;
-        }
-      }
-      const rightOuter = Math.round(width * 0.914);
-      intervals.push([rightInner, rightOuter]);
-    }
+    const relativeY = y / height;
+    const outer = interpolate(outerEdge, relativeY) * width;
+    const inner = interpolate(innerEdge, relativeY) * width;
+    const intervals = mode === 'both'
+      ? [[outer, inner], [width - inner, width - outer]]
+      : [[width - inner, width - outer]];
 
     for (const [xStart, xEnd] of intervals) {
-      for (let x = xStart - 3; x <= xEnd + 3; x++) {
+      for (let x = Math.floor(xStart - 4); x <= Math.ceil(xEnd + 4); x++) {
         if (x < 0 || x >= width) continue;
-        let hWeight = 1.0;
-        if (x < xStart + 3) {
-          hWeight = smoothstep(xStart - 2, xStart + 3, x);
-        } else if (x > xEnd - 3) {
-          hWeight = 1.0 - smoothstep(xEnd - 3, xEnd + 2, x);
-        }
+        const hWeight = smoothstep(xStart - 4, xStart + 4, x) *
+          (1 - smoothstep(xEnd - 4, xEnd + 4, x));
         const w = vWeight * hWeight;
         if (w > mask[y * width + x]) {
           mask[y * width + x] = w;
@@ -122,6 +87,25 @@ function buildPanelMask(data, width, height, channels, mode) {
   }
 
   return mask;
+}
+
+function isGold(r, g, b) {
+  return r - g > 39 && g - b > 44;
+}
+
+function meanPanelLuma(srcData, mask, width, height, channels) {
+  let total = 0;
+  let weight = 0;
+  for (let i = 0; i < width * height; i++) {
+    if (mask[i] < 0.9) continue;
+    const idx = i * channels;
+    const r = srcData[idx], g = srcData[idx + 1], b = srcData[idx + 2];
+    const chromaWeight = smoothstep(10, 28, r - b);
+    const weightedMask = mask[i] * chromaWeight;
+    total += (0.299 * r + 0.587 * g + 0.114 * b) * weightedMask;
+    weight += weightedMask;
+  }
+  return total / weight;
 }
 
 function applyColorToBuffer(srcData, mask, width, height, channels, targetRgb, baseMeanLuma) {
@@ -136,6 +120,11 @@ function applyColorToBuffer(srcData, mask, width, height, channels, targetRgb, b
     const r = srcData[idx];
     const g = srcData[idx + 1];
     const b = srcData[idx + 2];
+    const x = i % width;
+    const y = Math.floor(i / width);
+    const nearTieback = y > height * 0.47 && y < height * 0.73 &&
+      (x < width * 0.25 || x > width * 0.75);
+    if (nearTieback && isGold(r, g, b)) continue;
 
     const luma = 0.299 * r + 0.587 * g + 0.114 * b;
     const normLuma = luma / baseMeanLuma;
@@ -144,9 +133,10 @@ function applyColorToBuffer(srcData, mask, width, height, channels, targetRgb, b
     const newG = shadeChannel(tg, normLuma);
     const newB = shadeChannel(tb, normLuma);
 
-    out[idx] = clamp(r * (1 - w) + newR * w);
-    out[idx + 1] = clamp(g * (1 - w) + newG * w);
-    out[idx + 2] = clamp(b * (1 - w) + newB * w);
+    const colorWeight = w * smoothstep(10, 28, r - b);
+    out[idx] = clamp(r * (1 - colorWeight) + newR * colorWeight);
+    out[idx + 1] = clamp(g * (1 - colorWeight) + newG * colorWeight);
+    out[idx + 2] = clamp(b * (1 - colorWeight) + newB * colorWeight);
   }
 
   return out;
@@ -156,21 +146,10 @@ async function generateAll() {
   const bothLoaded = await sharp(BOTH_BASE).raw().toBuffer({ resolveWithObject: true });
   const rightLoaded = await sharp(RIGHT_BASE).raw().toBuffer({ resolveWithObject: true });
 
-  const bothMask = buildPanelMask(
-    bothLoaded.data,
-    bothLoaded.info.width,
-    bothLoaded.info.height,
-    bothLoaded.info.channels,
-    'both'
-  );
-
-  const rightMask = buildPanelMask(
-    rightLoaded.data,
-    rightLoaded.info.width,
-    rightLoaded.info.height,
-    rightLoaded.info.channels,
-    'right'
-  );
+  const bothMask = buildPanelMask(bothLoaded.info.width, bothLoaded.info.height, 'both');
+  const rightMask = buildPanelMask(rightLoaded.info.width, rightLoaded.info.height, 'right');
+  const bothMeanLuma = meanPanelLuma(bothLoaded.data, bothMask, bothLoaded.info.width, bothLoaded.info.height, bothLoaded.info.channels);
+  const rightMeanLuma = meanPanelLuma(rightLoaded.data, rightMask, rightLoaded.info.width, rightLoaded.info.height, rightLoaded.info.channels);
 
   for (const color of COLORS) {
     // 1. Both sides (كلاهما)
@@ -181,7 +160,7 @@ async function generateAll() {
       bothLoaded.info.height,
       bothLoaded.info.channels,
       color.targetRgb,
-      102
+      bothMeanLuma
     );
     const bothPath = path.join(OUT_DIR, `side_panel_${color.id}_both.jpg`);
     await sharp(bothColored, {
@@ -202,7 +181,7 @@ async function generateAll() {
       rightLoaded.info.height,
       rightLoaded.info.channels,
       color.targetRgb,
-      112
+      rightMeanLuma
     );
     const rightPath = path.join(OUT_DIR, `side_panel_${color.id}_right.jpg`);
     await sharp(rightColored, {
